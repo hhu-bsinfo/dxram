@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.monitoring;
 
 import de.hhu.bsinfo.dxnet.MessageReceiver;
@@ -8,19 +24,14 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringDataMessage;
-import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringDataRequest;
-import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringDataResponse;
-import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringMessages;
-import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringProposeMessage;
-import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringSysInfoMessage;
+import de.hhu.bsinfo.dxram.monitoring.messages.*;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
  * Monitoring Service
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringService extends AbstractDXRAMService<MonitoringServiceConfig> implements MessageReceiver {
 
@@ -70,10 +81,9 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
         return true;
     }
 
-    public boolean isActive() {
-        return getConfig().isMonitoringActive();
-    }
-
+    /**
+     * Registers class as receiver for monitoring messages.
+     */
     private void registerMessageReceiver() {
         m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO,
                 this);
@@ -85,6 +95,9 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
                 this);
     }
 
+    /**
+     * Unregisters class as monitornig message receiver.
+     */
     private void unregisterMessageReceiver() {
         m_network.unregister(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
                 MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST, this);
@@ -96,6 +109,9 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
                 this);
     }
 
+    /**
+     * Registers monitoring message types.
+     */
     private void registerMonitorMessages() {
         m_network.registerMessageType(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
                 MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST, MonitoringDataRequest.class);
@@ -145,19 +161,39 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
         }
     }
 
+    /**
+     * Handles received MonitoringSysInfoMessage by adding to a list.
+     *
+     * @param p_message MonitoringSysInfoMessage
+     */
     private void incomingMonitoringSystemInfo(MonitoringSysInfoMessage p_message) {
         m_monitor.addMonitoringSysInfoToWriter(p_message.getSource(), p_message.getWrapper());
     }
 
+    /**
+     * Adds incoming MonitoringData to List.
+     *
+     * @param p_message Message with Data
+     */
     private void incomingMonitoringData(final MonitoringDataMessage p_message) {
         m_monitor.addMonitoringDataToWriter(p_message.getMonitorData()); // todo use chunkservice and put to superpeer
     }
 
+    /**
+     * Incoming propse message (currently beeing ignored)
+     *
+     * @param p_message
+     */
     private void incomingMonitoringPropose(final MonitoringProposeMessage p_message) {
         LOGGER.debug("Received Monitoring propose from: %d - component %s value: %f",
                 p_message.getSource(), p_message.getComponent(), p_message.getValue());
     }
 
+    /**
+     * Handle terminal monitoring data request.
+     *
+     * @param p_request Reqeust
+     */
     private void incomingMonitoringDataRequest(final MonitoringDataRequest p_request) {
         Runnable task = () -> {
             MonitoringDataStructure monitorData = m_monitor.getCurrentMonitoringData();
@@ -172,8 +208,12 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
         new Thread(task).start();
     }
 
-    /********************* TERMINAL FUNCTIONS *********************/
-    // terminal uses this method to get monitoring info from peer
+    /**
+     * Terminal method to get current monitoring data for a chosen peer.
+     *
+     * @param p_nid nid of peer
+     * @return Monitornig Data
+     */
     public MonitoringDataStructure getMonitoringDataFromPeer(final short p_nid) {
         if (m_boot.getNodeID() == p_nid) { // will never be the case because only terminal will call this method
             return m_monitor.getCurrentMonitoringData();

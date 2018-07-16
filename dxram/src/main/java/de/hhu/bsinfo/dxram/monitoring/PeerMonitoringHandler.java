@@ -1,23 +1,22 @@
+/*
+ * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.monitoring;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import de.hhu.bsinfo.dxmonitor.monitor.CpuMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.DiskMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.JVMMemMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.JVMThreadsMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.MemMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.Monitor;
-import de.hhu.bsinfo.dxmonitor.monitor.MultipleThresholdDouble;
-import de.hhu.bsinfo.dxmonitor.monitor.NetworkMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.*;
 import de.hhu.bsinfo.dxmonitor.state.StateUpdateException;
 import de.hhu.bsinfo.dxmonitor.state.SystemState;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
@@ -27,12 +26,21 @@ import de.hhu.bsinfo.dxram.monitoring.messages.MonitoringSysInfoMessage;
 import de.hhu.bsinfo.dxram.monitoring.metric.AverageMetric;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxutils.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * PeerMonitoringHandler class
  * Peer collects monitoring data and sends it to superpeer.
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class PeerMonitoringHandler extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(PeerMonitoringHandler.class.getSimpleName());
@@ -56,6 +64,10 @@ public class PeerMonitoringHandler extends Thread {
 
     /**
      * Constructor
+     *
+     * @param p_ownNid           own node id
+     * @param p_superpeerNid     NID of corresponding superpeer
+     * @param p_networkComponent NetworkComponent instance to send messages
      */
     PeerMonitoringHandler(short p_ownNid, short p_superpeerNid, NetworkComponent p_networkComponent) {
         setName("PeerMonitoringHandler");
@@ -69,8 +81,17 @@ public class PeerMonitoringHandler extends Thread {
         m_networkComponent = p_networkComponent;
     }
 
+    /**
+     * Sets a few config values.
+     *
+     * @param p_monFolder        path to monitoring folder
+     * @param p_secondDelay      delay in seconds
+     * @param p_numberOfCollects number of collects per "time window"
+     * @param p_nicIdentifier    nic identifier
+     * @param p_diskIdentifier   disk identifier
+     */
     void setConfigParameters(final String p_monFolder, float p_secondDelay, short p_numberOfCollects,
-            String p_nicIdentifier, String p_diskIdentifier) {
+                             String p_nicIdentifier, String p_diskIdentifier) {
         m_monitorFolder = p_monFolder;
         m_secondDelay = p_secondDelay;
         m_numberOfCollects = p_numberOfCollects;
@@ -78,6 +99,9 @@ public class PeerMonitoringHandler extends Thread {
         m_diskIdentifier = p_diskIdentifier;
     }
 
+    /**
+     * Initializes the monitoring classes and assigns callbacks.
+     */
     void setupComponents() {
 
         CpuMonitor cpu = new CpuMonitor();
@@ -139,6 +163,10 @@ public class PeerMonitoringHandler extends Thread {
         }
     }
 
+    /**
+     * Applies on collected monitoring datas the average metric and sends a single datastructure to the superpeer.
+     * Furthermore the csv file is appended.
+     */
     private void sendDataToSuperpeer() {
         MonitoringDataStructure data = AverageMetric.calculate(m_monitoringDatas);
         MonitoringDataMessage dataMessage = new MonitoringDataMessage(m_superpeerNid, data);
@@ -152,10 +180,21 @@ public class PeerMonitoringHandler extends Thread {
         appendDataToFile(data);
     }
 
+    /**
+     * Returns certain monitor class.
+     *
+     * @param p_key key
+     * @return Monitor class for given key
+     */
     public Monitor getComponent(final String p_key) {
         return m_monitors.get(p_key);
     }
 
+    /**
+     * Collects monitoring data and puts them in a monitoring data structure
+     *
+     * @return the created DS
+     */
     MonitoringDataStructure getMonitoringData() {
         MonitoringDataStructure monitoringData = new MonitoringDataStructure(m_ownNid, System.nanoTime());
         for (Monitor monitor : m_monitors.values()) {
@@ -169,10 +208,16 @@ public class PeerMonitoringHandler extends Thread {
         return monitoringData;
     }
 
+    /**
+     * Sets the shutdown variable.
+     */
     void setShouldShutdown() {
         m_shouldShutdown = true;
     }
 
+    /**
+     * Creates a printwriter class instance (and creates a csv file which stores general monitoring information)
+     */
     private void createPrintWriter() {
         try {
             String path = m_monitorFolder + File.separator + "node" + NodeID.toHexString(m_ownNid);
@@ -199,6 +244,11 @@ public class PeerMonitoringHandler extends Thread {
         }
     }
 
+    /**
+     * Appends the general.csv file.
+     *
+     * @param p_data Monitoring Data
+     */
     private void appendDataToFile(MonitoringDataStructure p_data) {
         StringBuilder builder = new StringBuilder("");
         char DEFAULT_SEPARATOR = ',';
@@ -256,6 +306,12 @@ public class PeerMonitoringHandler extends Thread {
         m_writer.flush();
     }
 
+    /**
+     * Sends a propose message to the superpeer because a threshold has been exceeded.
+     *
+     * @param p_component which component caused the propose
+     * @param p_value     Actual value of component
+     */
     private void sendProposeToSuperpeer(final String p_component, final double p_value) {
         MonitoringProposeMessage proposeMessage = new MonitoringProposeMessage(m_superpeerNid, p_component, p_value);
         try {
@@ -265,12 +321,23 @@ public class PeerMonitoringHandler extends Thread {
         }
     }
 
-    /******* Callback functions ********/
+    /**
+     * Callback Function for cpu usage.
+     *
+     * @param p_currentValue current cpu usage
+     * @param p_threshold    threshold class instance
+     */
     private void callbackCpuUsageThresholdExceed(final double p_currentValue,
-            final MultipleThresholdDouble p_threshold) {
+                                                 final MultipleThresholdDouble p_threshold) {
         sendProposeToSuperpeer("cpu", p_currentValue);
     }
 
+    /**
+     * Callback function for memory.
+     *
+     * @param p_currentValue current memory "value"
+     * @param p_threshold    threshold class instance
+     */
     private void callbackMemThresholdExceed(final double p_currentValue, final MultipleThresholdDouble p_threshold) {
         sendProposeToSuperpeer("memory", p_currentValue);
     }

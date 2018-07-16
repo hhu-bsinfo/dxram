@@ -22,7 +22,7 @@ import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
 /**
  * Message with monitoring data.
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringDataMessage extends Message {
 
@@ -48,6 +48,9 @@ public class MonitoringDataMessage extends Message {
     private long[] m_data2;
     private long m_timestamp;
 
+    /**
+     * Constructor
+     */
     public MonitoringDataMessage() {
         super();
 
@@ -63,6 +66,12 @@ public class MonitoringDataMessage extends Message {
 
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_destination destination nid
+     * @param p_data        data to send
+     */
     public MonitoringDataMessage(final short p_destination, MonitoringDataStructure p_data) {
         super(p_destination, DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_DATA);
 
@@ -129,10 +138,16 @@ public class MonitoringDataMessage extends Message {
         return Long.BYTES + Integer.BYTES + Float.BYTES * m_data.length + Integer.BYTES + Long.BYTES * m_data2.length;
     }
 
+    /**
+     * Sets the timestamp.
+     */
     public void setTimestamp(final long p_timestamp) {
         m_timestamp = p_timestamp;
     }
 
+    /**
+     * Returns timestamp of data
+     */
     public long getTimestamp() {
         return m_timestamp;
     }

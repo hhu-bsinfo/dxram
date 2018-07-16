@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.monitoring;
 
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
@@ -8,18 +24,18 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxram.log.LogComponentConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.monitoring.util.MonitoringSysDxramWrapper;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Monitoring component (will launch 2 handler threads on peer nodes and 1 handler on superpeers)
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringComponentConfig> {
 
@@ -37,6 +53,9 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
                 MonitoringComponentConfig.class);
     }
 
+    /**
+     * Returns true if monitoring is activated.
+     */
     public boolean isActive() {
         return getConfig().isMonitoringActive();
     }
@@ -153,16 +172,28 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
         return true;
     }
 
-    /****** TERMINAL FUNCTIONS ******/
+    /**
+     * Wrapper method (only needed by terminal currently) to get current monitoring data.
+     *
+     * @return Monitoring data
+     */
     MonitoringDataStructure getCurrentMonitoringData() {
         return m_peerHandler.getMonitoringData();
     }
 
-    /****** WRAPPER FOR HANDLER ******/
+    /**
+     * Adds monitoring data to superpeer handlers list.
+     */
     void addMonitoringDataToWriter(MonitoringDataStructure p_data) {
         m_superpeerHandler.addDataToList(p_data);
     }
 
+    /**
+     * Adds system information to superpeer handler
+     *
+     * @param p_nid     NID of node who send the system information
+     * @param p_wrapper Wrapper class instance which stores the monitoring information
+     */
     void addMonitoringSysInfoToWriter(short p_nid, MonitoringSysDxramWrapper p_wrapper) {
         m_superpeerHandler.addSysInfoToList(p_nid, p_wrapper);
     }

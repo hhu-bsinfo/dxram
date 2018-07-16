@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.monitoring.messages;
 
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
@@ -10,7 +26,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 /**
  * Monitoring message with system information
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringSysInfoMessage extends Message {
 
@@ -19,12 +35,22 @@ public class MonitoringSysInfoMessage extends Message {
 
     private boolean m_isPageCacheInUse;
 
+    /**
+     * Constructor
+     */
     public MonitoringSysInfoMessage() {
         m_sysInfos = new String[5];
         m_dxramInfos = new String[5];
         m_isPageCacheInUse = true; // default values
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_destination nid of destination node
+     * @param p_sysInfos    String array with system information
+     * @param p_dxramInfos  String array with dxram information
+     */
     public MonitoringSysInfoMessage(short p_destination, String[] p_sysInfos, String[] p_dxramInfos, boolean p_isPageCacheInUse) {
         super(p_destination, DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
                 MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO);
@@ -86,6 +112,9 @@ public class MonitoringSysInfoMessage extends Message {
     }
 
 
+    /**
+     * Returns a wrapper which stores the sys infos.
+     */
     public MonitoringSysDxramWrapper getWrapper() {
         return new MonitoringSysDxramWrapper(m_sysInfos, m_dxramInfos, m_isPageCacheInUse);
     }

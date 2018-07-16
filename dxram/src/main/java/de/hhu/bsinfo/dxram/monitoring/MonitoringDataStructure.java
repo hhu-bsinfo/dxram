@@ -1,24 +1,34 @@
+/*
+ * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.monitoring;
 
-import java.lang.management.MemoryPoolMXBean;
-import java.util.Arrays;
-
-import de.hhu.bsinfo.dxmonitor.monitor.CpuMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.DiskMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.JVMMemMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.JVMThreadsMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.MemMonitor;
-import de.hhu.bsinfo.dxmonitor.monitor.Monitor;
-import de.hhu.bsinfo.dxmonitor.monitor.NetworkMonitor;
+import de.hhu.bsinfo.dxmonitor.monitor.*;
 import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
 
+import java.lang.management.MemoryPoolMXBean;
+import java.util.Arrays;
+
 /**
  * Monitoring Data structure class
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.06.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringDataStructure extends DataStructure {
     private long m_timestamp;
@@ -48,7 +58,12 @@ public class MonitoringDataStructure extends DataStructure {
     private long m_jvmThreadCount;
     private long m_jvmPeakThreadCnt;
 
-    /****** CONSTRUCTOR ******/
+    /**
+     * Constructor
+     *
+     * @param p_nid       Node ID
+     * @param p_timestamp timestamp
+     */
     public MonitoringDataStructure(short p_nid, long p_timestamp) {
         m_nid = p_nid;
 
@@ -82,6 +97,14 @@ public class MonitoringDataStructure extends DataStructure {
         m_jvmPeakThreadCnt = 0;
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_nid       Node ID
+     * @param p_data      Floats
+     * @param p_data2     Longs
+     * @param p_timestamp Timestamp
+     */
     public MonitoringDataStructure(short p_nid, float[] p_data, long[] p_data2, long p_timestamp) {
         m_nid = p_nid;
 
@@ -115,8 +138,6 @@ public class MonitoringDataStructure extends DataStructure {
         m_jvmPeakThreadCnt = p_data2[3];
 
     }
-
-    /****** DATASTRUCTURE FUNCTIONS ******/
 
     @Override
     public void exportObject(Exporter p_exporter) {
@@ -202,7 +223,7 @@ public class MonitoringDataStructure extends DataStructure {
     /**
      * Get needed information from certain components.
      *
-     * @param p_monitor
+     * @param p_monitor Monitor class which holds the information.
      */
     void fillWithData(Monitor p_monitor) {
         if (p_monitor instanceof CpuMonitor) {
@@ -241,57 +262,97 @@ public class MonitoringDataStructure extends DataStructure {
 
     }
 
-    /****** GETTERS ******/
-    // will be used by the PeerMonitoringHandler class to fill the Monitoring Data Message and calculate the average
+    /**
+     * Returns cpu usage
+     */
     public float getCpuUsage() {
         return m_cpuUsage;
     }
 
+    /**
+     * Returns cpu loads (1, 5, 15 Minute overview)
+     */
     public float[] getCpuLoads() {
         return m_loads;
     }
 
+    /**
+     * Returns memory usage
+     */
     public float getMemoryUsage() {
         return m_memoryUsage;
     }
 
+    /**
+     * Returns network information (rxThroughput, rxError, txThroughput, txError).
+     */
     public float[] getNetworkStats() {
-        return new float[] {m_rxThroughput, m_rxError, m_txThroughput, m_txError};
+        return new float[]{m_rxThroughput, m_rxError, m_txThroughput, m_txError};
     }
 
+    /**
+     * Returns disk information (read percentage, write percentage)
+     */
     public float[] getDiskStats() {
-        return new float[] {m_readPercent, m_writePercent};
+        return new float[]{m_readPercent, m_writePercent};
     }
 
+    /**
+     * Returns jvm memory related stats. (heap usage, eden usage, survivor usage, old usage)
+     */
     public float[] getJvmMemStats() {
-        return new float[] {m_jvmHeapUsage, m_jvmEdenUsage, m_jvmSurvivorUsage, m_jvmOldUsage};
+        return new float[]{m_jvmHeapUsage, m_jvmEdenUsage, m_jvmSurvivorUsage, m_jvmOldUsage};
     }
 
+    /**
+     * Returns jvm thread stats. (daemon thread cnt, non-daemon thread cnt, thread cnt, peak thread cnt)
+     */
     public long[] getJvmThreadStats() {
-        return new long[] {m_jvmDaemonThreadCnt, m_jvmNonDaemonThreadCnt, m_jvmThreadCount, m_jvmPeakThreadCnt};
+        return new long[]{m_jvmDaemonThreadCnt, m_jvmNonDaemonThreadCnt, m_jvmThreadCount, m_jvmPeakThreadCnt};
     }
 
+    /**
+     * Returns timestamp of data structure.
+     *
+     * @return
+     */
     public long getTimestamp() {
         return m_timestamp;
     }
 
+    /**
+     * Returns of the nid of the node whom the monitoring data belongs to.
+     *
+     * @return
+     */
     public short getNid() {
         return m_nid;
     }
 
-    /****** SETTERS ******/
+    /**
+     * Sets cpu usage.
+     */
     public void setCpuUsage(float p_usage) {
         m_cpuUsage = p_usage;
     }
 
+    /**
+     * Sets cpu loads.
+     */
     public void setCpuLoads(float[] p_loads) {
         m_loads = p_loads;
     }
 
+    /**
+     * Sets memory usage.
+     */
     public void setMemoryUsage(float p_usage) {
         m_memoryUsage = p_usage;
     }
 
+    /**
+     * Sets network stats.
+     */
     public void setNetworsStats(float[] p_stats) {
         m_rxThroughput = p_stats[0];
         m_rxError = p_stats[1];
@@ -299,11 +360,17 @@ public class MonitoringDataStructure extends DataStructure {
         m_txError = p_stats[3];
     }
 
+    /**
+     * Sets disk stats.
+     */
     public void setDiskStats(float[] p_stats) {
         m_readPercent = p_stats[0];
         m_writePercent = p_stats[1];
     }
 
+    /**
+     * Sets jvm memory related stats.
+     */
     public void setJvmMemStats(float[] p_stats) {
         m_jvmHeapUsage = p_stats[0];
         m_jvmEdenUsage = p_stats[1];
@@ -311,6 +378,9 @@ public class MonitoringDataStructure extends DataStructure {
         m_jvmOldUsage = p_stats[3];
     }
 
+    /**
+     * Sets jvm thread related stats.
+     */
     public void setJvmThreadsStats(long[] p_stats) {
         m_jvmDaemonThreadCnt = p_stats[0];
         m_jvmNonDaemonThreadCnt = p_stats[1];

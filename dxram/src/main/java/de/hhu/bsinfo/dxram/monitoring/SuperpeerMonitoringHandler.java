@@ -1,16 +1,20 @@
+/*
+ * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.monitoring;
-
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxmonitor.state.SystemState;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -22,11 +26,18 @@ import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.monitoring.util.MonitoringSysDxramWrapper;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Superpeer monitoring handler thread. Will write a list of nodes on event trigger.
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class SuperpeerMonitoringHandler extends Thread implements EventListener<AbstractEvent> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(
@@ -46,9 +57,14 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
 
     /**
      * Constructor
+     *
+     * @param p_secondDelay      delay in seconds
+     * @param p_bootComponent    BootComponent Instance
+     * @param p_eventComponent   EventComponent Instance
+     * @param p_monitoringFolder path to monitoring folder
      */
     SuperpeerMonitoringHandler(float p_secondDelay, AbstractBootComponent p_bootComponent,
-            EventComponent p_eventComponent, String p_monitoringFolder) {
+                               EventComponent p_eventComponent, String p_monitoringFolder) {
         m_collectedData = new ArrayList<>();
         m_sysInfos = new HashMap<>();
         m_shouldShutdown = false;
@@ -58,10 +74,21 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
         m_eventComponent = p_eventComponent;
     }
 
+    /**
+     * Adds monitoring data structured to list
+     *
+     * @param p_data Data Structure
+     */
     void addDataToList(MonitoringDataStructure p_data) {
         m_collectedData.add(p_data);
     }
 
+    /**
+     * Adds system information about a certain node to the hashmap
+     *
+     * @param p_nid     NID
+     * @param p_wrapper Sysinfo Wrapper
+     */
     void addSysInfoToList(short p_nid, MonitoringSysDxramWrapper p_wrapper) {
         m_sysInfos.put(p_nid, p_wrapper);
         nodeOverview();
@@ -102,7 +129,8 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
     }
 
     /**
-     * method needs to run more than once because not every node is online on first run (and nodes can boot later)
+     * Writes all sysinfos of current nodes to a csv file
+     * This method needs to run more than once because not every node is online on first run (and nodes can boot later).
      */
     private void nodeOverview() {
         // create file with list of nodes
@@ -162,14 +190,17 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
         }
     }
 
+    /**
+     * Sets m_shouldShutdown to false.
+     */
     void setShouldShutdown() {
         m_shouldShutdown = true;
     }
 
     @Override
     public void eventTriggered(AbstractEvent p_event) {
-        if (p_event instanceof NodeFailureEvent || p_event instanceof NodeJoinEvent) {
-            nodeOverview();
+        if (p_event instanceof NodeFailureEvent) {
+            m_sysInfos.remove(((NodeFailureEvent) p_event).getNodeID());
         }
     }
 }

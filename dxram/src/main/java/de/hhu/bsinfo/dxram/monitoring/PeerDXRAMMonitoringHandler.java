@@ -1,4 +1,29 @@
+/*
+ * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.monitoring;
+
+import de.hhu.bsinfo.dxnet.DXNet;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.stats.AbstractOperation;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -7,20 +32,10 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import de.hhu.bsinfo.dxnet.DXNet;
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
-import de.hhu.bsinfo.dxutils.NodeID;
-import de.hhu.bsinfo.dxutils.stats.AbstractOperation;
-import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
-
 /**
  * Handler for DXRAM specific Monitoring Data (Uses currently only ChunkService, MemoryManagerComponent and DXNet Statistics)
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class PeerDXRAMMonitoringHandler extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(
@@ -36,8 +51,16 @@ public class PeerDXRAMMonitoringHandler extends Thread {
     private StatisticsManager m_statsManager;
     private HashMap<String, PrintWriter> m_statsWriter;
 
+    /**
+     * Constructor
+     *
+     * @param p_ownNid           own node id
+     * @param p_numberOfCollects number of collects
+     * @param p_secondDelay      delay in seconds
+     * @param p_monFolder        path to monitoring folder
+     */
     PeerDXRAMMonitoringHandler(final short p_ownNid, short p_numberOfCollects, final float p_secondDelay,
-            final String p_monFolder) {
+                               final String p_monFolder) {
         m_ownNid = p_ownNid;
         m_shouldShutdown = false;
         m_statsWriter = new HashMap<>();
@@ -67,6 +90,11 @@ public class PeerDXRAMMonitoringHandler extends Thread {
         }
     }
 
+    /**
+     * Collects statistics for a given class
+     *
+     * @param p_class
+     */
     private void collectStatsFromClass(final Class<?> p_class) {
         ArrayList<AbstractOperation> operations = m_statsManager.getClassStatistics(p_class);
         for (AbstractOperation operation : operations) {
@@ -88,6 +116,12 @@ public class PeerDXRAMMonitoringHandler extends Thread {
         }
     }
 
+    /**
+     * Creates a csv file and printwriter for a given operation
+     *
+     * @param operation
+     * @return PrintWriter instance
+     */
     private PrintWriter createPrintWriter(AbstractOperation operation) {
         try {
             String path = m_monitoringFolder + File.separator + "node" + NodeID.toHexString(m_ownNid);
@@ -116,6 +150,9 @@ public class PeerDXRAMMonitoringHandler extends Thread {
         return null;
     }
 
+    /**
+     * Sets the shouldshutdown variable.
+     */
     void setShouldShutdown() {
         m_shouldShutdown = true;
     }

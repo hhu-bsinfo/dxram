@@ -16,7 +16,7 @@ package de.hhu.bsinfo.dxram.monitoring.messages;
 /**
  * Monitoring messages
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringMessages {
     public static final byte SUBTYPE_MONITORING_DATA_REQUEST = 0;
@@ -25,6 +25,9 @@ public class MonitoringMessages {
     public static final byte SUBTYPE_MONITORING_PROPOSE = 3;
     public static final byte SUBTYPE_MONITORING_SYS_INFO = 4;
 
+    /**
+     * Private constructor
+     */
     private MonitoringMessages() {
 
     }

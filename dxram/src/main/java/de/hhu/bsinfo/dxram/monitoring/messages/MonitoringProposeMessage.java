@@ -22,16 +22,25 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 /**
  * Monitoring propose message - will be send by callback functions automatically "in the background"
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.07.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringProposeMessage extends Message {
 
     private String m_component;
     private double m_value;
 
+    /**
+     * Constructor
+     */
     public MonitoringProposeMessage() {
     }
 
+    /**
+     * Constructor
+     *
+     * @param p_destination destination nid
+     * @param p_component   component name
+     */
     public MonitoringProposeMessage(final short p_destination, String p_component, double p_value) {
         super(p_destination, DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_PROPOSE);
         m_component = p_component;
@@ -55,10 +64,16 @@ public class MonitoringProposeMessage extends Message {
         return ObjectSizeUtil.sizeofString(m_component) + Double.BYTES;
     }
 
+    /**
+     * Returns critical value.
+     */
     public double getValue() {
         return m_value;
     }
 
+    /**
+     * Returns critical component name.
+     */
     public String getComponent() {
         return m_component;
     }

@@ -1,17 +1,38 @@
+/*
+ * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.monitoring.metric;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
+
+import java.util.ArrayList;
 
 /**
  * Metric Helper class which will load multiple collected DataStructures in a 2D grid
  *
- * @author Burak Akguel, burak.akguel@hhu.de, 08.06.2018
+ * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class Metric {
 
+    /**
+     * Helper method to put multiple data structure float variables in a 2D Grid.
+     *
+     * @param p_datas list of data structures
+     * @return 2D grid
+     */
     public static float[][] createFloatTable(ArrayList<MonitoringDataStructure> p_datas) {
         int numData = p_datas.size();
         /******** Create Table *********/
@@ -49,6 +70,9 @@ public class Metric {
         return floatTable;
     }
 
+    /**
+     * Helper method to store multiple data structure long variables in a 2D Grid.
+     */
     public static long[][] createLongTable(ArrayList<MonitoringDataStructure> p_datas) {
         int numData = p_datas.size();
         /******** Create Table *********/
