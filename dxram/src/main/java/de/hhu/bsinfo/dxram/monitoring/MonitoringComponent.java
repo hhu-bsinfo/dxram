@@ -13,7 +13,7 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.monitoring.util.MonitoringSysDxramWrapper;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxutils.ManifestHelper;
+import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -81,8 +81,8 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
             isPageCacheInUse = true;
         }
 
-        String buildUser = ManifestHelper.getProperty(getClass(), "BuildUser");
-        String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
+        String buildUser = BuildConfig.BUILD_USER;
+        String buildDate = BuildConfig.BUILD_DATE;
         String buildType = DXRAM.BUILD_TYPE;
         String commit = DXRAM.GIT_COMMIT;
         String version = DXRAM.VERSION.toString();
