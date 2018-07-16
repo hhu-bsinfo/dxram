@@ -70,6 +70,10 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
         return true;
     }
 
+    public boolean isActive() {
+        return getConfig().isMonitoringActive();
+    }
+
     private void registerMessageReceiver() {
         m_network.register(DXRAMMessageTypes.MONITORING_MESSAGES_TYPE, MonitoringMessages.SUBTYPE_MONITORING_SYS_INFO,
                 this);

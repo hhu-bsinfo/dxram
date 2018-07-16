@@ -13,6 +13,9 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Expose
+    private boolean m_monitoringActive = false;
+
+    @Expose
     private String m_nic = "";
 
     @Expose
@@ -30,8 +33,6 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
     private TimeUnit m_csvTimeWindow;
 
     public MonitoringComponentConfig() {
-        // FIXME temporarily disable the component by default due to several bugs that must be fixed first
-        //super(MonitoringComponent.class, false, false);
         super(MonitoringComponent.class, true, true);
     }
 
@@ -73,6 +74,10 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
         m_csvTimeWindow = new TimeUnit(m_timeWindow.getSec() * 8, "sec");
 
         return true;
+    }
+
+    public boolean isMonitoringActive() {
+        return m_monitoringActive;
     }
 
     public String getNic() {

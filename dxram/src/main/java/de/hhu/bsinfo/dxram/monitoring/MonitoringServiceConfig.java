@@ -1,14 +1,17 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
+import com.google.gson.annotations.Expose;
+
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxutils.OSValidator;
 
 public class MonitoringServiceConfig extends AbstractDXRAMServiceConfig {
 
+    @Expose
+    private boolean m_monitoringActive = false;
+
     public MonitoringServiceConfig() {
-        // FIXME temporarily disable the component by default due to several bugs that must be fixed first
-        //super(MonitoringService.class, false, false);
         super(MonitoringService.class, true, true);
     }
 
@@ -20,5 +23,9 @@ public class MonitoringServiceConfig extends AbstractDXRAMServiceConfig {
         }
 
         return true;
+    }
+
+    public boolean isMonitoringActive() {
+        return m_monitoringActive;
     }
 }

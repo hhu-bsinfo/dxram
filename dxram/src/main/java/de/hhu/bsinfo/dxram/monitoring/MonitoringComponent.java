@@ -37,6 +37,10 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
                 MonitoringComponentConfig.class);
     }
 
+    public boolean isActive() {
+        return getConfig().isMonitoringActive();
+    }
+
     @Override
     protected void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
