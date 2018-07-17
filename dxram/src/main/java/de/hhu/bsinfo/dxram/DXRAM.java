@@ -87,6 +87,10 @@ public final class DXRAM {
      */
     public DXRAM() {
         Locale.setDefault(new Locale("en", "US"));
+
+        printBuildInfo();
+        printInstanceInfo();
+
         m_engine = new DXRAMEngine(VERSION);
         registerComponents(m_engine);
         registerServices(m_engine);
@@ -101,6 +105,7 @@ public final class DXRAM {
     public static void main(final String[] p_args) {
         printJVMArgs();
         printCmdArgs(p_args);
+        System.out.println();
 
         DXRAM dxram = new DXRAM();
 
@@ -243,45 +248,71 @@ public final class DXRAM {
     }
 
     /**
-     * Print some information after init about our current node.
+     * Print information about the current build
      */
-    private void printNodeInfo() {
-        String str = "==================== DXRAM Node ====================\n";
-        str += ">>> DXRAM build\n";
-        str += VERSION + "\n";
-        str += "Build type: " + BUILD_TYPE + '\n';
-        str += "Git commit: " + GIT_COMMIT + '\n';
+    private void printBuildInfo() {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(">>> DXRAM build <<<\n");
+        builder.append(VERSION);
+        builder.append('\n');
+        builder.append("Build type: ");
+        builder.append(BUILD_TYPE);
+        builder.append('\n');
+        builder.append("Git commit: ");
+        builder.append(GIT_COMMIT);
+        builder.append('\n');
 
         String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
 
         if (buildDate != null) {
-            str += "BuildDate: " + buildDate + '\n';
+            builder.append("BuildDate: ");
+            builder.append(buildDate);
+            builder.append('\n');
         }
         String buildUser = ManifestHelper.getProperty(getClass(), "BuildUser");
 
         if (buildUser != null) {
-            str += "BuildUser: " + buildUser + '\n';
+            builder.append("BuildUser: ");
+            builder.append(buildUser);
+            builder.append('\n');
         }
 
-        str += ">>> Current instance\n";
-        str += InstanceInfo.compile();
+        System.out.println(builder);
+    }
 
+    private static void printInstanceInfo() {
+        System.out.println(">>> Instance <<<\n" + InstanceInfo.compile() + "\n");
+    }
+
+    /**
+     * Print some information after init about our current node.
+     */
+    private void printNodeInfo() {
         BootService bootService = m_engine.getService(BootService.class);
 
-        if (bootService != null) {
-            str += "DXRAM node\n";
+        StringBuilder builder = new StringBuilder();
 
+        builder.append(">>> DXRAM node <<<\n");
+
+        if (bootService != null) {
             short nodeId = bootService.getNodeID();
-            str += "NodeID: " + NodeID.toHexString(nodeId) + '\n';
-            str += "Role: " + bootService.getNodeRole(nodeId) + '\n';
+            builder.append("NodeID: ");
+            builder.append(NodeID.toHexString(nodeId));
+            builder.append('\n');
+            builder.append("Role: ");
+            builder.append(bootService.getNodeRole(nodeId));
+            builder.append('\n');
 
             InetSocketAddress address = bootService.getNodeAddress(nodeId);
-            str += "Address: " + address;
+            builder.append("Address: ");
+            builder.append(address);
+            builder.append('\n');
         } else {
-            str += '\n';
+            builder.append("ERROR retrieving node info\n");
         }
 
-        System.out.println(str);
+        System.out.println(builder);
     }
 
     /**
@@ -300,6 +331,7 @@ public final class DXRAM {
         }
 
         System.out.println(builder);
+        System.out.println();
     }
 
     /**
@@ -318,6 +350,7 @@ public final class DXRAM {
         }
 
         System.out.println(builder);
+        System.out.println();
     }
 
     /**
