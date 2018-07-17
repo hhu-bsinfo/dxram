@@ -11,7 +11,7 @@ very useful warnings that highlight common mistakes and also enforce some rules 
 There are a few additional rules that cannot be enforced by the formatter but want you to stick to:
 
 ## Empty lines before and after control blocks
-Types of control blocks: if, if-else, for, while, do-while
+Types of control blocks: if, if-else, for, while, do-while, try-catch
 
 ```
 // bad
