@@ -22,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Locale;
 
+import de.hhu.bsinfo.dxmonitor.state.SystemState;
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
 import de.hhu.bsinfo.dxram.app.ApplicationService;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
@@ -67,7 +68,6 @@ import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.dxutils.ManifestHelper;
 import de.hhu.bsinfo.dxutils.NodeID;
-import de.hhu.bsinfo.dxutils.Process;
 
 /**
  * Main class/entry point for DXRAM.
@@ -263,7 +263,7 @@ public final class DXRAM {
         }
 
         str += "Cwd: " + System.getProperty("user.dir") + '\n';
-        str += "PID: " + Process.getCurrentPID() + '\n';
+        str += "PID: " + SystemState.getCurrentPID() + '\n';
 
         BootService bootService = m_engine.getService(BootService.class);
 
