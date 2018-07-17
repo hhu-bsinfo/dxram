@@ -11,13 +11,12 @@ import java.util.Arrays;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class PercentileMetric extends Metric {
-
     /**
      * Helper method which calculates a single data structure from multiple ones using the percentile.
      *
      * @param p_k kth-Percentile - use numbers from 0 to 1 -> example 25 Perctile <=> 0.25
      */
-    public static MonitoringDataStructure calculate(ArrayList<MonitoringDataStructure> p_datas,
+    public static MonitoringDataStructure calculate(final ArrayList<MonitoringDataStructure> p_datas,
                                                     final float p_k) {
         if (p_k <= 0.0f || p_k >= 1.0f) {
             throw new IllegalArgumentException("Percentile argument 'p_kth' must be in (0.0, 1.0)!");
@@ -33,6 +32,7 @@ public class PercentileMetric extends Metric {
             Arrays.sort(floatTable[i]);
             floatTable[i][0] = floatTable[i][index];
         }
+
         for (int i = 0; i < longTable.length; i++) {
             Arrays.sort(longTable[i]);
             longTable[i][0] = longTable[i][index];
@@ -52,5 +52,4 @@ public class PercentileMetric extends Metric {
 
         return dataStructure;
     }
-
 }

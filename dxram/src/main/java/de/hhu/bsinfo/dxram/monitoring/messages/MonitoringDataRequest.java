@@ -25,7 +25,6 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringDataRequest extends Request {
-
     /**
      * Creates an instance of MonitoringRequest.
      * This constructor is used when receiving this message.
@@ -44,5 +43,4 @@ public class MonitoringDataRequest extends Request {
         super(p_destination, DXRAMMessageTypes.MONITORING_MESSAGES_TYPE,
                 MonitoringMessages.SUBTYPE_MONITORING_DATA_REQUEST);
     }
-
 }

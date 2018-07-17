@@ -63,8 +63,8 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
      * @param p_eventComponent   EventComponent Instance
      * @param p_monitoringFolder path to monitoring folder
      */
-    SuperpeerMonitoringHandler(float p_secondDelay, AbstractBootComponent p_bootComponent,
-                               EventComponent p_eventComponent, String p_monitoringFolder) {
+    SuperpeerMonitoringHandler(final float p_secondDelay, final AbstractBootComponent p_bootComponent,
+                               final EventComponent p_eventComponent, final String p_monitoringFolder) {
         m_collectedData = new ArrayList<>();
         m_sysInfos = new HashMap<>();
         m_shouldShutdown = false;
@@ -79,7 +79,7 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
      *
      * @param p_data Data Structure
      */
-    void addDataToList(MonitoringDataStructure p_data) {
+    void addDataToList(final MonitoringDataStructure p_data) {
         m_collectedData.add(p_data);
     }
 
@@ -89,7 +89,7 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
      * @param p_nid     NID
      * @param p_wrapper Sysinfo Wrapper
      */
-    void addSysInfoToList(short p_nid, MonitoringSysDxramWrapper p_wrapper) {
+    void addSysInfoToList(final short p_nid, final MonitoringSysDxramWrapper p_wrapper) {
         m_sysInfos.put(p_nid, p_wrapper);
         nodeOverview();
     }
@@ -135,6 +135,7 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
     private void nodeOverview() {
         // create file with list of nodes
         PrintWriter nodesPW = null;
+
         try {
             File file = new File(m_monitoringFolder + File.separator + "nodes.csv");
 
@@ -182,11 +183,14 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
                 nodesPW.print(data.isPageCacheInUse());
                 nodesPW.print(LINE_SEPERATOR);
             }
+
             nodesPW.flush();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            nodesPW.close();
+            if (nodesPW != null) {
+                nodesPW.close();
+            }
         }
     }
 
@@ -198,7 +202,7 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
     }
 
     @Override
-    public void eventTriggered(AbstractEvent p_event) {
+    public void eventTriggered(final AbstractEvent p_event) {
         if (p_event instanceof NodeFailureEvent) {
             m_sysInfos.remove(((NodeFailureEvent) p_event).getNodeID());
         }

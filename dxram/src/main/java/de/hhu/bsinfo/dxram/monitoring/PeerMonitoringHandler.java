@@ -69,7 +69,7 @@ public class PeerMonitoringHandler extends Thread {
      * @param p_superpeerNid     NID of corresponding superpeer
      * @param p_networkComponent NetworkComponent instance to send messages
      */
-    PeerMonitoringHandler(short p_ownNid, short p_superpeerNid, NetworkComponent p_networkComponent) {
+    PeerMonitoringHandler(final short p_ownNid, final short p_superpeerNid, NetworkComponent p_networkComponent) {
         setName("PeerMonitoringHandler");
 
         m_monitors = new HashMap<>();
@@ -90,8 +90,8 @@ public class PeerMonitoringHandler extends Thread {
      * @param p_nicIdentifier    nic identifier
      * @param p_diskIdentifier   disk identifier
      */
-    void setConfigParameters(final String p_monFolder, float p_secondDelay, short p_numberOfCollects,
-                             String p_nicIdentifier, String p_diskIdentifier) {
+    void setConfigParameters(final String p_monFolder, final float p_secondDelay, final short p_numberOfCollects,
+                             final String p_nicIdentifier, final String p_diskIdentifier) {
         m_monitorFolder = p_monFolder;
         m_secondDelay = p_secondDelay;
         m_numberOfCollects = p_numberOfCollects;
@@ -103,7 +103,6 @@ public class PeerMonitoringHandler extends Thread {
      * Initializes the monitoring classes and assigns callbacks.
      */
     void setupComponents() {
-
         CpuMonitor cpu = new CpuMonitor();
         cpu.addThresholdCpuUsagePercent(
                 new MultipleThresholdDouble("CpuUsage1", 3.9, true, 3, this::callbackCpuUsageThresholdExceed));
@@ -150,6 +149,7 @@ public class PeerMonitoringHandler extends Thread {
 
         while (!m_shouldShutdown) {
             m_monitoringDatas.add(getMonitoringData());
+
             if (m_monitoringDatas.size() == m_numberOfCollects) {
                 sendDataToSuperpeer();
                 m_monitoringDatas.clear();
@@ -197,14 +197,17 @@ public class PeerMonitoringHandler extends Thread {
      */
     MonitoringDataStructure getMonitoringData() {
         MonitoringDataStructure monitoringData = new MonitoringDataStructure(m_ownNid, System.nanoTime());
+
         for (Monitor monitor : m_monitors.values()) {
             try {
                 monitor.update();
             } catch (StateUpdateException e) {
                 e.printStackTrace();
             }
+
             monitoringData.fillWithData(monitor);
         }
+
         return monitoringData;
     }
 
@@ -238,7 +241,6 @@ public class PeerMonitoringHandler extends Thread {
             m_writer.println("nid,cpu,memory,rxThroughput,rxError,txThroughput,txError,readPercent,writePercent," +
                     "jvmHeapUsage,jvmEdenUsage,jvmSurvivorUsage,jvmOldUsage,jvmThreadDaemon,jvmThreadNonDaemon,jvmThreadCnt,jvmPeakCnt,timestamp");
             m_writer.flush();
-
         } catch (Exception e) {
             LOGGER.error("Couldn't create PrintWriter " + e);
         }
@@ -249,7 +251,7 @@ public class PeerMonitoringHandler extends Thread {
      *
      * @param p_data Monitoring Data
      */
-    private void appendDataToFile(MonitoringDataStructure p_data) {
+    private void appendDataToFile(final MonitoringDataStructure p_data) {
         StringBuilder builder = new StringBuilder("");
         char DEFAULT_SEPARATOR = ',';
         builder.append(NodeID.toHexString(p_data.getNid()));
@@ -314,6 +316,7 @@ public class PeerMonitoringHandler extends Thread {
      */
     private void sendProposeToSuperpeer(final String p_component, final double p_value) {
         MonitoringProposeMessage proposeMessage = new MonitoringProposeMessage(m_superpeerNid, p_component, p_value);
+
         try {
             m_networkComponent.sendMessage(proposeMessage);
         } catch (NetworkException e) {

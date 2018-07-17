@@ -25,7 +25,6 @@ import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringDataMessage extends Message {
-
     /**
      * cpuUsage
      * loads (1, 5, 15)

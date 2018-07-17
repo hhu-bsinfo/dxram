@@ -64,7 +64,7 @@ public class MonitoringDataStructure extends DataStructure {
      * @param p_nid       Node ID
      * @param p_timestamp timestamp
      */
-    public MonitoringDataStructure(short p_nid, long p_timestamp) {
+    public MonitoringDataStructure(final short p_nid, final long p_timestamp) {
         m_nid = p_nid;
 
         m_timestamp = p_timestamp;
@@ -105,7 +105,7 @@ public class MonitoringDataStructure extends DataStructure {
      * @param p_data2     Longs
      * @param p_timestamp Timestamp
      */
-    public MonitoringDataStructure(short p_nid, float[] p_data, long[] p_data2, long p_timestamp) {
+    public MonitoringDataStructure(final short p_nid, final float[] p_data, final long[] p_data2, final long p_timestamp) {
         m_nid = p_nid;
 
         m_timestamp = p_timestamp;
@@ -140,14 +140,16 @@ public class MonitoringDataStructure extends DataStructure {
     }
 
     @Override
-    public void exportObject(Exporter p_exporter) {
+    public void exportObject(final Exporter p_exporter) {
         p_exporter.writeLong(m_timestamp);
         // CPU
         p_exporter.writeFloat(m_cpuUsage);
         p_exporter.writeInt(m_loads.length);
+
         for (int i = 0; i < m_loads.length; i++) {
             p_exporter.writeFloat(m_loads[i]);
         }
+
         // MEMORY
         p_exporter.writeFloat(m_memoryUsage);
         // NETWORK
@@ -171,15 +173,17 @@ public class MonitoringDataStructure extends DataStructure {
     }
 
     @Override
-    public void importObject(Importer p_importer) {
+    public void importObject(final Importer p_importer) {
         m_timestamp = p_importer.readLong(m_timestamp);
         // CPU
         m_cpuUsage = p_importer.readFloat(m_cpuUsage);
         int length = p_importer.readInt(3);
         m_loads = new float[length];
+
         for (int i = 0; i < length; i++) {
             m_loads[i] = p_importer.readFloat(m_loads[i]);
         }
+
         // MEMORY
         m_memoryUsage = p_importer.readFloat(m_memoryUsage);
         // NETWORK
@@ -225,7 +229,7 @@ public class MonitoringDataStructure extends DataStructure {
      *
      * @param p_monitor Monitor class which holds the information.
      */
-    void fillWithData(Monitor p_monitor) {
+    void fillWithData(final Monitor p_monitor) {
         if (p_monitor instanceof CpuMonitor) {
             m_cpuUsage = ((CpuMonitor) p_monitor).getProgress().getCpuUsage();
             m_loads = ((CpuMonitor) p_monitor)
@@ -243,6 +247,7 @@ public class MonitoringDataStructure extends DataStructure {
         } else if (p_monitor instanceof JVMMemMonitor) {
             JVMMemMonitor monitor = (JVMMemMonitor) p_monitor;
             m_jvmHeapUsage = monitor.getState().getHeapUsage().getUsed();
+
             for (MemoryPoolMXBean p : monitor.getState().getListMemoryPoolMXBean()) {
                 if (p.getName().contains("Eden")) {
                     m_jvmEdenUsage = p.getUsage().getUsed();
@@ -252,6 +257,7 @@ public class MonitoringDataStructure extends DataStructure {
                     m_jvmSurvivorUsage = p.getUsage().getUsed();
                 }
             }
+
         } else if (p_monitor instanceof JVMThreadsMonitor) {
             JVMThreadsMonitor monitor = (JVMThreadsMonitor) p_monitor;
             m_jvmDaemonThreadCnt = monitor.getState().getDaemonThreadCount();
@@ -332,28 +338,28 @@ public class MonitoringDataStructure extends DataStructure {
     /**
      * Sets cpu usage.
      */
-    public void setCpuUsage(float p_usage) {
+    public void setCpuUsage(final float p_usage) {
         m_cpuUsage = p_usage;
     }
 
     /**
      * Sets cpu loads.
      */
-    public void setCpuLoads(float[] p_loads) {
+    public void setCpuLoads(final float[] p_loads) {
         m_loads = p_loads;
     }
 
     /**
      * Sets memory usage.
      */
-    public void setMemoryUsage(float p_usage) {
+    public void setMemoryUsage(final float p_usage) {
         m_memoryUsage = p_usage;
     }
 
     /**
      * Sets network stats.
      */
-    public void setNetworsStats(float[] p_stats) {
+    public void setNetworsStats(final float[] p_stats) {
         m_rxThroughput = p_stats[0];
         m_rxError = p_stats[1];
         m_txThroughput = p_stats[2];
@@ -363,7 +369,7 @@ public class MonitoringDataStructure extends DataStructure {
     /**
      * Sets disk stats.
      */
-    public void setDiskStats(float[] p_stats) {
+    public void setDiskStats(final float[] p_stats) {
         m_readPercent = p_stats[0];
         m_writePercent = p_stats[1];
     }
@@ -371,7 +377,7 @@ public class MonitoringDataStructure extends DataStructure {
     /**
      * Sets jvm memory related stats.
      */
-    public void setJvmMemStats(float[] p_stats) {
+    public void setJvmMemStats(final float[] p_stats) {
         m_jvmHeapUsage = p_stats[0];
         m_jvmEdenUsage = p_stats[1];
         m_jvmSurvivorUsage = p_stats[2];
@@ -381,11 +387,10 @@ public class MonitoringDataStructure extends DataStructure {
     /**
      * Sets jvm thread related stats.
      */
-    public void setJvmThreadsStats(long[] p_stats) {
+    public void setJvmThreadsStats(final long[] p_stats) {
         m_jvmDaemonThreadCnt = p_stats[0];
         m_jvmNonDaemonThreadCnt = p_stats[1];
         m_jvmThreadCount = p_stats[2];
         m_jvmPeakThreadCnt = p_stats[3];
     }
-
 }

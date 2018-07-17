@@ -22,7 +22,6 @@ package de.hhu.bsinfo.dxram.monitoring.util;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringSysDxramWrapper {
-
     private String[] m_sysInfos;
     private String[] m_dxramInfos;
 
@@ -35,7 +34,7 @@ public class MonitoringSysDxramWrapper {
      * @param p_dxramInfos       list of dxram information (Build Date, Version, User)
      * @param p_isPageCacheInUse
      */
-    public MonitoringSysDxramWrapper(String[] p_sysInfos, String[] p_dxramInfos, boolean p_isPageCacheInUse) {
+    public MonitoringSysDxramWrapper(final String[] p_sysInfos, final String[] p_dxramInfos, final boolean p_isPageCacheInUse) {
         m_sysInfos = p_sysInfos;
         m_dxramInfos = p_dxramInfos;
         m_isPageCacheInUse = p_isPageCacheInUse;

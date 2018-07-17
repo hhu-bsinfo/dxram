@@ -27,19 +27,20 @@ import java.util.Arrays;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MinMetric extends Metric {
-
     /**
      * Helper method which calculates a single data structure from multiple ones using the minimum.
      *
      * @param p_datas list of data structures
      * @return calculated data structure
      */
-    public static MonitoringDataStructure calculate(ArrayList<MonitoringDataStructure> p_datas) {
+    public static MonitoringDataStructure calculate(final ArrayList<MonitoringDataStructure> p_datas) {
         float[][] floatTable = createFloatTable(p_datas);
         long[][] longTable = createLongTable(p_datas);
+
         for (int i = 0; i < floatTable.length; i++) {
             Arrays.sort(floatTable[i]);
         }
+
         for (int i = 0; i < longTable.length; i++) {
             Arrays.sort(longTable[i]);
         }

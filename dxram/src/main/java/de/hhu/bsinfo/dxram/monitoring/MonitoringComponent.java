@@ -38,7 +38,6 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringComponentConfig> {
-
     private PeerMonitoringHandler m_peerHandler;
     private PeerDXRAMMonitoringHandler m_dxramPeerHandler;
     private SuperpeerMonitoringHandler m_superpeerHandler;
@@ -61,7 +60,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     }
 
     @Override
-    protected void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
@@ -69,7 +68,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     }
 
     @Override
-    protected boolean initComponent(DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config) {
         MonitoringComponentConfig componentConfig = p_config.getComponentConfig(MonitoringComponentConfig.class);
 
         String diskIdentifier = componentConfig.getDisk();
@@ -132,7 +131,6 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
             m_dxramPeerHandler = new PeerDXRAMMonitoringHandler(ownNid, numberOfCollects, secondDelay,
                     monitoringFolder);
             m_dxramPeerHandler.start();
-
         }
 
         return true;
@@ -169,6 +167,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
                 LOGGER.error("Coulnd't join superpeer handler thread", e);
             }
         }
+
         return true;
     }
 
@@ -184,7 +183,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     /**
      * Adds monitoring data to superpeer handlers list.
      */
-    void addMonitoringDataToWriter(MonitoringDataStructure p_data) {
+    void addMonitoringDataToWriter(final MonitoringDataStructure p_data) {
         m_superpeerHandler.addDataToList(p_data);
     }
 
@@ -194,7 +193,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
      * @param p_nid     NID of node who send the system information
      * @param p_wrapper Wrapper class instance which stores the monitoring information
      */
-    void addMonitoringSysInfoToWriter(short p_nid, MonitoringSysDxramWrapper p_wrapper) {
+    void addMonitoringSysInfoToWriter(final short p_nid, final MonitoringSysDxramWrapper p_wrapper) {
         m_superpeerHandler.addSysInfoToList(p_nid, p_wrapper);
     }
 

@@ -27,28 +27,30 @@ import java.util.Arrays;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MedianMetric extends Metric {
-
     /**
      * Helper method which calculates a single data structure from multiple ones using the median.
      *
      * @param p_datas List of data structures
      * @return calculated data structure
      */
-    public static MonitoringDataStructure calculate(ArrayList<MonitoringDataStructure> p_datas) {
+    public static MonitoringDataStructure calculate(final ArrayList<MonitoringDataStructure> p_datas) {
         int numData = p_datas.size();
         float[][] floatTable = createFloatTable(p_datas);
         long[][] longTable = createLongTable(p_datas);
 
         for (int i = 0; i < floatTable.length; i++) {
             Arrays.sort(floatTable[i]);
+
             if (numData % 2 == 0) {
                 floatTable[i][0] = 0.5f * (floatTable[i][numData / 2 - 1] + floatTable[i][numData / 2]);
             } else {
                 floatTable[i][0] = floatTable[i][numData / 2];
             }
         }
+
         for (int i = 0; i < longTable.length; i++) {
             Arrays.sort(longTable[i]);
+
             if (numData % 2 == 0) {
                 longTable[i][0] = (longTable[i][numData / 2 - 1] + longTable[i][numData / 2]) / 2;
             } else {
@@ -70,5 +72,4 @@ public class MedianMetric extends Metric {
 
         return dataStructure;
     }
-
 }

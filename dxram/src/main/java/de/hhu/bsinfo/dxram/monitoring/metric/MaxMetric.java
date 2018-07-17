@@ -27,22 +27,23 @@ import java.util.Arrays;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MaxMetric extends Metric {
-
     /**
      * Helper method which calculates a single data structure from multiple ones using the maximum.
      *
      * @param p_datas List of data structures.
      * @return Calculated data structure.
      */
-    public static MonitoringDataStructure calculate(ArrayList<MonitoringDataStructure> p_datas) {
+    public static MonitoringDataStructure calculate(final ArrayList<MonitoringDataStructure> p_datas) {
         float[][] floatTable = createFloatTable(p_datas);
         long[][] longTable = createLongTable(p_datas);
 
         int numData = p_datas.size();
+
         for (int i = 0; i < floatTable.length; i++) {
             Arrays.sort(floatTable[i]); // maybe just search for max in a loop
             floatTable[i][0] = floatTable[i][numData - 1];
         }
+
         for (int i = 0; i < longTable.length; i++) {
             Arrays.sort(longTable[i]);
             longTable[i][0] = longTable[i][numData - 1];
@@ -62,5 +63,4 @@ public class MaxMetric extends Metric {
 
         return dataStructure;
     }
-
 }

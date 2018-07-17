@@ -34,7 +34,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringService extends AbstractDXRAMService<MonitoringServiceConfig> implements MessageReceiver {
-
     private boolean m_peerIsSuperpeer;
 
     private AbstractBootComponent m_boot;
@@ -59,14 +58,14 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
     }
 
     @Override
-    protected void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_monitor = p_componentAccessor.getComponent(MonitoringComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
     }
 
     @Override
-    protected boolean startService(DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMContext.Config p_config) {
         m_peerIsSuperpeer = m_boot.getNodeRole() == NodeRole.SUPERPEER;
 
         registerMessageReceiver();
@@ -166,7 +165,7 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
      *
      * @param p_message MonitoringSysInfoMessage
      */
-    private void incomingMonitoringSystemInfo(MonitoringSysInfoMessage p_message) {
+    private void incomingMonitoringSystemInfo(final MonitoringSysInfoMessage p_message) {
         m_monitor.addMonitoringSysInfoToWriter(p_message.getSource(), p_message.getWrapper());
     }
 
@@ -197,8 +196,8 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
     private void incomingMonitoringDataRequest(final MonitoringDataRequest p_request) {
         Runnable task = () -> {
             MonitoringDataStructure monitorData = m_monitor.getCurrentMonitoringData();
-
             MonitoringDataResponse response = new MonitoringDataResponse(p_request, monitorData);
+
             try {
                 m_network.sendMessage(response);
             } catch (final NetworkException e) {
@@ -225,13 +224,14 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
 
         if (!m_boot.getIDsOfOnlineSuperpeers().contains(p_nid)) {
             MonitoringDataRequest request = new MonitoringDataRequest(p_nid);
+
             try {
                 m_network.sendSync(request);
             } catch (NetworkException e) {
                 e.printStackTrace();
             }
-            MonitoringDataResponse response = (MonitoringDataResponse) request.getResponse();
 
+            MonitoringDataResponse response = (MonitoringDataResponse) request.getResponse();
             return response.getData();
         }
 

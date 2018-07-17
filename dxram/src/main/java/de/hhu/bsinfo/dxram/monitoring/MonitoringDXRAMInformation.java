@@ -99,6 +99,5 @@ public class MonitoringDXRAMInformation {
      */
     private MonitoringDXRAMInformation() {
     }
-
 }
 

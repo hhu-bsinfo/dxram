@@ -59,7 +59,7 @@ public class PeerDXRAMMonitoringHandler extends Thread {
      * @param p_secondDelay      delay in seconds
      * @param p_monFolder        path to monitoring folder
      */
-    PeerDXRAMMonitoringHandler(final short p_ownNid, short p_numberOfCollects, final float p_secondDelay,
+    PeerDXRAMMonitoringHandler(final short p_ownNid, final short p_numberOfCollects, final float p_secondDelay,
                                final String p_monFolder) {
         m_ownNid = p_ownNid;
         m_shouldShutdown = false;
@@ -97,18 +97,23 @@ public class PeerDXRAMMonitoringHandler extends Thread {
      */
     private void collectStatsFromClass(final Class<?> p_class) {
         ArrayList<AbstractOperation> operations = m_statsManager.getClassStatistics(p_class);
+
         for (AbstractOperation operation : operations) {
             PrintWriter writer = m_statsWriter.get(operation.getOperationName());
+
             if (writer == null) {
                 writer = createPrintWriter(operation);
+
                 if (writer == null) {
                     continue;
                 }
+
                 m_statsWriter.put(operation.getOperationName(), writer);
             }
 
             String csv = operation.toCSV(
                     ','); // TODO find better way to put in csv Format (for example ThroughputPool has bad keywords) - for example check with instanceof and put in datastructure and send to superpeer
+
             if (!csv.isEmpty()) {
                 writer.println(csv);
                 writer.flush();
@@ -122,16 +127,18 @@ public class PeerDXRAMMonitoringHandler extends Thread {
      * @param operation
      * @return PrintWriter instance
      */
-    private PrintWriter createPrintWriter(AbstractOperation operation) {
+    private PrintWriter createPrintWriter(final AbstractOperation operation) {
         try {
             String path = m_monitoringFolder + File.separator + "node" + NodeID.toHexString(m_ownNid);
             File tmp = new File(path);
+
             if (!tmp.exists()) {
                 tmp.mkdir();
             }
 
             path += File.separator + operation.getOperationName() + ".csv";
             File file = new File(path);
+
             if (!file.exists()) {
                 file.createNewFile();
             }

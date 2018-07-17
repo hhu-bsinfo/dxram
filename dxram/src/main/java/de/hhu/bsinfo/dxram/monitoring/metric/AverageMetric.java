@@ -26,14 +26,13 @@ import java.util.ArrayList;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class AverageMetric extends Metric {
-
     /**
      * Helper method which calculates a single data structure from multiple ones using the average
      *
      * @param p_datas List of Data Structures
      * @return calculated data structure
      */
-    public static MonitoringDataStructure calculate(ArrayList<MonitoringDataStructure> p_datas) {
+    public static MonitoringDataStructure calculate(final ArrayList<MonitoringDataStructure> p_datas) {
         int numData = p_datas.size();
         float[][] floatValues = createFloatTable(p_datas);
         long[][] longValues = createLongTable(p_datas);
@@ -64,5 +63,4 @@ public class AverageMetric extends Metric {
 
         return dataStructure;
     }
-
 }

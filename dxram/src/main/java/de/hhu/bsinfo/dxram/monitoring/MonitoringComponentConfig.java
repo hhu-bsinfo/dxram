@@ -32,7 +32,6 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  * @author Burak Akguel, burak.akguel@hhu.de 14.07.2018
  */
 public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
-
     @Expose
     private boolean m_monitoringActive = false;
 
@@ -58,20 +57,19 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     @Override
-    protected boolean verify(DXRAMContext.Config p_config) {
-
+    protected boolean verify(final DXRAMContext.Config p_config) {
         if (!OSValidator.isUnix()) {
             LOGGER.error("Monitoring is only supported for unix operating systems.");
             return false;
         }
 
         if (!m_nic.isEmpty() && !DeviceLister.getNICs().contains(m_nic)) {
-            LOGGER.error("Monitoring component - m_nic [" + m_nic + "] is invalid");
+            LOGGER.error("Monitoring component - m_nic [%s] is invalid", m_nic);
             return false;
         }
 
         if (!m_disk.isEmpty() && !DeviceLister.getDisks().contains(m_disk)) {
-            LOGGER.error("Monitoring component - m_diskIdentifier [" + m_disk + "] is invalid");
+            LOGGER.error("Monitoring component - m_diskIdentifier [%s] is invalid", m_disk);
             return false;
         }
 
@@ -83,8 +81,7 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
 
         if (!file.exists()) {
             if (!file.mkdirs()) {
-                LOGGER.error("Monitoring folder [" + m_monitoringFolder +
-                        "] seems to be invalid - didn't exist and couldn't be created!");
+                LOGGER.error("Monitoring folder [%s] seems to be invalid - didn't exist and couldn't be created!", m_monitoringFolder);
                 return false;
             }
         }

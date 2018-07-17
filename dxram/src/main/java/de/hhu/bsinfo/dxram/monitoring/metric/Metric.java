@@ -26,14 +26,13 @@ import java.util.ArrayList;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class Metric {
-
     /**
      * Helper method to put multiple data structure float variables in a 2D Grid.
      *
      * @param p_datas list of data structures
      * @return 2D grid
      */
-    public static float[][] createFloatTable(ArrayList<MonitoringDataStructure> p_datas) {
+    public static float[][] createFloatTable(final ArrayList<MonitoringDataStructure> p_datas) {
         int numData = p_datas.size();
         /******** Create Table *********/
         float[][] floatTable = new float[15][numData];
@@ -73,14 +72,16 @@ public class Metric {
     /**
      * Helper method to store multiple data structure long variables in a 2D Grid.
      */
-    public static long[][] createLongTable(ArrayList<MonitoringDataStructure> p_datas) {
+    public static long[][] createLongTable(final ArrayList<MonitoringDataStructure> p_datas) {
         int numData = p_datas.size();
         /******** Create Table *********/
         long[][] longTable = new long[4][numData];
+
         for (int i = 0; i < numData; i++) {
             MonitoringDataStructure data = p_datas.get(i);
             // add JVMThreadsState Values
             long[] tmp2 = data.getJvmThreadStats();
+
             for (int j = 0; j < 4; j++) {
                 longTable[j][i] = tmp2[j];
             }
@@ -88,5 +89,4 @@ public class Metric {
 
         return longTable;
     }
-
 }

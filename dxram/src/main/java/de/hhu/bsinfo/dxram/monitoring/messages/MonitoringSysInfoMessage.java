@@ -29,7 +29,6 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class MonitoringSysInfoMessage extends Message {
-
     private String[] m_sysInfos;
     private String[] m_dxramInfos;
 
