@@ -109,9 +109,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
         assert p_timeout >= 0;
         assert p_chunkID != ChunkID.INVALID_ID;
 
-        // #ifdef STATISTICS
         SOP_LOCK.start();
-        // #endif /* STATISTICS */
 
         ErrorCode err = ErrorCode.SUCCESS;
 
@@ -186,18 +184,14 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
             }
         }
 
-        // #ifdef STATISTICS
         SOP_LOCK.stop();
-        // #endif /* STATISTICS */
 
         return err;
     }
 
     @Override
     public ErrorCode unlock(final boolean p_writeLock, final long p_chunkID) {
-        // #ifdef STATISTICS
         SOP_UNLOCK.start();
-        // #endif /* STATISTICS */
 
         ErrorCode err = ErrorCode.SUCCESS;
 
@@ -247,9 +241,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
             }
         }
 
-        // #ifdef STATISTICS
         SOP_UNLOCK.stop();
-        // #endif /* STATISTICS */
 
         return err;
     }
@@ -260,7 +252,6 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
 
             LOGGER.debug("Connection to peer 0x%X lost, unlocking all chunks locked by lost instance",
                     p_event.getNodeID());
-
 
             if (!m_lock.unlockAllByNodeID(p_event.getNodeID())) {
 
@@ -274,7 +265,6 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
     public void onIncomingMessage(final Message p_message) {
 
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
-
 
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.LOCK_MESSAGES_TYPE) {
@@ -293,7 +283,6 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
                 }
             }
         }
-
 
         LOGGER.trace("Exiting incomingMessage");
 
@@ -355,9 +344,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
     private void incomingLockRequest(final LockRequest p_request) {
         boolean success;
 
-        // #ifdef STATISTICS
         SOP_INCOMING_LOCK.start();
-        // #endif /* STATISTICS */
 
         // the host handles the timeout as we don't want to block the message receiver thread
         // for too long, execute a tryLock instead
@@ -374,9 +361,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
 
         }
 
-        // #ifdef STATISTICS
         SOP_INCOMING_LOCK.stop();
-        // #endif /* STATISTICS */
     }
 
     /**
@@ -386,15 +371,11 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
      *         the UnlockMessage
      */
     private void incomingUnlockMessage(final UnlockMessage p_message) {
-        // #ifdef STATISTICS
         SOP_INCOMING_UNLOCK.start();
-        // #endif /* STATISTICS */
 
         m_lock.unlock(ChunkID.getLocalID(p_message.getChunkID()), m_boot.getNodeID(), p_message.isWriteLockOperation());
 
-        // #ifdef STATISTICS
         SOP_INCOMING_UNLOCK.stop();
-        // #endif /* STATISTICS */
     }
 
     /**

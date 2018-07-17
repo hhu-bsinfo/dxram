@@ -137,16 +137,12 @@ public abstract class AbstractLog {
         if (p_length > 0) {
             assert p_length <= bytesUntilEnd;
 
-            // #ifdef STATISTICS
             SOP_READ_SECONDARY_LOG.start();
-            // #endif /* STATISTICS */
 
             p_randomAccessFile.seek(p_readPos);
             p_randomAccessFile.readFully(p_bufferWrapper.getBuffer().array(), 0, p_length);
 
-            // #ifdef STATISTICS
             SOP_READ_SECONDARY_LOG.stop();
-            // #endif /* STATISTICS */
         }
     }
 
@@ -173,15 +169,11 @@ public abstract class AbstractLog {
             if (p_length > 0) {
                 assert p_length <= bytesUntilEnd;
 
-                // #ifdef STATISTICS
                 SOP_READ_SECONDARY_LOG.start();
-                // #endif /* STATISTICS */
 
                 JNIFileDirect.read(p_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_readPos);
 
-                // #ifdef STATISTICS
                 SOP_READ_SECONDARY_LOG.stop();
-                // #endif /* STATISTICS */
             }
         } else {
             final long bytesUntilEnd = JNIFileRaw.length(p_fileID) - p_readPos;
@@ -189,15 +181,11 @@ public abstract class AbstractLog {
             if (p_length > 0) {
                 assert p_length <= bytesUntilEnd;
 
-                // #ifdef STATISTICS
                 SOP_READ_SECONDARY_LOG.start();
-                // #endif /* STATISTICS */
 
                 JNIFileRaw.read(p_fileID, p_bufferWrapper.getAddress(), 0, p_length, p_readPos);
 
-                // #ifdef STATISTICS
                 SOP_READ_SECONDARY_LOG.stop();
-                // #endif /* STATISTICS */
             }
         }
     }
@@ -339,10 +327,7 @@ public abstract class AbstractLog {
         final long bytesUntilEnd = m_totalUsableSpace - p_readPos;
 
         if (p_length > 0) {
-
-            // #ifdef STATISTICS
             SOP_READ_SECONDARY_LOG.start();
-            // #endif /* STATISTICS */
 
             // All reads might be concurrent to writes by writer thread -> lock file
             m_fileAccessLock.lock();
@@ -365,9 +350,7 @@ public abstract class AbstractLog {
 
             m_fileAccessLock.unlock();
 
-            // #ifdef STATISTICS
             SOP_READ_SECONDARY_LOG.stop();
-            // #endif /* STATISTICS */
         }
     }
 
@@ -388,9 +371,7 @@ public abstract class AbstractLog {
             final long p_writePos) throws IOException {
         long ret;
 
-        // #ifdef STATISTICS
         SOP_WRITE_PRIMARY_LOG.start();
-        // #endif /* STATISTICS */
 
         if (p_bufferWrapper == null) {
             throw new IOException("Error writing to log. Buffer wrapper is null");
@@ -421,9 +402,7 @@ public abstract class AbstractLog {
 
         ret = p_writePos + p_length;
 
-        // #ifdef STATISTICS
         SOP_WRITE_PRIMARY_LOG.stop();
-        // #endif /* STATISTICS */
 
         return ret;
     }
@@ -448,11 +427,8 @@ public abstract class AbstractLog {
             final long p_writePos, final int p_length, final boolean p_accessed) throws IOException {
 
         if (p_length > 0) {
-
-            // #ifdef STATISTICS
             SOP_WRITE_SECONDARY_LOG_DATA.add(p_length);
             SOP_WRITE_SECONDARY_LOG.start();
-            // #endif /* STATISTICS */
 
             if (p_accessed) {
                 m_fileAccessLock.lock();
@@ -553,10 +529,7 @@ public abstract class AbstractLog {
                 m_fileAccessLock.unlock();
             }
 
-            // #ifdef STATISTICS
             SOP_WRITE_SECONDARY_LOG.stop();
-            // #endif /* STATISTICS */
-
         }
     }
 

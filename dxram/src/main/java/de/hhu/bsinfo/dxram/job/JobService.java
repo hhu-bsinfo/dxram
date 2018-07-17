@@ -101,9 +101,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      * @return True if scheduling was successful, false otherwise.
      */
     public long pushJob(final AbstractJob p_job) {
-        // #ifdef STATISTICS
         SOP_CREATE.start();
-        // #endif /* STATISTICS */
 
         long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
 
@@ -115,9 +113,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
             p_job.setID(jobId);
         }
 
-        // #ifdef STATISTICS
         SOP_CREATE.stop();
-        // #endif /* STATISTICS */
 
         return jobId;
     }
@@ -133,9 +129,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      * @return Valid job ID assigned to the submitted job, false otherwise.
      */
     public long pushJobRemote(final AbstractJob p_job, final short p_nodeID) {
-        // #ifdef STATISTICS
         SOP_REMOTE_SUBMIT.start();
-        // #endif /* STATISTICS */
 
         long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
         p_job.setID(jobId);
@@ -167,9 +161,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
             jobId = JobID.INVALID_ID;
         }
 
-        // #ifdef STATISTICS
         SOP_REMOTE_SUBMIT.stop();
-        // #endif /* STATISTICS */
 
         // set jobid again to mark possible failure
         p_job.setID(jobId);
@@ -383,9 +375,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      *         Incoming request.
      */
     private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
-        // #ifdef STATISTICS
         SOP_INCOMING_SUBMIT.start();
-        // #endif /* STATISTICS */
 
         AbstractJob job = p_request.getJob();
         job.setServiceAccessor(getServiceAccessor());
@@ -396,15 +386,12 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
         m_remoteJobCallbackMap.put(job.getID(), new JobEventEntry(p_request.getCallbackJobEventBitMask(), job));
 
         if (!m_job.pushJob(job)) {
-
             LOGGER.error("Scheduling job %s failed", job);
 
             m_remoteJobCallbackMap.remove(job.getID());
         }
 
-        // #ifdef STATISTICS
         SOP_INCOMING_SUBMIT.stop();
-        // #endif /* STATISTICS */
     }
 
     /**

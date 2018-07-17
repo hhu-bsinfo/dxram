@@ -912,9 +912,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         short rangeID = importer.readShort((short) 0);
         int numberOfChunks = importer.readInt(0);
 
-        // #ifdef STATISTICS
         SOP_LOG_BATCH.start();
-        // #endif /* STATISTICS */
 
         SecondaryLog secLog = getSecondaryLog(owner, rangeID);
         if (secLog == null) {
@@ -938,21 +936,14 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
             assert length > 0;
 
-            // #ifdef STATISTICS
             SOP_PUT_ENTRY_AND_HEADER.start();
-            // #endif /* STATISTICS */
 
             m_writeBuffer.putLogData(importer, chunkID, length, rangeID, owner, originalOwner, timestamp, secLog);
 
-            // #ifdef STATISTICS
             SOP_PUT_ENTRY_AND_HEADER.stop();
-            // #endif /* STATISTICS */
-
         }
 
-        // #ifdef STATISTICS
         SOP_LOG_BATCH.stop();
-        // #endif /* STATISTICS */
     }
 
     /**
@@ -972,9 +963,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         long chunkID = ChunkID.INVALID_ID;
         int length = -1;
 
-        // #ifdef STATISTICS
         SOP_LOG_BATCH.start();
-        // #endif /* STATISTICS */
 
         SecondaryLog secLog = getSecondaryLog(p_owner, p_rangeID);
         if (secLog == null) {
@@ -1000,22 +989,14 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 timestamp = (int) ((System.currentTimeMillis() - m_initTime) / 1000);
             }
 
-            // #ifdef STATISTICS
             SOP_PUT_ENTRY_AND_HEADER.start();
-            // #endif /* STATISTICS */
 
             m_writeBuffer.putLogData(importer, chunkID, length, p_rangeID, p_owner, originalOwner, timestamp, secLog);
 
-            // #ifdef STATISTICS
             SOP_PUT_ENTRY_AND_HEADER.stop();
-            // #endif /* STATISTICS */
-
         }
 
-        // #ifdef STATISTICS
         SOP_LOG_BATCH.stop();
-        // #endif /* STATISTICS */
-
     }
 
     /**
@@ -1040,9 +1021,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             if (secLog != null) {
                 secLog.invalidateChunk(chunkID);
             } else {
-
                 LOGGER.error("Removing of chunk 0x%X failed: %s. SecondaryLog is missing!", chunkID);
-
             }
         }
     }
@@ -1065,9 +1044,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         cat = m_logCatalogs[p_owner & 0xFFFF];
 
         if (cat == null) {
-
             LOGGER.error("Log catalog for peer 0x%X is empty!", p_owner);
-
             return null;
         }
 

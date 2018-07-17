@@ -535,23 +535,20 @@ public final class CIDTable {
     private long createNIDTable() {
         long ret;
 
-        // #ifdef STATISTICS
         SOP_CREATE_NID_TABLE.start();
-
         MemoryManagerComponent.SOP_MALLOC.start(1);
-        // #endif /* STATISTICS */
+
         ret = m_rawMemory.malloc(NID_TABLE_SIZE);
-        // #ifdef STATISTICS
+
         MemoryManagerComponent.SOP_MALLOC.stop();
-        // #endif /* STATISTICS */
+
         if (ret != -1) {
             m_rawMemory.set(ret, NID_TABLE_SIZE, (byte) 0);
             m_totalMemoryTables += NID_TABLE_SIZE;
             m_tableCount++;
         }
-        // #ifdef STATISTICS
+
         SOP_CREATE_NID_TABLE.stop();
-        // #endif /* STATISTICS */
 
         return ret;
     }
@@ -564,23 +561,20 @@ public final class CIDTable {
     private long createLIDTable() {
         long ret;
 
-        // #ifdef STATISTICS
         SOP_CREATE_LID_TABLE.start();
-
         MemoryManagerComponent.SOP_MALLOC.start(1);
-        // #endif /* STATISTICS */
+
         ret = m_rawMemory.malloc(LID_TABLE_SIZE);
-        // #ifdef STATISTICS
+
         MemoryManagerComponent.SOP_MALLOC.stop();
-        // #endif /* STATISTICS */
+
         if (ret != -1) {
             m_rawMemory.set(ret, LID_TABLE_SIZE, (byte) 0);
             m_totalMemoryTables += LID_TABLE_SIZE;
             m_tableCount++;
         }
-        // #ifdef STATISTICS
+
         SOP_CREATE_LID_TABLE.stop();
-        // #endif /* STATISTICS */
 
         return ret;
     }
