@@ -22,7 +22,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Locale;
 
-import de.hhu.bsinfo.dxmonitor.state.SystemState;
+import de.hhu.bsinfo.dxmonitor.info.InstanceInfo;
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
 import de.hhu.bsinfo.dxram.app.ApplicationService;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
@@ -246,7 +246,8 @@ public final class DXRAM {
      * Print some information after init about our current node.
      */
     private void printNodeInfo() {
-        String str = ">>> DXRAM Node <<<\n";
+        String str = "==================== DXRAM Node ====================\n";
+        str += ">>> DXRAM build\n";
         str += VERSION + "\n";
         str += "Build type: " + BUILD_TYPE + '\n';
         str += "Git commit: " + GIT_COMMIT + '\n';
@@ -262,21 +263,25 @@ public final class DXRAM {
             str += "BuildUser: " + buildUser + '\n';
         }
 
-        str += "Cwd: " + System.getProperty("user.dir") + '\n';
-        str += "PID: " + SystemState.getCurrentPID() + '\n';
+        str += ">>> Current instance\n";
+        str += InstanceInfo.compile();
 
         BootService bootService = m_engine.getService(BootService.class);
 
         if (bootService != null) {
+            str += "DXRAM node\n";
+
             short nodeId = bootService.getNodeID();
             str += "NodeID: " + NodeID.toHexString(nodeId) + '\n';
             str += "Role: " + bootService.getNodeRole(nodeId) + '\n';
 
             InetSocketAddress address = bootService.getNodeAddress(nodeId);
             str += "Address: " + address;
-
-            System.out.println(str);
+        } else {
+            str += '\n';
         }
+
+        System.out.println(str);
     }
 
     /**
