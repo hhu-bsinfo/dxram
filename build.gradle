@@ -7,7 +7,7 @@ buildscript {
         }
 
         maven {
-            url  "https://dl.bintray.com/hhu-bsinfo/dxram"
+            url "https://dl.bintray.com/hhu-bsinfo/dxram"
         }
     }
 
@@ -16,16 +16,64 @@ buildscript {
     }
 }
 
-allprojects {
-    repositories {
-        mavenCentral()
-    	jcenter()
+plugins {
+    id 'maven-publish'
+    id 'com.jfrog.bintray' version '1.8.4'
+}
 
-        maven {
-            url  "https://dl.bintray.com/hhu-bsinfo/dxram"
-        }
+apply plugin: 'dxgradle'
+group = 'de.hhu.bsinfo'
+version = '0.3.1-dev'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+mainClassName = 'de.hhu.bsinfo.dxram.DXRAM'
+
+repositories {
+    mavenCentral()
+
+    maven {
+        url "https://dl.bintray.com/hhu-bsinfo/dxram"
     }
 }
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += ["-Werror", "-Xlint:sunapi", "-XDenableSunApiLintControl"]
+}
+
+task sourcesJar(type: Jar, dependsOn: classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+javadoc.failOnError = false
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+dependencies {
+    implementation fileTree(dir: 'lib', include: ['*.jar'])
+
+    implementation 'de.hhu.bsinfo:dxnet:1.0.0'
+    implementation 'de.hhu.bsinfo:dxmon:1.0.0'
+    nativeImplementation 'de.hhu.bsinfo:dxutils:1.0.0'
+
+    implementation 'org.apache.zookeeper:zookeeper:3.4.3'
+
+    testImplementation 'junit:junit:4.12'
+    testImplementation 'org.assertj:assertj-core:3.9.0'
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
+apply from: 'publish.gradle'
+apply from: 'types.gradle'
 
 task wrapper(type: Wrapper) {
     gradleVersion = "4.9"
