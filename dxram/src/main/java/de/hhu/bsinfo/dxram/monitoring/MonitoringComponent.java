@@ -17,7 +17,6 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
-import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
@@ -101,9 +100,9 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
 
         String buildUser = BuildConfig.BUILD_USER;
         String buildDate = BuildConfig.BUILD_DATE;
-        String buildType = DXRAM.BUILD_TYPE;
-        String commit = DXRAM.GIT_COMMIT;
-        String version = DXRAM.VERSION.toString();
+        String buildType = BuildConfig.BUILD_TYPE;
+        String commit = BuildConfig.GIT_COMMIT;
+        String version = BuildConfig.DXRAM_VERSION.toString();
 
         MonitoringDXRAMInformation.setValues(buildDate, buildUser, buildType, version, commit, isPageCacheInUse);
 
@@ -190,8 +189,10 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     /**
      * Adds system information to superpeer handler
      *
-     * @param p_nid     NID of node who send the system information
-     * @param p_wrapper Wrapper class instance which stores the monitoring information
+     * @param p_nid
+     *         NID of node who send the system information
+     * @param p_wrapper
+     *         Wrapper class instance which stores the monitoring information
      */
     void addMonitoringSysInfoToWriter(final short p_nid, final MonitoringSysDxramWrapper p_wrapper) {
         m_superpeerHandler.addSysInfoToList(p_nid, p_wrapper);

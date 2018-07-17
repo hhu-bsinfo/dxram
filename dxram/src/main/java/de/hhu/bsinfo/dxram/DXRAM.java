@@ -66,7 +66,6 @@ import de.hhu.bsinfo.dxram.recovery.RecoveryService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
-import de.hhu.bsinfo.dxutils.ManifestHelper;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -75,9 +74,6 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public final class DXRAM {
-    public static final DXRAMVersion VERSION = BuildConfig.DXRAM_VERSION;
-    public static final String GIT_COMMIT = BuildConfig.GIT_COMMIT;
-    public static final String BUILD_TYPE = BuildConfig.BUILD_TYPE;
     private static final String STARTUP_DONE_STR = "!---ooo---!";
 
     private DXRAMEngine m_engine;
@@ -91,7 +87,7 @@ public final class DXRAM {
         printBuildInfo();
         printInstanceInfo();
 
-        m_engine = new DXRAMEngine(VERSION);
+        m_engine = new DXRAMEngine(BuildConfig.DXRAM_VERSION);
         registerComponents(m_engine);
         registerServices(m_engine);
     }
@@ -250,39 +246,30 @@ public final class DXRAM {
     /**
      * Print information about the current build
      */
-    private void printBuildInfo() {
+    private static void printBuildInfo() {
         StringBuilder builder = new StringBuilder();
 
         builder.append(">>> DXRAM build <<<\n");
-        builder.append(VERSION);
+        builder.append(BuildConfig.DXRAM_VERSION);
         builder.append('\n');
         builder.append("Build type: ");
-        builder.append(BUILD_TYPE);
+        builder.append(BuildConfig.BUILD_TYPE);
         builder.append('\n');
         builder.append("Git commit: ");
-        builder.append(GIT_COMMIT);
+        builder.append(BuildConfig.GIT_COMMIT);
         builder.append('\n');
-
-        String buildDate = ManifestHelper.getProperty(getClass(), "BuildDate");
-
-        if (buildDate != null) {
-            builder.append("BuildDate: ");
-            builder.append(buildDate);
-            builder.append('\n');
-        }
-        String buildUser = ManifestHelper.getProperty(getClass(), "BuildUser");
-
-        if (buildUser != null) {
-            builder.append("BuildUser: ");
-            builder.append(buildUser);
-            builder.append('\n');
-        }
+        builder.append("BuildDate: ");
+        builder.append(BuildConfig.BUILD_DATE);
+        builder.append('\n');
+        builder.append("BuildUser: ");
+        builder.append(BuildConfig.BUILD_USER);
+        builder.append('\n');
 
         System.out.println(builder);
     }
 
     private static void printInstanceInfo() {
-        System.out.println(">>> Instance <<<\n" + InstanceInfo.compile() + "\n");
+        System.out.println(">>> Instance <<<\n" + InstanceInfo.compile() + '\n');
     }
 
     /**
