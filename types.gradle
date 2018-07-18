@@ -20,9 +20,8 @@ buildTypes {
 
     release {
 
-        excludeStatistics()
-
         excludeLogger 'RELEASE'
+        excludeStatistics 'RELEASE'
 
         buildConfig {
 
@@ -34,9 +33,8 @@ buildTypes {
 
     performance {
 
-        excludeStatistics()
-
         excludeLogger 'PERFORMANCE'
+        excludeStatistics 'PERFORMANCE'
 
         buildConfig {
 
