@@ -26,8 +26,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.Arrays;
 import java.util.stream.LongStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MigrationManagerTest {
@@ -56,6 +55,11 @@ public class MigrationManagerTest {
         MigrationTask[] tasks = manager.createMigrationTasks(IDENTIFIER);
 
         assertEquals(WORKER_COUNT, tasks.length);
+
+        for (int i = 0; i < tasks.length; i++) {
+
+            assertNotNull(tasks[i]);
+        }
 
         int totalChunks = Arrays.stream(tasks)
                 .map(MigrationTask::getChunkCount)

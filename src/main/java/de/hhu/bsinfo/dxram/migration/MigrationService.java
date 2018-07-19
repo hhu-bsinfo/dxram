@@ -170,7 +170,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      */
     public Future<Void> migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
 
-        return m_migrationManager.migrateRangeAsync(p_target, p_startChunkID, p_endChunkID);
+        return m_migrationManager.migrateRange(p_target, p_startChunkID, p_endChunkID);
     }
 
     public MigrationManager getMigrationManager() {

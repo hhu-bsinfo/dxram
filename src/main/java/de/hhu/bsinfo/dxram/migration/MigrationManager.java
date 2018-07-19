@@ -34,6 +34,7 @@ import de.hhu.bsinfo.dxram.migration.messages.*;
 import de.hhu.bsinfo.dxram.migration.util.CountDownFuture;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxutils.NodeID;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +90,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
-    public Future<Void> migrateRangeAsync(final short p_target, final long p_startId, final long p_endId) {
+    public Future<Void> migrateRange(final short p_target, final long p_startId, final long p_endId) {
 
         MigrationIdentifier identifier = new MigrationIdentifier(m_boot.getNodeID(), p_target, p_startId, p_endId);
 
@@ -115,9 +116,9 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
         long[] partitions = partition(p_identifier.getStartId(), p_identifier.getEndId(), m_workerCount);
 
-        for (int i = 0; i < partitions.length / 2; i += 2) {
+        for (int i = 0, j = 0; i < partitions.length - 1; i += 2, j++) {
 
-            tasks[i] = new MigrationTask(this, p_identifier, partitions[i], partitions[i + 1]);
+            tasks[j] = new MigrationTask(this, p_identifier, partitions[i], partitions[i + 1]);
         }
 
         return tasks;
@@ -199,8 +200,6 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
             log.warn("Received wrong message type {}", p_message.getType());
         }
-
-//        log.debug("Received message {} {}", p_message.getType(), p_message.getSubtype());
 
         m_executor.execute(() -> {
 
@@ -437,7 +436,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
             namePrefix = "migration-" + poolNumber.getAndIncrement() + "-thread-";
         }
 
-        public Thread newThread(Runnable r) {
+        public Thread newThread(@NotNull Runnable r) {
 
             Thread t = new Thread(group, r, namePrefix + threadNumber.getAndIncrement(), 0);
 
