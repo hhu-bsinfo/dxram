@@ -16,6 +16,8 @@
 
 package de.hhu.bsinfo.dxram.util;
 
+import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
+
 /**
  * Represents the node roles.
  *
@@ -92,6 +94,20 @@ public enum NodeRole {
         }
 
         return ret;
+    }
+
+    /**
+     * Assert node roles. This call is stripped on non-debug builds by the build system
+     *
+     * Throws an InvalidNodeRoleException on failure
+     *
+     * @param p_expected Node role expected
+     * @param p_actual Actual node role
+     */
+    public static void assertNodeRole(final NodeRole p_expected, final NodeRole p_actual) {
+        if (p_expected != p_actual) {
+            throw new InvalidNodeRoleException(p_actual);
+        }
     }
 
     // Methods
