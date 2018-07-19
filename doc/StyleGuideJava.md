@@ -74,3 +74,62 @@ void myFunc(final int v1, final bool p_v2) {
     // ...
 }
 ```
+
+## No empty lines on nested control blocks
+```
+// bad
+if (var == 1) {
+
+    while (true) {
+        // ...
+    }
+
+}
+
+// good
+if (var == 1) {
+    while (true) {
+        // ...
+    }
+}
+
+// good
+if (var == 1) {
+    // comment
+    while (true) {
+        // ...
+    }
+}
+```
+
+However, if the control blocks starts with a statement, make sure to add an empty line afterwards if followed by
+another control block.
+
+```
+// bad
+if (var == 1) {
+    int var2 = 2;
+    while (true) {
+        // ...
+    }
+}
+
+// good
+if (var == 1) {
+    int var2 = 2;
+
+    while (true) {
+        // ...
+    }
+}
+
+// good
+if (var == 1) {
+    int var2 = 2;
+
+    // comment
+    while (true) {
+        // ...
+    }
+}
+```
