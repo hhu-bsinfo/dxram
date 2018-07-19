@@ -90,11 +90,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return the number of name service entries
      */
     public int getNameserviceEntryCount() {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.getNameserviceEntryCount();
     }
@@ -105,11 +101,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return List of nameservice entries or null on error.
      */
     public ArrayList<NameserviceEntry> getNameserviceEntries() {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.getNameserviceEntries();
     }
@@ -141,11 +133,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     public LookupRange getLookupRange(final long p_chunkID) {
         LookupRange ret;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         LOGGER.trace("Entering getLookupRange with: p_chunkID=0x%X", p_chunkID);
 
@@ -178,11 +166,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the ChunkIDs
      */
     public void removeChunkIDs(final ArrayListLong p_chunkIDs) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.getSize());
 
@@ -205,11 +189,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the ChunkID
      */
     public void insertNameserviceEntry(final int p_id, final long p_chunkID) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         // Insert ChunkID <-> ApplicationID mapping
 
@@ -238,11 +218,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     public long getChunkIDForNameserviceEntry(final int p_id, final int p_timeoutMs) {
         long ret;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         // Resolve ChunkID <-> ApplicationID mapping to return corresponding ChunkID
 
@@ -282,11 +258,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the new owner
      */
     public void migrate(final long p_chunkID, final short p_nodeID) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         LOGGER.trace("Entering migrate with: p_chunkID=0x%X, p_nodeID=0x%X", p_chunkID, p_nodeID);
 
@@ -311,11 +283,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the new owner
      */
     public void migrateRange(final long p_startCID, final long p_endCID, final short p_nodeID) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         LOGGER.trace("Entering migrateRange with: p_startChunkID=0x%X, p_endChunkID=0x%X, p_nodeID=0x%X", p_startCID,
                 p_endCID, p_nodeID);
@@ -339,12 +307,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the backup range to initialize
      */
     public void initRange(final BackupRange p_backupRange) {
-
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         LOGGER.trace("Entering initRange with: p_backupRange=%s", p_backupRange);
 
@@ -364,11 +327,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     public BackupRange[] getAllBackupRanges(final short p_nodeID) {
         BackupRange[] ret;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         LOGGER.trace("Entering getAllBackupRanges with: p_nodeID=0x%X", p_nodeID);
 
@@ -443,11 +402,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return Barrier identifier on success, -1 on failure.
      */
     public int barrierAllocate(final int p_size) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.barrierAllocate(p_size);
     }
@@ -460,11 +415,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True if successful, false otherwise.
      */
     public boolean barrierFree(final int p_barrierId) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.barrierFree(p_barrierId);
     }
@@ -479,11 +430,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True if changing size was successful, false otherwise.
      */
     public boolean barrierChangeSize(final int p_barrierId, final int p_newSize) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.barrierChangeSize(p_barrierId, p_newSize);
     }
@@ -502,11 +449,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * null on error
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData, final boolean p_waitForRelease) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.barrierSignOn(p_barrierId, p_customData, p_waitForRelease);
     }
@@ -522,11 +465,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * ons, null on error
      */
     public BarrierStatus barrierSignOn(final int p_barrierId, final long p_customData) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.barrierSignOn(p_barrierId, p_customData, true);
     }
@@ -539,11 +478,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return BarrierStatus or null if barrier does not exist
      */
     public BarrierStatus barrierGetStatus(final int p_barrierId) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.barrierGetStatus(p_barrierId);
     }
@@ -558,11 +493,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
     public boolean superpeerStorageCreate(final int p_storageId, final int p_size) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.superpeerStorageCreate(p_storageId, p_size);
     }
@@ -575,11 +506,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
     public boolean superpeerStorageCreate(final DataStructure p_dataStructure) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
 
@@ -600,11 +527,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
 
@@ -624,11 +547,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStoragePutAnon(final ChunkAnon p_chunk) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
 
@@ -648,11 +567,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True on success, false on failure.
      */
     public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
 
@@ -672,11 +587,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True on success, false on failure.
      */
     public boolean superpeerStorageGetAnon(final ChunkAnon p_chunk) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
 
@@ -696,11 +607,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStorageRemove(final int p_id) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         m_peer.superpeerStorageRemove(p_id);
         return true;
@@ -714,11 +621,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return True if successful, false otherwise.
      */
     public boolean superpeerStorageRemove(final DataStructure p_dataStructure) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
 
@@ -738,11 +641,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return Status of the superpeer storage.
      */
     public SuperpeerStorage.Status superpeerStorageGetStatus() {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.superpeerStorageGetStatus();
     }
@@ -758,11 +657,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the replacement
      */
     public void replaceBackupPeer(final short p_rangeID, final short p_failedPeer, final short p_newPeer) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         m_peer.replaceBackupPeer(p_rangeID, p_failedPeer, p_newPeer);
     }
@@ -919,11 +814,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         short ret = NodeID.INVALID_ID;
         LookupRange lookupRange;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         LOGGER.trace("Entering getPrimaryPeer with: p_chunkID=0x%X", p_chunkID);
 
@@ -966,11 +857,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      * @return the responsible superpeer
      */
     public short getResponsibleSuperpeer(final short p_nodeID) {
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
         return m_peer.getResponsibleSuperpeer(p_nodeID);
     }
@@ -986,11 +873,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     LookupTree superPeerGetLookUpTree(final short p_nodeID) {
         LookupTree ret;
 
-        // #ifdef ASSERT_NODE_ROLE
-        if (m_boot.getNodeRole() != NodeRole.SUPERPEER) {
-            throw new InvalidNodeRoleException(m_boot.getNodeRole());
-        }
-        // #endif /* ASSERT_NODE_ROLE */
+        NodeRole.assertNodeRole(NodeRole.SUPERPEER, m_boot.getNodeRole());
 
         LOGGER.trace("Entering getSuperPeerLookUpTree with: p_nodeID=0x%X", p_nodeID);
 
