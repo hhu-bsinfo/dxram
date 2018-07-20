@@ -12,7 +12,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  */
 public class ApplicationComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
-    private String m_applicationPath = "app";
+    private String m_applicationPath = "dxapp";
 
     /**
      * Constructor

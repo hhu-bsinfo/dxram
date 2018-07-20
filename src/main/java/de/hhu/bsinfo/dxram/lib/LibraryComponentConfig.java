@@ -12,7 +12,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  */
 public class LibraryComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
-    private String m_libraryPath = "lib";
+    private String m_libraryPath = "dxlib";
 
     /**
      * Constructor
