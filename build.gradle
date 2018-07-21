@@ -36,8 +36,8 @@ mainClassName = 'de.hhu.bsinfo.dxram.DXRAM'
 project.startScripts.with {
     doLast {
         unixScript.text = unixScript.text.replaceFirst('(?<=DEFAULT_JVM_OPTS=)((\'|\")(.*)(\'|"))(?=\n)',
-                '\'$3 "-Dlog4j.configurationFile=file:\\$APP_HOME/config/log4j2.xml ' +
-                        '-Ddxram.config=$APP_HOME/config/dxram.json"\'')
+                '\'$3 "-Dlog4j.configurationFile=file:\\$APP_HOME/config/log4j2.xml' +
+                        ' -Ddxram.config=\\$APP_HOME/config/dxram.json"\'')
     }
 }
 
