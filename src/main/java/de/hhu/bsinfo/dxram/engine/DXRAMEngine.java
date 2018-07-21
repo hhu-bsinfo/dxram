@@ -393,6 +393,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         // check vm arguments for configuration override
         String config = System.getProperty("dxram.config");
+
         if (config == null) {
             config = "";
         } else {
@@ -403,9 +404,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         if (config.isEmpty() || !new File(config).exists()) {
             m_contextHandler.createDefaultConfiguration(config);
 
-            LOGGER.info("Default configuration created (%s), please restart DXRAM", config);
-
-            return false;
+            LOGGER.warn("Default configuration created (%s)", config);
         }
 
         // load existing configuration
