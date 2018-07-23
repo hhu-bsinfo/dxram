@@ -404,7 +404,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         if (config.isEmpty() || !new File(config).exists()) {
             m_contextHandler.createDefaultConfiguration(config);
 
-            LOGGER.warn("Default configuration created (%s)", config);
+            LOGGER.info("Default configuration created (%s), please restart DXRAM", config);
+            return false;
         }
 
         // load existing configuration
