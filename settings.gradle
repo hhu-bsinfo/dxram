@@ -12,18 +12,18 @@ if (isDevelop && new File('../dxgradle').exists()) {
     includeBuild('../dxgradle')
 }
 
-if (isDevelop && new File('../dxutils').exists()) {
-    includeBuild '../dxutils'
-}
-
-if (isDevelop && new File('../dxmon').exists()) {
-    includeBuild '../dxmon'
-}
-
-if (isDevelop && new File('../dxnet').exists()) {
-    includeBuild('../dxnet')
-}
-
-if (isDevelop && new File('../dxgraph').exists()) {
-    includeBuild('../dxgraph')
-}
+//if (isDevelop && new File('../dxutils').exists()) {
+//    includeBuild '../dxutils'
+//}
+//
+//if (isDevelop && new File('../dxmon').exists()) {
+//    includeBuild '../dxmon'
+//}
+//
+//if (isDevelop && new File('../dxnet').exists()) {
+//    includeBuild('../dxnet')
+//}
+//
+//if (isDevelop && new File('../dxgraph').exists()) {
+//    includeBuild('../dxgraph')
+//}
