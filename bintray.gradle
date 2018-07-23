@@ -1,0 +1,24 @@
+bintray {
+    user = System.getProperty('bintray.user')
+    key = System.getProperty('bintray.key')
+    publications = ['mavenPublication']
+    publish = true
+    override = true
+
+    pkg {
+        repo = 'dxram'
+        name = 'dxram'
+        userOrg = 'hhu-bsinfo'
+        licenses = ['GPL-3.0']
+        websiteUrl = 'https://www.dxram.io'
+        vcsUrl = 'https://github.com/hhu-bsinfo/dxram.git'
+        labels = ['infiniband', 'key-value', 'distributed']
+        githubRepo = 'hhu-bsinfo/dxram'
+        githubReleaseNotesFile = 'README.md'
+
+        version {
+            name = project.version
+            released  = new Date()
+        }
+    }
+}
