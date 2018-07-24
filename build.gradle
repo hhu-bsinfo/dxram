@@ -35,13 +35,14 @@ targetCompatibility = '1.8'
 
 mainClassName = 'de.hhu.bsinfo.dxram.DXRAM'
 
-// There doesn't seem to be a way get the APP_HOME variable to the path of config files relative
-// to the application dir. Source:
-// https://stackoverflow.com/questions/25227198/how-to-pass-a-reference-to-distribution-home-directory-using-gradle-application
+applicationDefaultJvmArgs = [
+        '-Dlog4j.configurationFile=file:DXRAM_HOME/config/log4j2.xml',
+        '-Ddxram.config=DXRAM_HOME/config/dxram.json'
+]
+
 project.startScripts.with {
     doLast {
-        unixScript.text = unixScript.text.replaceFirst('(?<=DEFAULT_JVM_OPTS=)((\'|\")(.*)(\'|"))(?=\n)',
-                '\'$3 "-Dlog4j.configurationFile=file:\\$APP_HOME/config/log4j2.xml"\'')
+        unixScript.text = unixScript.text.replace('DXRAM_HOME', '\$APP_HOME')
     }
 }
 
