@@ -55,7 +55,6 @@ Run built in benchmarks or external applications/benchmarks
 * [Development setup](doc/DevelopmentSetup.md)
 * [Develop applications using DXRAM](doc/Development.md)
 * [Manual setup and configuration of DXRAM instances](doc/ManualSetup.md)
-* [Style guide bash](doc/StyleGuideBash.md)
 
 # License
 
