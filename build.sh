@@ -20,4 +20,4 @@ esac
 
 echo "Build type: $build_type"
 
-./gradlew installDist distZip -PbuildType="$build_type"
+./gradlew installDist distZip -PbuildVariant="$build_type"

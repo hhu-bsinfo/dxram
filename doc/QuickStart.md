@@ -18,10 +18,10 @@ ZooKeeper (a packaged version is included with DXRAM, see *util/zookeeper.zip*).
 
 # Building and install
 Our build system uses gradle and the project comes with a gradle-wrapper included, so you don't have to install gradle.
-For convenience, run the *build.sh* script in the root directory to start the build process. By specifying one of the
-additional arguments *debug*, *release* or *performance*, you can easily build the different build types offered. The
-default build type is *release*. The output with all necessary assets to run DXRAM is located in the *build/dist*
-directory. Grab the *dxram* folder or *dxram.zip* and unpack it to a location of your choice to install it.
+Run *./gradlew installDist* to build the project with default settings. Use *-PbuildVariant=* to specify different build
+types such as *debug* or *release*, e.g. *./gradlew installDist -PbuildVariant=release*. The output with all necessary
+assets to run DXRAM is located in the *build* directory. Grab the *dxram.zip* and unpack it to a location of your
+choice to install it.
 
 # Starting DXRAM - Deployment
 To easily deploy instances to either localhost or nodes of a cluster, we recommend using our deployment system

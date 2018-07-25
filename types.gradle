@@ -1,4 +1,4 @@
-buildTypes {
+buildVariants {
 
     debug {
 
@@ -6,7 +6,7 @@ buildTypes {
 
             typedField "DEBUG", Boolean, true
 
-            typedField "BUILD_TYPE", String, buildType
+            typedField "BUILD_TYPE", String, buildVariant
 
             typedField "GIT_COMMIT", String, gitCommit
 
