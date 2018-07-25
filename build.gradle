@@ -36,8 +36,7 @@ targetCompatibility = '1.8'
 mainClassName = 'de.hhu.bsinfo.dxram.DXRAM'
 
 applicationDefaultJvmArgs = [
-        '-Dlog4j.configurationFile=file:DXRAM_HOME/config/log4j2.xml',
-        '-Ddxram.config=DXRAM_HOME/config/dxram.json'
+        '-Dlog4j.configurationFile=file:DXRAM_HOME/config/log4j2.xml'
 ]
 
 project.startScripts.with {
