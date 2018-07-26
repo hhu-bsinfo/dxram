@@ -112,8 +112,6 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
         MigrationTask[] tasks = new MigrationTask[m_workerCount];
 
-        long[] result = LongStream.rangeClosed(p_identifier.getStartId(), p_identifier.getEndId()).toArray();
-
         long[] partitions = partition(p_identifier.getStartId(), p_identifier.getEndId(), m_workerCount);
 
         for (int i = 0, j = 0; i < partitions.length - 1; i += 2, j++) {
@@ -128,35 +126,35 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     //  Move this method to dxutils
     public static long[] partition(long p_start, long p_end, int p_count) {
 
-        int chunkCount = (int) (p_end - p_start + 1);
+        int elementCount = (int) (p_end - p_start + 1);
 
-        if (p_count > chunkCount) {
+        if (p_count > elementCount) {
 
-            throw new IllegalArgumentException("Insufficient number of chunks for " + p_count + " partitions");
+            throw new IllegalArgumentException("Insufficient number of elements for " + p_count + " partitions");
         }
 
         long[] result = new long[p_count * 2];
 
-        int length = (chunkCount / p_count) + 1;
+        int length = (elementCount / p_count) + 1;
 
         long split = p_start;
 
-        for (int i = 0; i < chunkCount % p_count; i++) {
+        for (int i = 0; i < elementCount % p_count; i++) {
 
             result[i * 2] = length * i + p_start;
 
             result[(i * 2) + 1] = result[i * 2] + length - 1;
 
-            split = result[(i * 2) + 1];
+            split = result[(i * 2) + 1] + 1;
         }
 
-        length = chunkCount / p_count;
+        length = elementCount / p_count;
 
-        p_start = split + 1;
+        p_start = split;
 
-        for (int i = chunkCount % p_count; i < p_count; i++) {
+        for (int i = elementCount % p_count; i < p_count; i++) {
 
-            result[i * 2] = length * (i - (chunkCount % p_count)) + p_start;
+            result[i * 2] = length * (i - (elementCount % p_count)) + p_start;
 
             result[(i * 2) + 1] = result[i * 2] + length - 1;
         }
@@ -252,18 +250,12 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
                 throw new IllegalArgumentException("Can't migrate non-existent chunks");
             }
-//
-//            // TODO(krakowski)
-//            //  Get a pointer pointing directly to the chunk's data
+
+            // TODO(krakowski)
+            //  Get a pointer pointing directly to the chunk's data
             data[index] = m_memoryManager.get(cid);
-//
+
             m_memoryManager.unlockAccess();
-
-//            data[index] = new byte[64];
-//
-//            Arrays.fill(data[index], (byte) 0xBB);
-
-//            m_random.nextBytes(data[index]);
 
             index++;
         }
@@ -331,7 +323,6 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
         log.debug("Saving received chunks");
 
         boolean status = m_chunk.putMigratedChunks(chunkIds, chunkRange.getData());
-//        boolean status = true;
 
         log.debug("Storing migrated chunks {}", status ? "succeeded" : "failed");
 

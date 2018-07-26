@@ -31,9 +31,9 @@ import static org.junit.Assert.*;
 @RunWith(MockitoJUnitRunner.class)
 public class MigrationManagerTest {
 
-    private static final long CHUNK_START_ID = 0x445800000000BEEFL;
+    private static final long CHUNK_START_ID = 0x4458000000000001L;
 
-    private static final long CHUNK_END_ID =   0x4458000000CAFFE1L;
+    private static final long CHUNK_END_ID =   0x4458000000500000L;
 
     private static final long TOTAL_CHUNKS = CHUNK_END_ID - CHUNK_START_ID + 1;
 
