@@ -2,6 +2,8 @@
 
 <img src="doc/img/logo.jpg" width="500">
 
+[![Build Status](https://travis-ci.org/hhu-bsinfo/dxram.svg?branch=development)](https://travis-ci.org/hhu-bsinfo/dxram)
+
 Developed by the [operating systems group](http://www.cs.hhu.de/en/research-groups/operating-systems.html)
 of the department of computer science of the Heinrich-Heine-University 
 Düsseldorf, DXRAM is a distributed in-memory key-value store for 
