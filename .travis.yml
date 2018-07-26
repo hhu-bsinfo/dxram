@@ -26,5 +26,5 @@ deploy:
   file: build/dist/dxram.zip
   on:
     repo: hhu-bsinfo/dxram
-    branch: development
+    branch: master
     tags: true
