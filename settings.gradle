@@ -8,8 +8,8 @@ if (isDevelop && gradle.parent != null) {
     return
 }
 
-if (isDevelop && new File('../dxgradle').exists()) {
-    includeBuild('../dxgradle')
+if (isDevelop && new File('../dxbuild').exists()) {
+    includeBuild('../dxbuild')
 }
 
 if (isDevelop && new File('../dxutils').exists()) {
