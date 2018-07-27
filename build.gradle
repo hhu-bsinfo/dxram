@@ -45,6 +45,11 @@ project.startScripts.with {
     }
 }
 
+// create empty dxapp folder in dist
+installDist.doLast {
+    project.file("$project.buildDir/dist/$project.name/dxapp").mkdir()
+}
+
 repositories {
     mavenCentral()
 
