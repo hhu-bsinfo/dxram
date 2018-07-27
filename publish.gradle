@@ -33,9 +33,7 @@ def pomConfig = {
 }
 
 publishing {
-
     publications {
-
         mavenPublication(MavenPublication) {
 
             from components.java

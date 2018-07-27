@@ -1,45 +1,32 @@
 buildVariants {
-
     debug {
-
         buildConfig {
-
             typedField "DEBUG", Boolean, true
-
             typedField "BUILD_TYPE", String, buildVariant
-
             typedField "GIT_COMMIT", String, gitCommit
-
             typedField "BUILD_USER", String, System.getProperty("user.name")
-
             typedField "BUILD_DATE", String, currentDate
-
             field "DXRAM_VERSION", "de.hhu.bsinfo.dxram.engine", "DXRAMVersion", "DXRAMVersion.fromString(\"${version}\")"
         }
     }
 
     release {
-
         excludeLogger 'RELEASE'
         excludeStatistics 'RELEASE'
         excludeNodeRoleAsserts 'RELEASE'
 
         buildConfig {
-
             inheritsFrom 'debug'
-
             typedField "DEBUG", Boolean, false
         }
     }
 
     performance {
-
         excludeLogger 'PERFORMANCE'
         excludeStatistics 'PERFORMANCE'
         excludeNodeRoleAsserts 'PERFORMANCE'
 
         buildConfig {
-
             inheritsFrom 'debug'
         }
     }
