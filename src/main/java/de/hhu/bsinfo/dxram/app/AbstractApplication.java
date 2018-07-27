@@ -22,12 +22,21 @@ public abstract class AbstractApplication extends Thread {
      * Name of the component (full class path)
      */
     @Expose
-    private final String m_class = getClass().getName();
+    private String m_class = getClass().getName();
+
     /**
      * True to enable the component, false to disable
      */
     @Expose
-    private final boolean m_enabled = true;
+    private boolean m_enabled = true;
+
+    /**
+     * Id to set the init order. Applications (main method) are initialized from lowest to highest id
+     * Init order might matter if your application depends on other dxapps to be available (e.g. to be used
+     * as a library)
+     */
+    @Expose
+    private int m_initOrderId = 0;
 
     private DXRAMEngine m_dxram;
 
@@ -38,6 +47,15 @@ public abstract class AbstractApplication extends Thread {
      */
     public boolean isEnabled() {
         return m_enabled;
+    }
+
+    /**
+     * Get the init order id of this application (call of init method)
+     *
+     * @return Init order id
+     */
+    public int getInitOrderId() {
+        return m_initOrderId;
     }
 
     /**
@@ -65,9 +83,20 @@ public abstract class AbstractApplication extends Thread {
     public abstract boolean useConfigurationFile();
 
     /**
+     * Initialize your application. The init methods of all applications loaded are called by a single thread in the
+     * order declared by m_initOrderId.
+     * Override this method if required.
+     */
+    public void init() {
+        // default stub
+    }
+
+    /**
      * The main entry point for your application.
      * Your application will run in its own thread started by the ApplicationService. If this call returns, your
      * application has terminated.
+     * Note: As every main of every application is run in a separate thread, you can not make assumption about the
+     * order of execution. Implement all application main's independent of each other.
      */
     public abstract void main();
 
@@ -76,6 +105,16 @@ public abstract class AbstractApplication extends Thread {
      * When called, exit any loops, shut down further child threads and initiate clean up of resources.
      */
     public abstract void signalShutdown();
+
+    /**
+     * Get a list of external dependencies (other java libs as jars).
+     * Override this method if required.
+     *
+     * @return List of dependencies as string array
+     */
+    public String[] getExternalDependencies() {
+        return new String[0];
+    }
 
     @Override
     public void run() {
@@ -118,6 +157,12 @@ public abstract class AbstractApplication extends Thread {
         return m_dxram.isServiceAvailable(p_class);
     }
 
+    /**
+     * Set the engine to allow access to services
+     *
+     * @param p_dxram
+     *         Engine
+     */
     void setEngine(final DXRAMEngine p_dxram) {
         m_dxram = p_dxram;
     }

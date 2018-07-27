@@ -83,7 +83,6 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
             }
         } else {
             LOGGER.warn("Can't load applications from %s, no such directory", getConfig().getApplicationPath());
-
         }
 
         return true;
@@ -94,6 +93,39 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         m_applicationClasses.clear();
 
         return false;
+    }
+
+    /**
+     * Load any external dependencies (jar packages) required by the application
+     *
+     * @param p_application
+     *         Application to load external dependencies for
+     */
+    public void loadExternalDependencies(final AbstractApplication p_application) {
+        for (String dep : p_application.getExternalDependencies()) {
+            try {
+                URLClassLoader loader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+                URL url = new File(dep).toURI().toURL();
+
+                // Disallow if already loaded
+                for (java.net.URL it : java.util.Arrays.asList(loader.getURLs())) {
+                    if (it.equals(url)) {
+                        return;
+                    }
+                }
+
+                Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
+                method.setAccessible(true);
+                method.invoke(loader, url);
+
+                LOGGER.info("[%s] Loaded external dependency %s", p_application.getApplicationName(), dep);
+            } catch (final NoSuchMethodException | IllegalAccessException | MalformedURLException |
+                    InvocationTargetException e) {
+                LOGGER.error("Could not load dependency %s for application %s", dep,
+                        p_application.getApplicationName(), e);
+
+            }
+        }
     }
 
     /**
@@ -141,41 +173,6 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
             try {
                 Class<?> clazz = Class.forName(classname, true, ucl);
 
-                if (AbstractApplicationDependency.class.equals(clazz.getSuperclass())) {
-                    LOGGER.info("Found Dependency Class: %s", clazz.getName());
-
-                    String[] dependencies = ((AbstractApplicationDependency) clazz.newInstance()).getDependency();
-                    loadDeps(dependencies);
-                }
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                e.printStackTrace();
-            } catch (NoClassDefFoundError ignored) {
-
-            }
-        }
-
-        try {
-            jarFile = new JarInputStream(new FileInputStream(p_jar));
-        } catch (final IOException e) {
-            LOGGER.error("Opening jar %s failed: %s", p_jar.getAbsolutePath(), e.getMessage());
-
-            return classes;
-        }
-
-        while (true) {
-            String classname = getNextClass(jarFile, p_jar);
-
-            if (classname == null) {
-                break;
-            }
-
-            if (classname.isEmpty()) {
-                continue;
-            }
-
-            try {
-                Class<?> clazz = Class.forName(classname, true, ucl);
-
                 if (AbstractApplication.class.equals(clazz.getSuperclass())) {
                     LOGGER.info("Found application %s", clazz.getName());
 
@@ -195,33 +192,16 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         return classes;
     }
 
-    private synchronized void loadDeps(String[] p_dependencies) {
-        for (String dep : p_dependencies) {
-            try {
-                URLClassLoader loader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-                URL url = new File(dep).toURI().toURL();
-
-                //Disallow if already loaded
-                for (java.net.URL it : java.util.Arrays.asList(loader.getURLs())) {
-                    if (it.equals(url)) {
-                        return;
-                    }
-                }
-
-                Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-                method.setAccessible(true);
-                method.invoke(loader, url);
-
-                LOGGER.info("Load dependency %s", dep);
-            } catch (final NoSuchMethodException | IllegalAccessException | MalformedURLException |
-                    InvocationTargetException e) {
-                LOGGER.error("Could not load dependency %s", dep, e);
-
-            }
-        }
-    }
-
-    private String getNextClass(JarInputStream p_jarFile, File p_jar) {
+    /**
+     * Get the next class file from the jar package
+     *
+     * @param p_jarFile
+     *         Jar input stream
+     * @param p_jar
+     *         Original jar file (path)
+     * @return Classname
+     */
+    private String getNextClass(final JarInputStream p_jarFile, final File p_jar) {
         JarEntry jarEntry = null;
 
         try {

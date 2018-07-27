@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -151,6 +152,26 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
     @Override
     protected void engineInitFinished() {
+        LOGGER.info("Loading external dependencies...");
+
+        // load external dependencies first, otherwise the app might crash
+        for (AbstractApplication app : m_applications) {
+            m_application.loadExternalDependencies(app);
+        }
+
+        m_applications.sort(Comparator.comparingInt(AbstractApplication::getInitOrderId));
+
+        LOGGER.info("Initializing applications...");
+
+        // initialize sequentially to allow applications to setup stuff that might be required by other applications
+        // e.g. use a dxapp as some sort of library
+        for (AbstractApplication app : m_applications) {
+            System.out.println("init order id: " + app.getInitOrderId());
+            app.init();
+        }
+
+        LOGGER.info("Starting applications...");
+
         // start all applications
         for (AbstractApplication app : m_applications) {
             app.start();
