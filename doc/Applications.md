@@ -39,13 +39,11 @@ The hello world examples are straight forward and the documentation of the abstr
 
 # DXApp using further dependencies (external jars)
 If you need further dependencies for your applications loaded to the JVM before your dxapp is loaded,
-because your dxapp uses them, create an implementation of *AbstractApplicationDependency* and put it
-into the same jar file as your dxapp. The application loader of DXRAM scans the jar for all classes
-implementating *AbstractApplicationDependency* and loads the dependencies returned by the *getDependencies*
-method.
+because your dxapp uses them, override the *getExternalDependencies* method in your dxapp implementation.
 
 # DXApps using other DXApps
-You can also compile a dxapp package that is used by another dxapp as some sort of library. Use the main method for
-library initialization and don't run any "processing code". If main returns, the dxapp is not unloaded. However, you
-have to ensure that your "library" is loaded before your dxapp using it. Enable your dxapp to use a configuration file
-(return true on *useConfigurationFile*, see examples) and configure the *m_startOrderId* accordingly.
+You can also compile a dxapp package that is used by another dxapp as some sort of library. Override the *init*
+method to initialize your library and don't execute anything in main. If main returns, the dxapp is not unloaded.
+Furthermore, you have to ensure that your "library" is loaded before your dxapp using it. Enable your dxapp to use a
+configuration file (return true on *useConfigurationFile*, see examples) and configure the *m_initOrderId* for your
+"library" and application accordingly.
