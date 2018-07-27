@@ -46,8 +46,6 @@ import de.hhu.bsinfo.dxram.failure.FailureComponent;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.job.JobWorkStealingComponent;
-import de.hhu.bsinfo.dxram.lib.LibraryComponent;
-import de.hhu.bsinfo.dxram.lib.LibraryService;
 import de.hhu.bsinfo.dxram.lock.PeerLockComponent;
 import de.hhu.bsinfo.dxram.lock.PeerLockService;
 import de.hhu.bsinfo.dxram.log.LogComponent;
@@ -202,7 +200,6 @@ public final class DXRAM {
         p_engine.registerComponent(EventComponent.class);
         p_engine.registerComponent(FailureComponent.class);
         p_engine.registerComponent(JobWorkStealingComponent.class);
-        p_engine.registerComponent(LibraryComponent.class);
         p_engine.registerComponent(LogComponent.class);
         p_engine.registerComponent(LookupComponent.class);
         p_engine.registerComponent(MemoryManagerComponent.class);
@@ -230,7 +227,6 @@ public final class DXRAM {
         p_engine.registerService(ChunkRemoveService.class);
         p_engine.registerService(ChunkService.class);
         p_engine.registerService(JobService.class);
-        p_engine.registerService(LibraryService.class);
         p_engine.registerService(LogService.class);
         p_engine.registerService(LoggerService.class);
         p_engine.registerService(LookupService.class);

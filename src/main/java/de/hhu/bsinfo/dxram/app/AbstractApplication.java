@@ -86,13 +86,10 @@ public abstract class AbstractApplication extends Thread {
         try {
             main();
         } catch (final Exception e) {
-
             LOGGER.info("Exception in application", e);
-
         }
 
         LOGGER.info("'%s' finished", getName());
-
     }
 
     /**

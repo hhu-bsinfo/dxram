@@ -49,8 +49,7 @@ public final class DXRAMComponentOrder {
         public static final short NAMESERVICE = 13;
         public static final short JOB_WORK_STEALING = 14;
         public static final short MONITORING = 15;
-        public static final short LIBRARY = 16;
-        public static final short APPLICATION = 17;
+        public static final short APPLICATION = 16;
 
         /**
          * Static class
@@ -65,8 +64,7 @@ public final class DXRAMComponentOrder {
      */
     public static final class Shutdown {
         public static final short BOOT = Short.MIN_VALUE;
-        public static final short APPLICATION = -16;
-        public static final short LIBRARY = -15;
+        public static final short APPLICATION = -15;
         public static final short MONITORING = -14;
         public static final short JOB_WORK_STEALING = -13;
         public static final short NAMESERVICE = -12;
