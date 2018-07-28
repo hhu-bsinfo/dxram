@@ -16,7 +16,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "de.hhu.bsinfo:dxbuild:0.1.0"
+        classpath "de.hhu.bsinfo:dxbuild:0.2.0-SNAPSHOT"
     }
 }
 
@@ -28,7 +28,7 @@ plugins {
 
 apply plugin: 'dxbuild'
 group = 'de.hhu.bsinfo'
-version = '0.4.0' + (Boolean.valueOf(System.getProperty("snapshot")) ? "-SNAPSHOT" : "")
+version = '0.5.0' + (Boolean.valueOf(System.getProperty("snapshot")) ? "-SNAPSHOT" : "")
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
@@ -82,9 +82,9 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 
-    api 'de.hhu.bsinfo:dxnet:0.4.0'
-    api 'de.hhu.bsinfo:dxmon:0.1.0'
-    nativeApi 'de.hhu.bsinfo:dxutils:0.4.0'
+    api 'de.hhu.bsinfo:dxnet:0.5.0-SNAPSHOT'
+    api 'de.hhu.bsinfo:dxmon:0.2.0-SNAPSHOT'
+    nativeApi 'de.hhu.bsinfo:dxutils:0.5.0-SNAPSHOT'
 
     implementation 'org.apache.zookeeper:zookeeper:3.4.3'
 
