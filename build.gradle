@@ -16,7 +16,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "de.hhu.bsinfo:dxbuild:0.4.0-SNAPSHOT"
+        classpath "de.hhu.bsinfo:dxbuild:0.1.0"
     }
 }
 
@@ -82,9 +82,9 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 
-    api 'de.hhu.bsinfo:dxnet:0.4.0-SNAPSHOT'
-    api 'de.hhu.bsinfo:dxmon:0.4.0-SNAPSHOT'
-    nativeApi 'de.hhu.bsinfo:dxutils:0.4.0-SNAPSHOT'
+    api 'de.hhu.bsinfo:dxnet:0.4.0'
+    api 'de.hhu.bsinfo:dxmon:0.1.0'
+    nativeApi 'de.hhu.bsinfo:dxutils:0.4.0'
 
     implementation 'org.apache.zookeeper:zookeeper:3.4.3'
 
