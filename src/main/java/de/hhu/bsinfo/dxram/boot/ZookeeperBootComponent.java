@@ -607,6 +607,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 // assign own node entry
                 if (m_ownAddress.equals(entry.getAddress())) {
                     m_nodes.setOwnNodeID(nodeID);
+                    entry.setNodeID(nodeID);
                     m_bootstrap = nodeID;
 
                     LOGGER.info("Own node assigned: %s", entry);
@@ -705,6 +706,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                     }
 
                     m_nodes.setOwnNodeID(nodeID);
+                    entry.setNodeID(nodeID);
                     m_bootstrap = nodeID;
 
                     LOGGER.info("Own node assigned: %s", entry);

@@ -322,11 +322,10 @@ public final class NodesConfiguration {
 
         @Override
         public String toString() {
-            return "NodesConfigurationEntry [m_address=" + m_address + ", m_nodeID=" + m_nodeID + ", m_rack=" + m_rack +
-                    ", m_switch=" + m_switch +
-                    ", m_role=" + m_role.getAcronym() + ", m_capabilities=" + m_capabilities + ", m_online=" +
-                    m_online + ", m_availableForBackup="
-                    + m_availableForBackup + ", m_readFromFile=" + (m_readFromFile == 1 ? "true" : "false") + ']';
+            return String.format("NodesConfigurationEntry [m_address=%s, m_nodeID=%s, m_rack=%d, m_switch=%d," +
+                    "m_role=%c, m_capabilities=0x%X, m_online=%s, m_availableForBackup=%s, m_readFromFile=%s]",
+                    m_address, NodeID.toHexString(m_nodeID), m_rack, m_switch, m_role.getAcronym(), m_capabilities,
+                    m_online, m_availableForBackup, m_readFromFile == 1);
         }
 
         /**
