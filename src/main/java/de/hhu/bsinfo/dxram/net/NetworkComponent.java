@@ -270,12 +270,12 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
         // node id is not loaded from config
-        getConfig().getCoreConfig().setOwnNodeId(m_boot.getNodeID());
+        getConfig().getCoreConfig().setOwnNodeId(m_boot.getNodeId());
 
         if (!"Infiniband".equals(getConfig().getCoreConfig().getDevice())) {
             // Check if given ip address is bound to one of this node's network interfaces
             boolean found = false;
-            InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeID()).getAddress();
+            InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeId()).getAddress();
             try {
                 Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
                 outerloop:

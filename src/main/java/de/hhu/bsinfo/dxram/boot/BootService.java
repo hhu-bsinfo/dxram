@@ -94,7 +94,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
      * @return NodeID.
      */
     public short getNodeID() {
-        return m_boot.getNodeID();
+        return m_boot.getNodeId();
     }
 
     /**
@@ -103,7 +103,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
      * @return List of IDs of nodes available.
      */
     public List<Short> getOnlineNodeIDs() {
-        return m_boot.getIDsOfOnlineNodes();
+        return m_boot.getOnlineNodeIds();
     }
 
     /**
@@ -121,7 +121,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
      * @return List of IDs of nodes available.
      */
     public List<Short> getOnlineSuperpeerNodeIDs() {
-        return m_boot.getIDsOfOnlineSuperpeers();
+        return m_boot.getOnlineSuperpeerIds();
     }
 
     /**
@@ -130,7 +130,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
      * @return List of IDs of nodes available.
      */
     public List<Short> getOnlinePeerNodeIDs() {
-        return m_boot.getIDsOfOnlinePeers();
+        return m_boot.getOnlinePeerIds();
     }
 
     /**
@@ -210,11 +210,11 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
      */
     public boolean shutdownNode(final short p_nodeID, final boolean p_hardShutdown) {
         if (p_nodeID == NodeID.INVALID_ID) {
-            List<Short> nodeIds = m_boot.getIDsOfOnlineNodes();
+            List<Short> nodeIds = m_boot.getOnlineNodeIds();
 
             // shutdown peers first
             for (Short nodeId : nodeIds) {
-                if (nodeId != m_boot.getNodeID() && m_boot.getNodeRole(nodeId) == NodeRole.PEER) {
+                if (nodeId != m_boot.getNodeId() && m_boot.getNodeRole(nodeId) == NodeRole.PEER) {
                     ShutdownMessage message = new ShutdownMessage(nodeId, p_hardShutdown);
                     try {
                         m_network.sendMessage(message);
@@ -236,7 +236,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
 
             // then superpeers
             for (Short nodeId : nodeIds) {
-                if (nodeId != m_boot.getNodeID() && m_boot.getNodeRole(nodeId) == NodeRole.SUPERPEER) {
+                if (nodeId != m_boot.getNodeId() && m_boot.getNodeRole(nodeId) == NodeRole.SUPERPEER) {
                     ShutdownMessage message = new ShutdownMessage(nodeId, p_hardShutdown);
 
                     try {
@@ -254,7 +254,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
             shutdown(p_hardShutdown);
 
         } else {
-            if (p_nodeID == m_boot.getNodeID()) {
+            if (p_nodeID == m_boot.getNodeId()) {
                 shutdown(p_hardShutdown);
             } else {
                 ShutdownMessage message = new ShutdownMessage(p_nodeID, p_hardShutdown);
@@ -291,7 +291,7 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
      * @return True if successful, false otherwise.
      */
     public boolean rebootNode(final short p_nodeID) {
-        if (p_nodeID == m_boot.getNodeID()) {
+        if (p_nodeID == m_boot.getNodeId()) {
             rebootNode();
         }
 

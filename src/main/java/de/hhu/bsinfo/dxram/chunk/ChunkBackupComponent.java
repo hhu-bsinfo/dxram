@@ -74,7 +74,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
                 // This is the current backup range -> end of range is unknown at this moment
                 // -> current end is highest used LocalID
                 m_memoryManager.lockAccess();
-                p_chunkIDRanges[i + 1] = ((long) m_boot.getNodeID() << 48) + m_memoryManager.getHighestUsedLocalID();
+                p_chunkIDRanges[i + 1] = ((long) m_boot.getNodeId() << 48) + m_memoryManager.getHighestUsedLocalID();
                 m_memoryManager.unlockAccess();
             }
             numberOfChunks += p_chunkIDRanges[i + 1] - p_chunkIDRanges[i] + 1;

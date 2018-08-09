@@ -169,22 +169,22 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
     @Override
     public void scheduledJob(final AbstractJob p_job) {
         m_unfinishedJobs.incrementAndGet();
-        p_job.notifyListenersJobScheduledForExecution(m_boot.getNodeID());
+        p_job.notifyListenersJobScheduledForExecution(m_boot.getNodeId());
     }
 
     @Override
     public void executingJob(final AbstractJob p_job) {
-        p_job.notifyListenersJobStartsExecution(m_boot.getNodeID());
+        p_job.notifyListenersJobStartsExecution(m_boot.getNodeId());
     }
 
     @Override
     public void finishedJob(final AbstractJob p_job) {
         m_unfinishedJobs.decrementAndGet();
-        p_job.notifyListenersJobFinishedExecution(m_boot.getNodeID());
+        p_job.notifyListenersJobFinishedExecution(m_boot.getNodeId());
     }
 
     @Override
     public short getNodeID() {
-        return m_boot.getNodeID();
+        return m_boot.getNodeId();
     }
 }

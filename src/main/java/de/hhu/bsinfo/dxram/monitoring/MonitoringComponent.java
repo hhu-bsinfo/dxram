@@ -114,7 +114,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
                         m_event, monitoringFolder);
                 m_superpeerHandler.start();
             } else {
-                short ownNid = m_boot.getNodeID();
+                short ownNid = m_boot.getNodeId();
                 short superpeerNid = m_lookup.getResponsibleSuperpeer(ownNid);
 
                 if (superpeerNid == NodeID.INVALID_ID) {

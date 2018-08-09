@@ -183,7 +183,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                                 for (DataStructure chunk : chunks) {
                                     if (ChunkID.getCreatorID(chunk.getID()) != p_owner) {
                                         // TODO: This might crash because there is no tree for creator of this chunk
-                                        m_lookup.migrate(chunk.getID(), m_boot.getNodeID());
+                                        m_lookup.migrate(chunk.getID(), m_boot.getNodeId());
                                     }
                                 }
                             }
@@ -231,7 +231,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                             for (DataStructure chunk : chunks) {
                                 if (ChunkID.getCreatorID(chunk.getID()) != p_owner) {
                                     // TODO: This might crash because there is no tree for creator of this chunk
-                                    m_lookup.migrate(chunk.getID(), m_boot.getNodeID());
+                                    m_lookup.migrate(chunk.getID(), m_boot.getNodeId());
                                 }
                             }
                         }

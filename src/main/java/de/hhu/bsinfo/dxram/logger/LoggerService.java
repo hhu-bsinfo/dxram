@@ -159,7 +159,7 @@ public class LoggerService extends AbstractDXRAMService<LoggerServiceConfig> imp
      *         Id of the node to change the log level on
      */
     private void setLogLevel(final Level p_logLevel, final Short p_nodeId) {
-        if (m_boot.getNodeID() == p_nodeId) {
+        if (m_boot.getNodeId() == p_nodeId) {
             setLogLevel(p_logLevel);
         } else {
             SetLogLevelMessage message = new SetLogLevelMessage(p_nodeId, p_logLevel.name());

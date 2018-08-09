@@ -84,7 +84,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
         boolean ret;
 
         m_migrationLock.lock();
-        if (p_target != m_boot.getNodeID() && m_memoryManager.exists(p_chunkID)) {
+        if (p_target != m_boot.getNodeId() && m_memoryManager.exists(p_chunkID)) {
             int size;
 
             m_memoryManager.lockAccess();
@@ -127,7 +127,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
                 backupPeers = m_backup.getArrayOfBackupPeersForLocalChunks(p_chunkID);
                 if (backupPeers != null) {
                     for (int i = 0; i < backupPeers.length; i++) {
-                        if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
+                        if (backupPeers[i] != m_boot.getNodeId() && backupPeers[i] != NodeID.INVALID_ID) {
                             try {
                                 m_network.sendMessage(new RemoveMessage(backupPeers[i], new ArrayListLong(p_chunkID)));
                             } catch (final NetworkException ignored) {
@@ -194,7 +194,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
         if (p_startChunkID <= p_endChunkID) {
             chunkIDs = new long[(int) (p_endChunkID - p_startChunkID + 1)];
             m_migrationLock.lock();
-            if (p_target != m_boot.getNodeID()) {
+            if (p_target != m_boot.getNodeId()) {
                 iter = p_startChunkID;
                 while (true) {
                     // Send chunks to p_target
@@ -241,7 +241,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
                     backupPeers = m_backup.getArrayOfBackupPeersForLocalChunks(iter);
                     if (backupPeers != null) {
                         for (int i = 0; i < backupPeers.length; i++) {
-                            if (backupPeers[i] != m_boot.getNodeID() && backupPeers[i] != NodeID.INVALID_ID) {
+                            if (backupPeers[i] != m_boot.getNodeId() && backupPeers[i] != NodeID.INVALID_ID) {
                                 try {
                                     m_network.sendMessage(new RemoveMessage(backupPeers[i], chunkIDs));
                                 } catch (final NetworkException ignored) {
@@ -303,7 +303,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
             firstID = ownChunkRanges.getRangeStart(i);
             lastID = ownChunkRanges.getRangeEnd(i);
             for (localID = firstID; localID < lastID; i++) {
-                chunkID = ((long) m_boot.getNodeID() << 48) + localID;
+                chunkID = ((long) m_boot.getNodeId() << 48) + localID;
                 if (m_memoryManager.exists(chunkID)) {
                     migrate(chunkID, p_target);
                 }

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxram.boot.NodesConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -1179,12 +1180,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 
                 LOGGER.trace("Contacting 0x%X to join the ring, I am 0x%X", contactSuperpeer, m_nodeID);
 
-                joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, true);
+                NodesConfiguration.NodeEntry entry = m_boot.getNodesConfiguration().getOwnNodeEntry();
+
+                joinRequest = new JoinRequest(contactSuperpeer, entry);
                 try {
                     m_network.sendSync(joinRequest);
                 } catch (final NetworkException e) {
                     // Contact superpeer is not available, get a new contact superpeer
-                    contactSuperpeer = m_boot.getNodeIDBootstrap();
+                    contactSuperpeer = m_boot.getBootstrapId();
                     continue;
                 }
 
@@ -1358,10 +1361,14 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         boolean newNodeisSuperpeer;
 
-        LOGGER.trace("Got request: JOIN_REQUEST from 0x%X", p_joinRequest.getSource());
+        LOGGER.info("Received JoinRequest from 0x%X", p_joinRequest.getSource());
 
-        joiningNode = p_joinRequest.getNewNode();
-        newNodeisSuperpeer = p_joinRequest.nodeIsSuperpeer();
+        m_boot.getNodesConfiguration().addNode(p_joinRequest.getEntry());
+
+        LOGGER.info("Added new node (0x%X, %s)", p_joinRequest.getSource(), p_joinRequest.getEntry().getAddress());
+
+        joiningNode = p_joinRequest.getNodeId();
+        newNodeisSuperpeer = p_joinRequest.isSuperPeer();
 
         if (newNodeisSuperpeer) {
             if (OverlayHelper.isSuperpeerInRange(joiningNode, m_predecessor, m_nodeID)) {

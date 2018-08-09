@@ -58,7 +58,7 @@ public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceC
      * @return The value read at the offset of the chunk.
      */
     public byte readByte(final long p_chunkID, final int p_offset) {
-        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID()) {
+        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeId()) {
             LOGGER.error("Cannot read data from non local chunk %s", ChunkID.toHexString(p_chunkID));
             return -1;
         }
@@ -80,7 +80,7 @@ public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceC
      * @return The value read at the offset of the chunk.
      */
     public short readShort(final long p_chunkID, final int p_offset) {
-        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID()) {
+        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeId()) {
             LOGGER.error("Cannot read data from non local chunk %s", ChunkID.toHexString(p_chunkID));
             return -1;
         }
@@ -102,7 +102,7 @@ public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceC
      * @return The value read at the offset of the chunk.
      */
     public int readInt(final long p_chunkID, final int p_offset) {
-        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID()) {
+        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeId()) {
             LOGGER.error("Cannot read data from non local chunk %s", ChunkID.toHexString(p_chunkID));
             return -1;
         }
@@ -124,7 +124,7 @@ public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceC
      * @return The value read at the offset of the chunk.
      */
     public long readLong(final long p_chunkID, final int p_offset) {
-        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID()) {
+        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeId()) {
             LOGGER.error("Cannot read data from non local chunk %s", ChunkID.toHexString(p_chunkID));
             return -1;
         }
@@ -148,7 +148,7 @@ public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceC
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeByte(final long p_chunkID, final int p_offset, final byte p_value) {
-        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID()) {
+        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeId()) {
             LOGGER.error("Cannot write data to non local chunk %s", ChunkID.toHexString(p_chunkID));
             return false;
         }
@@ -172,7 +172,7 @@ public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceC
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeShort(final long p_chunkID, final int p_offset, final short p_value) {
-        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID()) {
+        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeId()) {
             LOGGER.error("Cannot write data to non local chunk %s", ChunkID.toHexString(p_chunkID));
             return false;
         }
@@ -196,7 +196,7 @@ public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceC
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeInt(final long p_chunkID, final int p_offset, final int p_value) {
-        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID()) {
+        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeId()) {
             LOGGER.error("Cannot write data to non local chunk ", ChunkID.toHexString(p_chunkID));
             return false;
         }
@@ -220,7 +220,7 @@ public class ChunkMemoryService extends AbstractDXRAMService<ChunkMemoryServiceC
      * @return True if writing chunk was successful, false otherwise.
      */
     public boolean writeLong(final long p_chunkID, final int p_offset, final long p_value) {
-        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID()) {
+        if (ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeId()) {
             LOGGER.error("Cannot write data to non local chunk ", ChunkID.toHexString(p_chunkID));
             return false;
         }

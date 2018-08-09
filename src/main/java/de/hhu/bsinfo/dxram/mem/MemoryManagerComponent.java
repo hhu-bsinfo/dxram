@@ -228,7 +228,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
             address = m_rawMemory.malloc(p_size);
             if (address >= 0) {
-                chunkID = (long) m_boot.getNodeID() << 48;
+                chunkID = (long) m_boot.getNodeId() << 48;
                 // register new chunk in cid table
                 if (!m_cidTable.set(chunkID, address)) {
                     // on demand allocation of new table failed
@@ -362,7 +362,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             if (addresses != null) {
 
                 for (int i = 0; i < lids.length; i++) {
-                    lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
+                    lids[i] = ((long) m_boot.getNodeId() << 48) + lids[i];
 
                     // register new chunk in cid table
                     if (!m_cidTable.set(lids[i], addresses[i])) {
@@ -487,7 +487,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             if (addresses != null) {
 
                 for (int i = 0; i < lids.length; i++) {
-                    lids[i] = ((long) m_boot.getNodeID() << 48) + lids[i];
+                    lids[i] = ((long) m_boot.getNodeId() << 48) + lids[i];
 
                     // register new chunk in cid table
                     if (!m_cidTable.set(lids[i], addresses[i])) {
@@ -565,7 +565,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             SOP_MALLOC.stop();
             // #endif /* STATISTICS */
             if (address >= 0) {
-                chunkID = ((long) m_boot.getNodeID() << 48) + lid;
+                chunkID = ((long) m_boot.getNodeId() << 48) + lid;
                 // register new chunk in cid table
                 if (!m_cidTable.set(chunkID, address)) {
                     // on demand allocation of new table failed
@@ -1352,7 +1352,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
      * @return whether this Chunk was migrated here or not
      */
     public boolean dataWasMigrated(final long p_chunkID) {
-        return ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeID();
+        return ChunkID.getCreatorID(p_chunkID) != m_boot.getNodeId();
     }
 
     /**
@@ -1413,7 +1413,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         // Runtime.getRuntime().load("/home/nothaas/dxram/jni/libJNINativeMemory.so");
         m_rawMemory = new SmallObjectHeap(new StorageUnsafeMemory(), getConfig().getKeyValueStoreSize().getBytes(),
                 (int) getConfig().getKeyValueStoreMaxBlockSize().getBytes());
-        m_cidTable = new CIDTable(m_boot.getNodeID());
+        m_cidTable = new CIDTable(m_boot.getNodeId());
         m_cidTable.initialize(m_rawMemory);
 
         m_lock = new AtomicInteger(0);

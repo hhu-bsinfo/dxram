@@ -116,7 +116,7 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
         dxramInfos[4] = MonitoringDXRAMInformation.getBuildType();
         boolean isPageCacheInUse = MonitoringDXRAMInformation.isPageCacheInUse();
 
-        m_sysInfos.put(m_bootComponent.getNodeID(),
+        m_sysInfos.put(m_bootComponent.getNodeId(),
                 new MonitoringSysDxramWrapper(sysInfos, dxramInfos, isPageCacheInUse));
 
         while (!m_shouldShutdown) {

@@ -17,6 +17,8 @@
 package de.hhu.bsinfo.dxram.util;
 
 import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
+import org.codehaus.jackson.annotate.JsonCreator;
+import org.codehaus.jackson.annotate.JsonValue;
 
 /**
  * Represents the node roles.
@@ -65,6 +67,7 @@ public enum NodeRole {
      *         String to parse.
      * @return Role node of string.
      */
+    @JsonCreator
     public static NodeRole toNodeRole(final String p_str) {
         String str = p_str.toLowerCase();
 
@@ -113,6 +116,7 @@ public enum NodeRole {
     // Methods
 
     @Override
+    @JsonValue
     public String toString() {
         if (equals(PEER)) {
             return PEER_STR;

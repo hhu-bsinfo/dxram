@@ -31,7 +31,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentConfig> {
     protected final Logger LOGGER;
 
-    private T m_config;
+    protected T m_config;
 
     private final short m_priorityInit;
     private final short m_priorityShutdown;

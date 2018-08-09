@@ -237,7 +237,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
         // setup bootstrapping for other slaves
         // use the nameservice to store our node id
-        m_nameservice.register(ChunkID.getChunkID(m_boot.getNodeID(), ChunkID.INVALID_ID),
+        m_nameservice.register(ChunkID.getChunkID(m_boot.getNodeId(), ChunkID.INVALID_ID),
                 m_nameserviceMasterNodeIdKey);
 
         m_state = State.STATE_IDLE;
@@ -436,7 +436,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      */
     private void checkAllSlavesOnline() {
         // check if slaves are still alive
-        List<Short> onlineNodesList = m_boot.getIDsOfOnlineNodes();
+        List<Short> onlineNodesList = m_boot.getOnlineNodeIds();
 
         m_joinLock.lock();
         Iterator<Short> it = m_signedOnSlaves.iterator();

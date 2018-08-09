@@ -107,7 +107,7 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
 
             if (backupPeers != null) {
                 for (BackupPeer peer : backupPeers) {
-                    if (peer != null && peer.getNodeID() != m_boot.getNodeID()) {
+                    if (peer != null && peer.getNodeID() != m_boot.getNodeId()) {
 
                         LOGGER.trace("Logging 0x%x to %s", p_dataStructure.getID(),
                                 NodeID.toHexString(peer.getNodeID()));

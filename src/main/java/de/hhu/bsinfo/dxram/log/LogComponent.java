@@ -158,7 +158,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      * @return the header size
      */
     public short getApproxHeaderSize(final short p_nodeID, final long p_localID, final int p_size) {
-        return AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(m_boot.getNodeID() != p_nodeID, p_localID, p_size);
+        return AbstractSecLogEntryHeader.getApproxSecLogHeaderSize(m_boot.getNodeId() != p_nodeID, p_localID, p_size);
     }
 
     /**
@@ -468,7 +468,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
 
         m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup();
         if (m_loggingIsActive) {
-            m_nodeID = m_boot.getNodeID();
+            m_nodeID = m_boot.getNodeId();
             m_backupDirectory = m_backup.getConfig().getBackupDirectory();
             m_secondaryLogSize = m_backup.getConfig().getBackupRangeSize().getBytes() * 2;
 

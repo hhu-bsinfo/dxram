@@ -43,7 +43,7 @@ class NodeMappings implements NodeMap {
 
     @Override
     public short getOwnNodeID() {
-        return m_boot.getNodeID();
+        return m_boot.getNodeId();
     }
 
     @Override

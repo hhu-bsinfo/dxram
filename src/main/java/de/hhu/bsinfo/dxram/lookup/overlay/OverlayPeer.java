@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxram.boot.NodesConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -1426,12 +1427,15 @@ public class OverlayPeer implements MessageReceiver {
 
             LOGGER.trace("Contacting 0x%X to get the responsible superpeer, I am 0x%X", contactSuperpeer, m_nodeID);
 
-            joinRequest = new JoinRequest(contactSuperpeer, m_nodeID, false);
+            NodesConfiguration.NodeEntry entry = m_boot.getNodesConfiguration().getOwnNodeEntry();
+
+            joinRequest = new JoinRequest(contactSuperpeer, entry);
+
             try {
                 m_network.sendSync(joinRequest);
             } catch (final NetworkException e) {
                 // Contact superpeer is not available, get a new contact superpeer
-                contactSuperpeer = m_boot.getNodeIDBootstrap();
+                contactSuperpeer = m_boot.getBootstrapId();
                 continue;
             }
 

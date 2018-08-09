@@ -30,7 +30,6 @@ import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
@@ -688,7 +687,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     public boolean finishInitComponent() {
 
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            InetSocketAddress socketAddress = m_boot.getNodeAddress(m_boot.getNodeID());
+            InetSocketAddress socketAddress = m_boot.getNodeAddress(m_boot.getNodeId());
 
             int capabilities = 0;
 
@@ -757,7 +756,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         }
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-            m_superpeer = new OverlaySuperpeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(),
+            m_superpeer = new OverlaySuperpeer(m_boot.getNodeId(), m_boot.getBootstrapId(),
                     m_boot.getNumberOfAvailableSuperpeers(),
                     (int) getConfig().getStabilizationBreakTime(),
                     p_config.getServiceConfig(SynchronizationServiceConfig.class).getMaxBarriersPerSuperpeer(),
@@ -766,7 +765,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
                     p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot, m_network,
                     m_event);
         } else {
-            m_peer = new OverlayPeer(m_boot.getNodeID(), m_boot.getNodeIDBootstrap(),
+            m_peer = new OverlayPeer(m_boot.getNodeId(), m_boot.getBootstrapId(),
                     m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_network, m_event);
             m_event.registerListener(this, NameserviceCacheEntryUpdateEvent.class);
         }

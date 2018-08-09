@@ -174,7 +174,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         }
 
         // own status?
-        if (p_nodeID == m_boot.getNodeID()) {
+        if (p_nodeID == m_boot.getNodeId()) {
             status = getStatus();
         } else {
             // grab from remote
@@ -572,7 +572,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
                         if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
                             writeLock = true;
                         }
-                        m_lock.unlock(p_chunks[i + p_offset].getID(), m_boot.getNodeID(), writeLock);
+                        m_lock.unlock(p_chunks[i + p_offset].getID(), m_boot.getNodeId(), writeLock);
                     }
 
                     if (m_backup.isActive()) {
@@ -616,7 +616,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
         for (Entry<Short, ArrayList<DataStructure>> entry : remoteChunksByPeers.entrySet()) {
             short peer = entry.getKey();
 
-            if (peer == m_boot.getNodeID()) {
+            if (peer == m_boot.getNodeId()) {
                 // local put, migrated data to current node
                 try {
                     m_memoryManager.lockAccess();
@@ -799,7 +799,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             short peer = peerWithChunks.getKey();
             ArrayList<DataStructure> remoteChunks = peerWithChunks.getValue();
 
-            if (peer == m_boot.getNodeID()) {
+            if (peer == m_boot.getNodeId()) {
                 // local get, migrated data to current node
                 try {
                     m_memoryManager.lockAccess();
@@ -951,7 +951,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             return null;
         }
 
-        if (p_nodeID == m_boot.getNodeID()) {
+        if (p_nodeID == m_boot.getNodeId()) {
             list = getAllLocalChunkIDRanges();
         } else {
             GetLocalChunkIDRangesRequest request = new GetLocalChunkIDRangesRequest(p_nodeID);
@@ -996,7 +996,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             return null;
         }
 
-        if (p_nodeID == m_boot.getNodeID()) {
+        if (p_nodeID == m_boot.getNodeId()) {
             list = getAllMigratedChunkIDRanges();
         } else {
             GetMigratedChunkIDRangesRequest request = new GetMigratedChunkIDRangesRequest(p_nodeID);
@@ -1243,7 +1243,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             }
 
             for (long chunkID : chunkIDs) {
-                m_lock.unlock(chunkID, m_boot.getNodeID(), writeLock);
+                m_lock.unlock(chunkID, m_boot.getNodeId(), writeLock);
             }
         }
 

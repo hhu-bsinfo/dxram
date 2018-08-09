@@ -137,7 +137,7 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
                         writeLock = true;
                     }
 
-                    m_lock.unlock(dataStructure.getID(), m_boot.getNodeID(), writeLock);
+                    m_lock.unlock(dataStructure.getID(), m_boot.getNodeId(), writeLock);
                 }
             } else {
                 // remote or migrated, figure out location and sort by peers
@@ -172,7 +172,7 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
         for (Entry<Short, ArrayList<DataStructure>> entry : remoteChunksByPeers.entrySet()) {
             short peer = entry.getKey();
 
-            if (peer == m_boot.getNodeID()) {
+            if (peer == m_boot.getNodeId()) {
                 // local put, migrated data to current node
                 m_memoryManager.lockAccess();
                 for (final DataStructure dataStructure : entry.getValue()) {
@@ -330,7 +330,7 @@ public class ChunkAsyncService extends AbstractDXRAMService<ChunkAsyncServiceCon
             }
 
             for (int i = 0; i < chunkIDs.length; i++) {
-                m_lock.unlock(chunkIDs[i], m_boot.getNodeID(), writeLock);
+                m_lock.unlock(chunkIDs[i], m_boot.getNodeId(), writeLock);
             }
         }
 

@@ -153,7 +153,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
             short peer = peerWithChunks.getKey();
             ArrayList<Integer> remoteChunkIDIndexes = peerWithChunks.getValue();
 
-            if (peer == m_boot.getNodeID()) {
+            if (peer == m_boot.getNodeId()) {
                 // local get, migrated data to current node
                 try {
                     m_memoryManager.lockAccess();
@@ -325,7 +325,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
                         if (p_chunkUnlockOperation == ChunkLockOperation.WRITE_LOCK) {
                             writeLock = true;
                         }
-                        m_lock.unlock(p_chunks[i + p_offset].getID(), m_boot.getNodeID(), writeLock);
+                        m_lock.unlock(p_chunks[i + p_offset].getID(), m_boot.getNodeId(), writeLock);
                     }
 
                     if (m_backup.isActive()) {
@@ -369,7 +369,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
         for (Map.Entry<Short, ArrayList<ChunkAnon>> entry : remoteChunksByPeers.entrySet()) {
             short peer = entry.getKey();
 
-            if (peer == m_boot.getNodeID()) {
+            if (peer == m_boot.getNodeId()) {
                 // local put, migrated data to current node
                 try {
                     m_memoryManager.lockAccess();
@@ -656,7 +656,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
             }
 
             for (long chunkID : chunkIDs) {
-                m_lock.unlock(chunkID, m_boot.getNodeID(), writeLock);
+                m_lock.unlock(chunkID, m_boot.getNodeId(), writeLock);
             }
         }
 

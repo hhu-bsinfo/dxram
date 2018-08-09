@@ -214,7 +214,7 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
      * @return Monitornig Data
      */
     public MonitoringDataStructure getMonitoringDataFromPeer(final short p_nid) {
-        if (m_boot.getNodeID() == p_nid) { // will never be the case because only terminal will call this method
+        if (m_boot.getNodeId() == p_nid) { // will never be the case because only terminal will call this method
             return m_monitor.getCurrentMonitoringData();
         }
 
@@ -222,7 +222,7 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
             return null;
         }
 
-        if (!m_boot.getIDsOfOnlineSuperpeers().contains(p_nid)) {
+        if (!m_boot.getOnlineSuperpeerIds().contains(p_nid)) {
             MonitoringDataRequest request = new MonitoringDataRequest(p_nid);
 
             try {

@@ -103,7 +103,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
     public long pushJob(final AbstractJob p_job) {
         SOP_CREATE.start();
 
-        long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
+        long jobId = JobID.createJobID(m_boot.getNodeId(), m_jobIDCounter.incrementAndGet());
 
         // nasty way to access the services...feel free to have a better solution for this
         p_job.setServiceAccessor(getServiceAccessor());
@@ -131,7 +131,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
     public long pushJobRemote(final AbstractJob p_job, final short p_nodeID) {
         SOP_REMOTE_SUBMIT.start();
 
-        long jobId = JobID.createJobID(m_boot.getNodeID(), m_jobIDCounter.incrementAndGet());
+        long jobId = JobID.createJobID(m_boot.getNodeId(), m_jobIDCounter.incrementAndGet());
         p_job.setID(jobId);
 
         byte mergedCallbackBitMask = 0;
@@ -193,10 +193,10 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
             }
 
             // now check for remote peers
-            List<Short> peers = m_boot.getIDsOfOnlinePeers();
+            List<Short> peers = m_boot.getOnlinePeerIds();
             for (short peer : peers) {
                 // filter own node id
-                if (peer == m_boot.getNodeID()) {
+                if (peer == m_boot.getNodeId()) {
                     continue;
                 }
 

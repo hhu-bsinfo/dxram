@@ -20,7 +20,8 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxram.boot.NodesConfiguration;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
  * Join Request
@@ -30,8 +31,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
 public class JoinRequest extends Request {
 
     // Attributes
-    private short m_newNode;
-    private boolean m_nodeIsSuperpeer;
+    private NodesConfiguration.NodeEntry m_entry;
 
     // Constructors
 
@@ -40,28 +40,17 @@ public class JoinRequest extends Request {
      */
     public JoinRequest() {
         super();
-
-        m_newNode = NodeID.INVALID_ID;
-        m_nodeIsSuperpeer = false;
+        m_entry = new NodesConfiguration.NodeEntry(false);
     }
 
     /**
-     * Creates an instance of JoinRequest
+     * Creates an instance of JoinRequest.
      *
-     * @param p_destination
-     *         the destination
-     * @param p_newNode
-     *         the NodeID of the new node
-     * @param p_nodeIsSuperpeer
-     *         wether the new node is a superpeer or not
+     *  @param p_destination The destination's node id.
      */
-    public JoinRequest(final short p_destination, final short p_newNode, final boolean p_nodeIsSuperpeer) {
+    public JoinRequest(final short p_destination, final NodesConfiguration.NodeEntry p_entry) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST);
-
-        assert p_newNode != 0;
-
-        m_newNode = p_newNode;
-        m_nodeIsSuperpeer = p_nodeIsSuperpeer;
+        m_entry = p_entry;
     }
 
     // Getters
@@ -71,8 +60,8 @@ public class JoinRequest extends Request {
      *
      * @return the NodeID
      */
-    public final short getNewNode() {
-        return m_newNode;
+    public final short getNodeId() {
+        return m_entry.getNodeID();
     }
 
     /**
@@ -80,26 +69,27 @@ public class JoinRequest extends Request {
      *
      * @return true if the new node is a superpeer, false otherwise
      */
-    public final boolean nodeIsSuperpeer() {
-        return m_nodeIsSuperpeer;
+    public final boolean isSuperPeer() {
+        return m_entry.getRole() == NodeRole.SUPERPEER;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Short.BYTES + Byte.BYTES;
+        return m_entry.sizeofObject();
     }
 
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeShort(m_newNode);
-        p_exporter.writeBoolean(m_nodeIsSuperpeer);
+        m_entry.exportObject(p_exporter);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_newNode = p_importer.readShort(m_newNode);
-        m_nodeIsSuperpeer = p_importer.readBoolean(m_nodeIsSuperpeer);
+        m_entry.importObject(p_importer);
     }
 
+    public NodesConfiguration.NodeEntry getEntry() {
+        return m_entry;
+    }
 }

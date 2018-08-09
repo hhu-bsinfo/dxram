@@ -16,6 +16,7 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
@@ -23,11 +24,7 @@ import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
-import de.hhu.bsinfo.dxutils.serialization.Exportable;
-import de.hhu.bsinfo.dxutils.serialization.Exporter;
-import de.hhu.bsinfo.dxutils.serialization.Importable;
-import de.hhu.bsinfo.dxutils.serialization.Importer;
-import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxutils.serialization.*;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
@@ -41,12 +38,13 @@ public final class NodesConfiguration {
 
     private NodeEntry[] m_nodes = new NodeEntry[NodeID.MAX_ID + 1];
     private short m_ownID = NodeID.INVALID_ID;
+    private final NodeInformationProvider m_provider;
 
     /**
      * Creates an instance of NodesConfiguration
      */
-    NodesConfiguration() {
-
+    NodesConfiguration(final NodeInformationProvider p_nodeInformationProvider) {
+        m_provider = p_nodeInformationProvider;
     }
 
     /**
@@ -82,7 +80,7 @@ public final class NodesConfiguration {
      *
      * @return NodeEntry or null if invalid.
      */
-    NodeEntry getOwnNodeEntry() {
+    public NodeEntry getOwnNodeEntry() {
         return m_nodes[m_ownID & 0xFFFF];
     }
 
@@ -111,6 +109,10 @@ public final class NodesConfiguration {
      * @return NodeEntry containing information about the node or null if it does not exist.
      */
     NodeEntry getNode(final short p_nodeID) {
+        if (m_nodes[p_nodeID & 0xFFFF] == null) {
+            m_nodes[p_nodeID & 0xFFFF] = m_provider.getNodeEntry(p_nodeID);
+        }
+
         return m_nodes[p_nodeID & 0xFFFF];
     }
 
@@ -139,7 +141,7 @@ public final class NodesConfiguration {
      *         the configured node
      * @return whether this is a new entry or not
      */
-    synchronized boolean addNode(final NodeEntry p_entry) {
+    public synchronized boolean addNode(final NodeEntry p_entry) {
         short nodeID = p_entry.getNodeID();
         NodeEntry prev = m_nodes[nodeID & 0xFFFF];
 
@@ -196,10 +198,10 @@ public final class NodesConfiguration {
          * initial configuration
          */
         @Expose
-        private byte m_readFromFile = 1;
+        private byte m_readFromFile = 0;
 
         private short m_nodeID = NodeID.INVALID_ID;
-        private boolean m_online = false;
+        private boolean m_online;
         private boolean m_availableForBackup = true;
 
         /**
@@ -238,7 +240,7 @@ public final class NodesConfiguration {
          * @param p_isOnline
          *         True if the node is only, false otherwise
          */
-        NodeEntry(final IPV4Unit p_address, final short p_nodeID, final short p_rack, final short p_switch,
+        public NodeEntry(final IPV4Unit p_address, final short p_nodeID, final short p_rack, final short p_switch,
                 final NodeRole p_role, int p_capabilities, final boolean p_readFromFile,
                 final boolean p_availableForBackup, final boolean p_isOnline) {
             assert p_rack >= 0;
@@ -369,12 +371,13 @@ public final class NodesConfiguration {
         @Override
         public void exportObject(Exporter p_exporter) {
             p_exporter.writeString(m_address.getAddressStr());
+            p_exporter.writeBoolean(m_availableForBackup);
+            p_exporter.writeBoolean(m_online);
             p_exporter.writeShort(m_nodeID);
             p_exporter.writeShort((short) m_role.getAcronym());
-            p_exporter.writeInt(m_capabilities);
             p_exporter.writeShort(m_rack);
             p_exporter.writeShort(m_switch);
-            p_exporter.writeBoolean(m_availableForBackup);
+            p_exporter.writeInt(m_capabilities);
         }
 
         @Override
@@ -382,19 +385,36 @@ public final class NodesConfiguration {
             m_addrStr = p_importer.readString(m_addrStr);
             String[] splitAddr = m_addrStr.split(":");
             m_address = new IPV4Unit(splitAddr[0], Integer.parseInt(splitAddr[1]));
+            m_availableForBackup = p_importer.readBoolean(m_availableForBackup);
+            m_online = p_importer.readBoolean(m_online);
             m_nodeID = p_importer.readShort(m_nodeID);
             m_acr = p_importer.readShort(m_acr);
             m_role = NodeRole.getRoleByAcronym((char) m_acr);
-            m_capabilities = p_importer.readInt(m_capabilities);
             m_rack = p_importer.readShort(m_rack);
             m_switch = p_importer.readShort(m_switch);
-            m_availableForBackup = p_importer.readBoolean(m_availableForBackup);
+            m_capabilities = p_importer.readInt(m_capabilities);
         }
 
         @Override
         public int sizeofObject() {
-            return ObjectSizeUtil.sizeofString(m_address.getAddressStr()) + 4 * Short.BYTES + Byte.BYTES +
-                    Integer.BYTES;
+            return ObjectSizeUtil.sizeofString(m_address.getAddressStr()) + ObjectSizeUtil.sizeofBoolean() * 2 +
+                    Short.BYTES * 4 + Integer.BYTES;
+        }
+
+        byte[] toByteArray() {
+            ByteBuffer buffer = ByteBuffer.allocate(sizeofObject());
+            ByteBufferImExporter exporter = new ByteBufferImExporter(buffer);
+            exporter.exportObject(this);
+
+            return buffer.array();
+        }
+
+        static NodeEntry fromByteArray(final byte[] p_bytes) {
+            ByteBufferImExporter importer = new ByteBufferImExporter(ByteBuffer.wrap(p_bytes));
+            NodeEntry nodeEntry = new NodeEntry(false);
+            nodeEntry.importObject(importer);
+
+            return nodeEntry;
         }
     }
 }

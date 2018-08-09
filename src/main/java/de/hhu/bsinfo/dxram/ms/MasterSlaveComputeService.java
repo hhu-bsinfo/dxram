@@ -165,7 +165,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         AbstractComputeMSBase.State state = m_computeMSInstance.getComputeState();
         int tasksProcessed = ((ComputeMaster) m_computeMSInstance).getTotalTaskScriptsProcessed();
 
-        return new StatusMaster(m_boot.getNodeID(), state, slaves, numTasksInQueue, tasksProcessed);
+        return new StatusMaster(m_boot.getNodeId(), state, slaves, numTasksInQueue, tasksProcessed);
     }
 
     /**
@@ -301,7 +301,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         // remember task for remote callbacks
         TaskScriptState state = new TaskScriptState(p_taskScript);
         state.assignTaskId(response.getAssignedPayloadId());
-        state.setNodeIdSubmitted(m_boot.getNodeID());
+        state.setNodeIdSubmitted(m_boot.getNodeId());
         state.registerTaskListener(p_listener);
         m_remoteTasks.put(state.getTaskScriptIdAssigned(), state);
 

@@ -119,7 +119,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                 }
 
                 if (m_memoryManager.exists(p_chunkIDs[i])) {
-                    if (ChunkID.getCreatorID(p_chunkIDs[i]) != m_boot.getNodeID()) {
+                    if (ChunkID.getCreatorID(p_chunkIDs[i]) != m_boot.getNodeId()) {
                         // sort by initial owner/creator for chunk ID reuse
                         ArrayListLong reuseChunkIDsOfPeer = reuseChunkIDsByPeers.computeIfAbsent(ChunkID.getCreatorID(
                                 p_chunkIDs[i]), a -> new ArrayListLong());
@@ -203,7 +203,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
             short peer = peerWithChunks.getKey();
             ArrayListLong remoteChunks = peerWithChunks.getValue();
 
-            if (peer == m_boot.getNodeID()) {
+            if (peer == m_boot.getNodeId()) {
                 // local remove, migrated data to current node
                 // remove migrated chunks from superpeer overlay first, so cannot be found before being deleted
                 m_lookup.removeChunkIDs(remoteChunks);
@@ -251,7 +251,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
 
                 backupPeers = BackupRange.convert(backupPeersAsLong);
                 for (int i = 0; i < backupPeers.length; i++) {
-                    if (backupPeers[i] != null && backupPeers[i].getNodeID() != m_boot.getNodeID()) {
+                    if (backupPeers[i] != null && backupPeers[i].getNodeID() != m_boot.getNodeId()) {
                         try {
                             m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(
                                     backupPeers[i].getNodeID(), ids));
@@ -511,7 +511,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
                     } else {
                         m_backup.deregisterChunk(p_chunkIDs[i], size);
 
-                        if (ChunkID.getCreatorID(p_chunkIDs[i]) != m_boot.getNodeID()) {
+                        if (ChunkID.getCreatorID(p_chunkIDs[i]) != m_boot.getNodeId()) {
                             // sort by initial owner/creator for chunk ID reuse
                             ArrayListLong reuseChunkIDsOfPeer = reuseChunkIDsByPeers.computeIfAbsent(
                                     ChunkID.getCreatorID(p_chunkIDs[i]), a -> new ArrayListLong());
@@ -551,7 +551,7 @@ public class ChunkRemoveService extends AbstractDXRAMService<ChunkRemoveServiceC
 
                     backupPeers = BackupRange.convert(backupPeersAsLong);
                     for (int i = 0; i < backupPeers.length; i++) {
-                        if (backupPeers[i] != null && backupPeers[i].getNodeID() != m_boot.getNodeID()) {
+                        if (backupPeers[i] != null && backupPeers[i].getNodeID() != m_boot.getNodeId()) {
                             try {
                                 m_network.sendMessage(new de.hhu.bsinfo.dxram.log.messages.RemoveMessage(
                                         backupPeers[i].getNodeID(), ids));

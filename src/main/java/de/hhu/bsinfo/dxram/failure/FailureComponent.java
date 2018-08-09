@@ -329,7 +329,7 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
             // This is a peer
             if (roleOfFailedNode == NodeRole.PEER) {
                 if (!p_remoteDetect) {
-                    short responsibleSuperpeer = m_lookup.getResponsibleSuperpeer(m_boot.getNodeID());
+                    short responsibleSuperpeer = m_lookup.getResponsibleSuperpeer(m_boot.getNodeId());
 
                     LOGGER.debug("Detected failure of 0x%X. Informing own superpeer 0x%X.", p_nodeID,
                             responsibleSuperpeer);

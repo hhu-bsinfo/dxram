@@ -86,7 +86,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
 
     @Override
     public ArrayList<LockedChunkEntry> getLockedList(final short p_nodeId) {
-        if (p_nodeId == m_boot.getNodeID()) {
+        if (p_nodeId == m_boot.getNodeId()) {
             return getLockedList();
         }
 
@@ -117,7 +117,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
         if (m_memoryManager.exists(p_chunkID)) {
             m_memoryManager.unlockAccess();
 
-            if (!m_lock.lock(p_chunkID, m_boot.getNodeID(), p_writeLock, p_timeout)) {
+            if (!m_lock.lock(p_chunkID, m_boot.getNodeId(), p_writeLock, p_timeout)) {
                 err = ErrorCode.LOCK_TIMEOUT;
             }
         } else {
@@ -130,9 +130,9 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
             } else {
 
                 short peer = lookupRange.getPrimaryPeer();
-                if (peer == m_boot.getNodeID()) {
+                if (peer == m_boot.getNodeId()) {
                     // local lock
-                    if (!m_lock.lock(p_chunkID, m_boot.getNodeID(), p_writeLock, p_timeout)) {
+                    if (!m_lock.lock(p_chunkID, m_boot.getNodeId(), p_writeLock, p_timeout)) {
                         err = ErrorCode.LOCK_TIMEOUT;
                     }
                 } else {
@@ -199,7 +199,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
         if (m_memoryManager.exists(p_chunkID)) {
             m_memoryManager.unlockAccess();
 
-            if (!m_lock.unlock(p_chunkID, m_boot.getNodeID(), p_writeLock)) {
+            if (!m_lock.unlock(p_chunkID, m_boot.getNodeId(), p_writeLock)) {
                 return ErrorCode.INVALID_PARAMETER;
             }
         } else {
@@ -212,16 +212,16 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
             } else {
 
                 short peer = lookupRange.getPrimaryPeer();
-                if (peer == m_boot.getNodeID()) {
+                if (peer == m_boot.getNodeId()) {
                     // local unlock
-                    if (!m_lock.unlock(p_chunkID, m_boot.getNodeID(), p_writeLock)) {
+                    if (!m_lock.unlock(p_chunkID, m_boot.getNodeId(), p_writeLock)) {
                         return ErrorCode.INVALID_PARAMETER;
                     }
                 } else {
                     short primaryPeer = m_lookup.getLookupRange(p_chunkID).getPrimaryPeer();
-                    if (primaryPeer == m_boot.getNodeID()) {
+                    if (primaryPeer == m_boot.getNodeId()) {
                         // Local release
-                        if (!m_lock.unlock(p_chunkID, m_boot.getNodeID(), p_writeLock)) {
+                        if (!m_lock.unlock(p_chunkID, m_boot.getNodeId(), p_writeLock)) {
                             return ErrorCode.INVALID_PARAMETER;
                         }
                     } else {
@@ -348,7 +348,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
 
         // the host handles the timeout as we don't want to block the message receiver thread
         // for too long, execute a tryLock instead
-        success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeID(),
+        success = m_lock.lock(ChunkID.getLocalID(p_request.getChunkID()), m_boot.getNodeId(),
                 p_request.isWriteLockOperation(), (int) getConfig().getRemoteLockTryTimeout().getMs());
 
         try {
@@ -373,7 +373,7 @@ public class PeerLockService extends AbstractLockService<PeerLockServiceConfig>
     private void incomingUnlockMessage(final UnlockMessage p_message) {
         SOP_INCOMING_UNLOCK.start();
 
-        m_lock.unlock(ChunkID.getLocalID(p_message.getChunkID()), m_boot.getNodeID(), p_message.isWriteLockOperation());
+        m_lock.unlock(ChunkID.getLocalID(p_message.getChunkID()), m_boot.getNodeId(), p_message.isWriteLockOperation());
 
         SOP_INCOMING_UNLOCK.stop();
     }

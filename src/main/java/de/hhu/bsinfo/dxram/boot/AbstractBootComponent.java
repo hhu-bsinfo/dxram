@@ -34,7 +34,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
+public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConfig> extends AbstractDXRAMComponent<T> implements NodeInformationProvider {
     /**
      * Constructor
      *
@@ -60,7 +60,7 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      *
      * @return List of IDs of peers available for backup without own ID.
      */
-    public abstract List<BackupPeer> getIDsOfAvailableBackupPeers();
+    public abstract List<BackupPeer> getAvailableBackuppeerIds();
 
     /**
      * Get node entries of all available (online) nodes including the own.
@@ -68,6 +68,13 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      * @return List of IDs of nodes available.
      */
     public abstract ArrayList<NodesConfiguration.NodeEntry> getOnlineNodes();
+
+    /**
+     * Collects all nodes known to this node and returns them within an list.
+     *
+     * @return All known nodes
+     */
+    public abstract NodesConfiguration getNodesConfiguration();
 
     /**
      * Put node entries of available (online) nodes.
@@ -79,21 +86,21 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      *
      * @return List of IDs of nodes available.
      */
-    public abstract List<Short> getIDsOfOnlineNodes();
+    public abstract List<Short> getOnlineNodeIds();
 
     /**
      * Get IDs of all available (online) peer nodes except the own.
      *
      * @return List of IDs of nodes available without own ID.
      */
-    public abstract List<Short> getIDsOfOnlinePeers();
+    public abstract List<Short> getOnlinePeerIds();
 
     /**
      * Get IDs of all available (online) superpeer nodes except the own.
      *
      * @return List of IDs of nodes available without own ID.
      */
-    public abstract List<Short> getIDsOfOnlineSuperpeers();
+    public abstract List<Short> getOnlineSuperpeerIds();
 
     /**
      * Collects all node ids supporting the specified capabilities.
@@ -109,7 +116,7 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      *
      * @return Own NodeID.
      */
-    public abstract short getNodeID();
+    public abstract short getNodeId();
 
     /**
      * Get the role, which is currently assigned to this running instance.
@@ -159,25 +166,25 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
      *
      * @return Node ID assigned for bootstrapping or -1 if no bootstrap assigned/available.
      */
-    public abstract short getNodeIDBootstrap();
+    public abstract short getBootstrapId();
 
     /**
      * Check if a specific node is online.
      *
-     * @param p_nodeID
+     * @param p_nodeId
      *         Node to check.
      * @return True if online, false offline.
      */
-    public abstract boolean isNodeOnline(short p_nodeID);
+    public abstract boolean isNodeOnline(short p_nodeId);
 
     /**
      * Get the role of another nodeID.
      *
-     * @param p_nodeID
+     * @param p_nodeId
      *         Node id of the node.
      * @return Role of other nodeID or null if node does not exist.
      */
-    public abstract NodeRole getNodeRole(short p_nodeID);
+    public abstract NodeRole getNodeRole(short p_nodeId);
 
     /**
      * Returns the capabilities of the specified node.
@@ -191,28 +198,28 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
     /**
      * Get the IP and port of another node.
      *
-     * @param p_nodeID
+     * @param p_nodeId
      *         Node ID of the node.
      * @return IP and port of the specified node or an invalid address if not available.
      */
-    public abstract InetSocketAddress getNodeAddress(short p_nodeID);
+    public abstract InetSocketAddress getNodeAddress(short p_nodeId);
 
     /**
      * Check if a node is available/exists.
      *
-     * @param p_nodeID
+     * @param p_nodeId
      *         Node ID to check.
      * @return True if available, false otherwise.
      */
-    public abstract boolean nodeAvailable(short p_nodeID);
+    public abstract boolean nodeAvailable(short p_nodeId);
 
     /**
      * Report that we detected a node failure.
      *
-     * @param p_nodeID
+     * @param p_nodeId
      *         the failed node
      * @param p_role
      *         failed node's role
      */
-    public abstract void singleNodeCleanup(short p_nodeID, NodeRole p_role);
+    public abstract void singleNodeCleanup(short p_nodeId, NodeRole p_role);
 }

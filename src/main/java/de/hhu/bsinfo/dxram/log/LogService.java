@@ -71,7 +71,7 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      * @return the current utilization
      */
     public String getCurrentUtilization(final short p_nid) {
-        if (p_nid == m_boot.getNodeID()) {
+        if (p_nid == m_boot.getNodeId()) {
             return getCurrentUtilization();
         } else {
             GetUtilizationRequest request = new GetUtilizationRequest(p_nid);
