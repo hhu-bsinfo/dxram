@@ -1427,9 +1427,8 @@ public class OverlayPeer implements MessageReceiver {
 
             LOGGER.trace("Contacting 0x%X to get the responsible superpeer, I am 0x%X", contactSuperpeer, m_nodeID);
 
-            NodesConfiguration.NodeEntry entry = m_boot.getNodesConfiguration().getOwnNodeEntry();
 
-            joinRequest = new JoinRequest(contactSuperpeer, entry);
+            joinRequest = new JoinRequest(contactSuperpeer, m_boot.getDetails());
 
             try {
                 m_network.sendSync(joinRequest);
@@ -1447,7 +1446,6 @@ public class OverlayPeer implements MessageReceiver {
         m_mySuperpeer = joinResponse.getSource();
         OverlayHelper.insertSuperpeer(m_mySuperpeer, m_superpeers);
 
-        m_boot.putOnlineNodes(joinResponse.getOnlineNodes());
 
         LOGGER.trace("Exiting joinSuperpeerOverlay");
 

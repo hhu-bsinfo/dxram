@@ -189,17 +189,6 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
     }
 
     /**
-     * Check if a node is available/exists.
-     *
-     * @param p_nodeID
-     *         Node ID to check.
-     * @return True if available, false otherwise.
-     */
-    public boolean nodeAvailable(final short p_nodeID) {
-        return m_boot.nodeAvailable(p_nodeID);
-    }
-
-    /**
      * Shutdown a single node or all nodes.
      *
      * @param p_nodeID

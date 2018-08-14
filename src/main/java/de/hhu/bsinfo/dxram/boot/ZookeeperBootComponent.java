@@ -16,21 +16,17 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.atomic.AtomicValue;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicInteger;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.zookeeper.data.Stat;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
@@ -41,15 +37,14 @@ import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
-import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxram.util.ZooKeeperHandler;
 import de.hhu.bsinfo.dxutils.BloomFilter;
 import de.hhu.bsinfo.dxutils.CRC16;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -60,27 +55,25 @@ import org.jetbrains.annotations.Nullable;
  */
 public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig>
         implements EventListener<AbstractEvent>, NodeRegistry.Listener {
-    // component dependencies
-    private EventComponent m_event;
-    private LookupComponent m_lookup;
 
-    // private state
-    private IPV4Unit m_ownAddress;
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private EventComponent m_event;
+
+    private short m_id = NodeID.INVALID_ID;
+    private IPV4Unit m_address;
     private NodeRole m_nodeRole;
-    private ZooKeeperHandler m_zookeeper;
-    private short m_bootstrap = NodeID.INVALID_ID;
+
+    private NodeRegistry.NodeDetails m_details;
+
     private BloomFilter m_bloomFilter;
-    private NodesConfiguration m_nodes;
 
     private NodeRegistry m_nodeRegistry;
 
-    private boolean m_shutdown;
-
-    private static final int COUNTER_VALUE_INVALID = -1;
+    private static final int INVALID_COUNTER_VALUE = -1;
     private static final int BOOTSTRAP_COUNTER_VALUE = 1;
-    private static final int BOOTSTRAP_TIMEOUT = 30000;
 
-    private int m_counterValue = COUNTER_VALUE_INVALID;
+    private int m_counterValue = INVALID_COUNTER_VALUE;
 
     private CuratorFramework m_curatorClient;
 
@@ -109,150 +102,99 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     @Override
-    public List<BackupPeer> getPeersFromNodeFile() {
-        NodeEntry[] allNodes = m_nodes.getNodes();
-
-        NodeEntry currentEntry;
-        ArrayList<BackupPeer> ret = new ArrayList<>();
-        for (int i = 0; i < allNodes.length; i++) {
-            currentEntry = allNodes[i];
-            if (currentEntry != null) {
-                if (currentEntry.readFromFile() && currentEntry.getRole() == NodeRole.PEER) {
-                    ret.add(new BackupPeer((short) (i & 0xFFFF), currentEntry.getRack(), currentEntry.getSwitch()));
-                }
-            }
-        }
-
-        return ret;
+    public NodeRegistry.NodeDetails getDetails() {
+        return m_nodeRegistry.getDetails();
     }
 
     @Override
-    public List<BackupPeer> getAvailableBackuppeerIds() {
-        NodeEntry[] allNodes = m_nodes.getNodes();
-
-        NodeEntry currentEntry;
-        ArrayList<BackupPeer> ret = new ArrayList<>();
-        for (int i = 0; i < allNodes.length; i++) {
-            currentEntry = allNodes[i];
-            if (currentEntry != null) {
-                if (currentEntry.getRole() == NodeRole.PEER && currentEntry.getStatus() &&
-                        currentEntry.isAvailableForBackup()) {
-                    ret.add(new BackupPeer((short) (i & 0xFFFF), currentEntry.getRack(), currentEntry.getSwitch()));
-                }
-            }
-        }
-
-        return ret;
+    public NodeRegistry.NodeDetails getDetails(short p_nodeId) {
+        return m_nodeRegistry.getDetails(p_nodeId);
     }
 
     @Override
-    public ArrayList<NodeEntry> getOnlineNodes() {
-        return m_nodes.getOnlineNodes();
-    }
-
-    @Override
-    public NodesConfiguration getNodesConfiguration() {
-        return m_nodes;
-    }
-
-    @Override
-    public void putOnlineNodes(ArrayList<NodeEntry> p_onlineNodes) {
-        for (NodeEntry entry : p_onlineNodes) {
-            m_nodes.addNode(entry);
-        }
-    }
-
-    @Override
-    public List<Short> getOnlineNodeIds() {
-        NodeEntry[] allNodes = m_nodes.getNodes();
-
-        NodeEntry currentEntry;
-        ArrayList<Short> ret = new ArrayList<>();
-        for (int i = 0; i < allNodes.length; i++) {
-            currentEntry = allNodes[i];
-            if (currentEntry != null) {
-                if (currentEntry.getStatus()) {
-                    ret.add((short) (i & 0xFFFF));
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    @Override
-    public List<Short> getOnlinePeerIds() {
-        NodeEntry[] allNodes = m_nodes.getNodes();
-
-        NodeEntry currentEntry;
-        ArrayList<Short> ret = new ArrayList<>();
-        for (int i = 0; i < allNodes.length; i++) {
-            currentEntry = allNodes[i];
-            if (currentEntry != null) {
-                if (currentEntry.getRole() == NodeRole.PEER && currentEntry.getStatus()) {
-                    ret.add((short) (i & 0xFFFF));
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    @Override
-    public List<Short> getOnlineSuperpeerIds() {
-        NodeEntry[] allNodes = m_nodes.getNodes();
-
-        NodeEntry currentEntry;
-        ArrayList<Short> ret = new ArrayList<>();
-        for (int i = 0; i < allNodes.length; i++) {
-            currentEntry = allNodes[i];
-            if (currentEntry != null) {
-                if (currentEntry.getRole() == NodeRole.SUPERPEER && currentEntry.getStatus()) {
-                    ret.add((short) (i & 0xFFFF));
-                }
-            }
-        }
-
-        return ret;
-    }
-
-    @Override
-    public List<Short> getSupportingNodes(final int p_capabilities) {
-
-        return Arrays.stream(m_nodes.getNodes())
-                .filter(node -> NodeCapabilities.supportsAll(node.getCapabilities(), p_capabilities))
-                .map(NodeEntry::getNodeID)
+    public List<NodeRegistry.NodeDetails> getOnlineNodes() {
+        return m_nodeRegistry.getAll().stream()
+                .filter(NodeRegistry.NodeDetails::isOnline)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public short getNodeId() {
-        return m_nodes.getOwnNodeID();
+    public List<Short> getOnlineNodeIds() {
+        return m_nodeRegistry.getAll().stream()
+                .filter(NodeRegistry.NodeDetails::isOnline)
+                .map(NodeRegistry.NodeDetails::getId)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public NodeRole getNodeRole() {
-        return m_nodes.getOwnNodeEntry().getRole();
+    public List<Short> getOnlinePeerIds() {
+        return m_nodeRegistry.getAll().stream()
+                .filter(NodeRegistry.NodeDetails::isOnline)
+                .filter(node -> node.getRole().equals(NodeRole.PEER))
+                .map(NodeRegistry.NodeDetails::getId)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public int getNodeCapabilities() {
-        return m_nodes.getOwnNodeEntry().getCapabilities();
+    public List<Short> getOnlineSuperpeerIds() {
+        return m_nodeRegistry.getAll().stream()
+                .filter(NodeRegistry.NodeDetails::isOnline)
+                .filter(node -> node.getRole().equals(NodeRole.SUPERPEER))
+                .map(NodeRegistry.NodeDetails::getId)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<BackupPeer> getAvailableBackupPeers() {
+        return m_nodeRegistry.getAll().stream()
+                .filter(node -> node.getRole().equals(NodeRole.PEER) && node.isOnline() && node.isAvailableForBackup())
+                .map(node -> new BackupPeer(node.getId(), node.getRack(), node.getSwitch()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Short> getSupportingNodes(final int p_capabilities) {
+        return m_nodeRegistry.getAll().stream()
+                .filter(node -> NodeCapabilities.supportsAll(node.getCapabilities(), p_capabilities))
+                .map(NodeRegistry.NodeDetails::getId)
+                .collect(Collectors.toList());
     }
 
     @Override
     public void updateNodeCapabilities(int p_capibilities) {
-        m_nodes.getOwnNodeEntry().setCapabilities(p_capibilities);
+        NodeRegistry.NodeDetails details = m_nodeRegistry.getDetails(m_id).withCapabilities(p_capibilities);
+        m_nodeRegistry.updateNodeDetails(details);
+    }
+
+    @Override
+    public short getBootstrapId() {
+        NodeRegistry.NodeDetails bootstrapDetails = getBootstrapDetails();
+
+        if (bootstrapDetails == null) {
+            return NodeID.INVALID_ID;
+        }
+
+        return bootstrapDetails.getId();
+    }
+
+    @Override
+    public short getNodeId() {
+        return getDetails().getId();
+    }
+
+    @Override
+    public NodeRole getNodeRole() {
+        return getDetails().getRole();
     }
 
     @Override
     public short getRack() {
-        return m_nodes.getOwnNodeEntry().getRack();
+        return getDetails().getRack();
     }
 
     @Override
     public short getSwitch() {
-        return m_nodes.getOwnNodeEntry().getSwitch();
+        return getDetails().getSwitch();
     }
 
     @Override
@@ -261,102 +203,69 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     @Override
-    public short getBootstrapId() {
-        NodeEntry bootstrapEntry = getBootstrapEntry();
+    public InetSocketAddress getNodeAddress(short p_nodeId) {
+        NodeRegistry.NodeDetails details = getDetails(p_nodeId);
 
-        if (bootstrapEntry == null) {
-            return NodeID.INVALID_ID;
-        }
-
-        return bootstrapEntry.getNodeID();
-    }
-
-    @Override
-    public boolean isNodeOnline(final short p_nodeId) {
-        NodeEntry entry = m_nodes.getNode(p_nodeId);
-
-        if (entry == null) {
-            LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeId));
-            return false;
-        }
-
-        return entry.getStatus();
-    }
-
-    @Override
-    public NodeRole getNodeRole(final short p_nodeId) {
-        NodeEntry entry = m_nodes.getNode(p_nodeId);
-
-        if (entry == null) {
-            LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeId));
+        if (details == null) {
+            LOGGER.warn("Couldn't find node 0x%04X", p_nodeId);
             return null;
         }
 
-        return entry.getRole();
+        return details.getAddress();
+    }
+
+    @Override
+    public NodeRole getNodeRole(short p_nodeId) {
+        NodeRegistry.NodeDetails details = getDetails(p_nodeId);
+
+        if (details == null) {
+            LOGGER.warn("Couldn't find node 0x%04X", p_nodeId);
+            return null;
+        }
+
+        return details.getRole();
+    }
+
+    @Override
+    public boolean isNodeOnline(short p_nodeId) {
+        NodeRegistry.NodeDetails details = getDetails(p_nodeId);
+
+        if (details == null) {
+            LOGGER.warn("Couldn't find node 0x%04X", p_nodeId);
+            return false;
+        }
+
+        return details.isOnline();
     }
 
     @Override
     public int getNodeCapabilities(short p_nodeId) {
-        NodeEntry entry = m_nodes.getNode(p_nodeId);
+        NodeRegistry.NodeDetails details = getDetails(p_nodeId);
 
-        if (entry == null) {
-            LOGGER.warn("Could not find node %s", NodeID.toHexString(p_nodeId));
-            return 0;
+        if (details == null) {
+            LOGGER.warn("Couldn't find node 0x%04X", p_nodeId);
+            return NodeCapabilities.INVALID;
         }
 
-        return entry.getCapabilities();
-    }
-
-    @Override
-    public InetSocketAddress getNodeAddress(final short p_nodeId) {
-        NodeEntry entry = m_nodes.getNode(p_nodeId);
-        InetSocketAddress address;
-        // return "proper" invalid address if entry does not exist
-        if (entry == null) {
-
-            //LOGGER.warn("Could not find ip and port for node id %s", NodeID.toHexString(p_nodeID));
-
-            address = new InetSocketAddress("255.255.255.255", 0xFFFF);
-        } else {
-            address = entry.getAddress().getInetSocketAddress();
-        }
-
-        return address;
-    }
-
-    @Override
-    public boolean nodeAvailable(final short p_nodeId) {
-        return isNodeOnline(p_nodeId);
+        return details.getCapabilities();
     }
 
     @Override
     public void singleNodeCleanup(final short p_nodeId, final NodeRole p_role) {
 
-        m_nodes.getNode(p_nodeId).setStatus(false);
     }
 
     @Override
     public void eventTriggered(final AbstractEvent p_event) {
         if (p_event instanceof NodeFailureEvent) {
-            m_nodes.getNode(((NodeFailureEvent) p_event).getNodeID()).setStatus(false);
+
         } else if (p_event instanceof NodeJoinEvent) {
-            NodeJoinEvent event = (NodeJoinEvent) p_event;
 
-            LOGGER.info(String.format("Node %s with capabilities %s joined", NodeID.toHexString(event.getNodeID()),
-                    NodeCapabilities.toString(event.getCapabilities())));
-
-            boolean readFromFile = m_nodes.getNode(event.getNodeID()) != null;
-            m_nodes.addNode(new NodeEntry(event.getAddress(), event.getNodeID(), event.getRack(), event.getSwitch(),
-                    event.getRole(), event.getCapabilities(), readFromFile,
-                    event.isAvailableForBackup(), true));
         }
     }
 
     @Override
     public boolean finishInitComponent() {
-
-        // Set own status to online
-        m_nodes.getOwnNodeEntry().setStatus(true);
 
         return true;
     }
@@ -374,18 +283,16 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_event = p_componentAccessor.getComponent(EventComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config) {
 
-        m_ownAddress = p_config.getEngineConfig().getAddress();
+        m_address = p_config.getEngineConfig().getAddress();
         m_nodeRole = p_config.getEngineConfig().getRole();
         m_bloomFilter = new BloomFilter((int) m_config.getBitfieldSize().getBytes(), 65536);
-        m_nodes = new NodesConfiguration(this);
 
-        LOGGER.info("Initializing with address %s, role %s", m_ownAddress, m_nodeRole);
+        LOGGER.info("Initializing with address %s, role %s", m_address, m_nodeRole);
 
         m_event.registerListener(this, NodeFailureEvent.class);
         m_event.registerListener(this, NodeJoinEvent.class);
@@ -402,7 +309,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         // Assign a globally unique counter value to this superpeer
         if (m_nodeRole.equals(NodeRole.SUPERPEER)) {
-            assignCounterValue();
+            assignNodeId();
         }
 
         // Start bootstrap process if this is the first node
@@ -421,9 +328,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         LOGGER.info("Waiting on bootstrap node to finish initialization");
 
         // Wait until bootstrap node finishes initializing
-        NodeEntry bootstrapEntry = getBootstrapEntry();
+        NodeRegistry.NodeDetails bootstrapDetails = getBootstrapDetails();
 
-        while(bootstrapEntry == null) {
+        while(bootstrapDetails == null) {
 
             try {
                 Thread.sleep(1000);
@@ -431,32 +338,20 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 // Ignored
             }
 
-            bootstrapEntry = getBootstrapEntry();
+            bootstrapDetails = getBootstrapDetails();
         }
-
-        m_nodes.addNode(bootstrapEntry);
 
         LOGGER.info("Bootstrap node is ready");
 
         // Assign a globally unique counter value if it hasn't been assigned yet
         if (m_counterValue == -1) {
-            assignCounterValue();
+            assignNodeId();
         }
 
-        short nodeId = calculateNodeId();
-
-        NodeEntry ownEntry = new NodeEntry(m_ownAddress, nodeId, m_config.getRack(), m_config.getSwitch(), m_nodeRole,
-                NodeCapabilities.NONE, false, false, true);
-
-        m_nodes.addNode(ownEntry);
-        m_nodes.setOwnNodeID(nodeId);
-
-        saveNodeEntry(ownEntry);
-
-        NodeRegistry.NodeDetails nodeDetails = buildNodeDetails(nodeId);
+        m_details = buildNodeDetails();
 
         try {
-            m_nodeRegistry.start(nodeDetails);
+            m_nodeRegistry.start(m_details);
         } catch (Exception p_e) {
             LOGGER.error("Starting node registry failed");
             return false;
@@ -464,65 +359,15 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         LOGGER.info("Started node registry");
 
-        LOGGER.info("Assigned node id 0x%04x to this node", nodeId);
+        LOGGER.info("Assigned node id 0x%04x to this node", m_id);
 
-        LOGGER.info("Using 0x%04x as bootstrap node with ip address %s", bootstrapEntry.getNodeID(), bootstrapEntry.getAddress());
+        LOGGER.info("Using 0x%04x as bootstrap node with ip address %s", bootstrapDetails.getId(), bootstrapDetails.getAddress());
 
         return true;
     }
 
-    @Override
     @Nullable
-    public NodeEntry getNodeEntry(short p_nodeId) {
-        byte[] bootBytes;
-
-        String path = String.format("%s/%s", PEER_DIR, NodeID.toHexStringShort(p_nodeId));
-
-        try {
-            bootBytes = m_curatorClient.getData().forPath(path);
-        } catch (Exception p_e) {
-            path = String.format("%s/%s", SUPERPEER_DIR, NodeID.toHexStringShort(p_nodeId));
-
-            try {
-                bootBytes = m_curatorClient.getData().forPath(path);
-            } catch (Exception p_e1) {
-                return null;
-            }
-        }
-
-        ByteBufferImExporter importer = new ByteBufferImExporter(ByteBuffer.wrap(bootBytes));
-        NodeEntry nodeEntry = new NodeEntry(true);
-        nodeEntry.importObject(importer);
-
-        return nodeEntry;
-    }
-
-    private NodeRegistry.NodeDetails buildNodeDetails(final short p_nodeId) {
-        return NodeRegistry.NodeDetails.builder(p_nodeId, m_ownAddress.getIP(), m_ownAddress.getPort())
-                .withRole(m_nodeRole)
-                .withRack(m_config.getRack())
-                .withSwitch(m_config.getSwitch())
-                .withOnline(true)
-                .build();
-    }
-
-    private void saveNodeEntry(NodeEntry p_entry) {
-        ByteBuffer buffer = ByteBuffer.allocate(p_entry.sizeofObject());
-        ByteBufferImExporter exporter = new ByteBufferImExporter(buffer);
-        exporter.exportObject(p_entry);
-
-        String path = String.format("%s/%s", p_entry.getRole().equals(NodeRole.PEER) ? PEER_DIR : SUPERPEER_DIR,
-                NodeID.toHexStringShort(p_entry.getNodeID()));
-
-        try {
-            m_curatorClient.create().creatingParentsIfNeeded().forPath(path, buffer.array());
-        } catch (Exception p_e) {
-            throw new RuntimeException("Saving node entry failed", p_e);
-        }
-    }
-
-    @Nullable
-    private NodeEntry getBootstrapEntry() {
+    private NodeRegistry.NodeDetails getBootstrapDetails() {
         byte[] bootBytes;
 
         try {
@@ -531,53 +376,57 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return null;
         }
 
-        return NodeEntry.fromByteArray(bootBytes);
+        return NodeRegistry.NodeDetails.fromByteArray(bootBytes);
     }
 
 
 
     @Override
     protected boolean shutdownComponent() {
-        m_shutdown = true;
-
         m_curatorClient.close();
 
         return true;
     }
 
-    // -----------------------------------------------------------------------------------
+    /**
+     * Builds this node's details.
+     *
+     * @return This node's details.
+     */
+    private NodeRegistry.NodeDetails buildNodeDetails() {
+        return NodeRegistry.NodeDetails.builder(m_id, m_address.getIP(), m_address.getPort())
+                .withRole(m_nodeRole)
+                .withRack(m_config.getRack())
+                .withSwitch(m_config.getSwitch())
+                .withOnline(true)
+                .build();
+    }
 
+    /**
+     * Initializes this node as the bootstrap node.
+     *
+     * @throws Exception If ZooKeeper reports errors.
+     */
     private void initializeBootstrapNode() throws Exception {
 
-        LOGGER.info("Starting bootstrap process on node %s", m_ownAddress.getAddressStr());
+        LOGGER.info("Starting bootstrap process on node %s", m_address.getAddressStr());
 
         short nodeId = calculateNodeId();
 
-        NodeEntry entry = new NodeEntry(m_ownAddress, nodeId, m_config.getRack(), m_config.getSwitch(), m_nodeRole, NodeCapabilities.NONE, false, false, true);
+        m_details = buildNodeDetails();
 
-        ByteBuffer buffer = ByteBuffer.allocate(entry.sizeofObject());
-        ByteBufferImExporter exporter = new ByteBufferImExporter(buffer);
-        exporter.exportObject(entry);
-
-        m_nodes.addNode(entry);
-        m_nodes.setOwnNodeID(nodeId);
-
-        // Save node information within peer/superpeer folder
-        saveNodeEntry(entry);
-
-        NodeRegistry.NodeDetails nodeDetails = buildNodeDetails(nodeId);
-
-        m_nodeRegistry.start(nodeDetails);
-
-        LOGGER.info("Started node registry");
+        m_nodeRegistry.start(m_details);
 
         // Insert own node information into ZooKeeper so other nodes can find the bootstrap node
-        m_curatorClient.create().creatingParentsIfNeeded().forPath(BOOTSTRAP_NODE_PATH, buffer.array());
+        m_curatorClient.create().creatingParentsIfNeeded().forPath(BOOTSTRAP_NODE_PATH, m_details.toByteArray());
 
         LOGGER.info("Assigned id 0x%04x to bootstrap node", nodeId);
     }
 
-    private void assignCounterValue() {
+    /**
+     * Assigns a globally unique id to this node.
+     */
+    private void assignNodeId() {
         AtomicValue<Integer> atomicValue = null;
 
         try {
@@ -591,10 +440,16 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         }
 
         m_counterValue = atomicValue.postValue();
+        m_id = calculateNodeId();
 
         LOGGER.info("Assigned counter value %d to this node", m_counterValue);
     }
 
+    /**
+     * Calculates this node's id based on its unique counter value.
+     *
+     * @return This node's id.
+     */
     private short calculateNodeId() {
         int seed = 1;
         short nodeId = 0;
@@ -607,38 +462,13 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         return nodeId;
     }
 
+    /**
+     * Indicates if this node is responsible for the bootstrap process.
+     *
+     * @return True if this node is the bootstrap node; false else.
+     */
     private boolean isBootstrapNode() {
         return m_counterValue == BOOTSTRAP_COUNTER_VALUE;
-    }
-
-    /**
-     * Replaces the current bootstrap with p_nodeID if the failed bootstrap has not been replaced by another superpeer
-     *
-     * @param p_nodeID The new bootstrap peer
-     */
-    private void setBootstrapPeer(final short p_nodeID) {
-        NodeEntry newBootstrapEntry = getNodeEntry(p_nodeID);
-
-        if (newBootstrapEntry == null) {
-            LOGGER.warn("New bootstrap peer 0x%04X does not exist", p_nodeID);
-            return;
-        }
-
-        Stat stat = null;
-
-        try {
-            stat = m_curatorClient.checkExists().forPath(BOOTSTRAP_NODE_PATH);
-        } catch (Exception p_e) {
-            // Ignored
-        }
-
-        int version = stat == null ? 0 : stat.getVersion();
-
-        try {
-            m_curatorClient.create().orSetData(version).forPath(BOOTSTRAP_NODE_PATH, newBootstrapEntry.toByteArray());
-        } catch (Exception p_e) {
-            LOGGER.warn("Setting new bootstrap node failed", p_e);
-        }
     }
 
     @Override
@@ -648,7 +478,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
     @Override
     public void onPeerLeft(NodeRegistry.NodeDetails p_nodeDetails) {
-
+        LOGGER.info("Node %s left the network", p_nodeDetails);
     }
 
     @Override
@@ -658,6 +488,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
     @Override
     public void onSuperpeerLeft(NodeRegistry.NodeDetails p_nodeDetails) {
+        LOGGER.info("Node %s left the network", p_nodeDetails);
+    }
 
+    @Override
+    public void onNodeUpdated(NodeRegistry.NodeDetails p_nodeDetails) {
+        LOGGER.info("Updated node %s", p_nodeDetails);
     }
 }

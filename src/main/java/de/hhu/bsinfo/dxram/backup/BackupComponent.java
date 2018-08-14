@@ -226,7 +226,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
         m_lock.writeLock().lock();
         if (REREPLICATION_ACTIVE) {
             replacementPeer = m_placementStrategy.determineReplacementBackupPeer(p_backupRange.getBackupPeers(),
-                    m_boot.getAvailableBackuppeerIds());
+                    m_boot.getAvailableBackupPeers());
         }
 
         if (replacementPeer == null) {
@@ -381,7 +381,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                         if (REREPLICATION_ACTIVE) {
                             // Determine new backup peer and replace it in backup range
                             newBackupPeer = m_placementStrategy.determineReplacementBackupPeer(backupPeers,
-                                    m_boot.getAvailableBackuppeerIds());
+                                    m_boot.getAvailableBackupPeers());
 
                             currentBackupRange.replaceBackupPeer(failedPeer, newBackupPeer);
                             m_lock.writeLock().unlock();
@@ -420,7 +420,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                 BackupPeer joinedPeer = new BackupPeer(event.getNodeID(), event.getRack(), event.getSwitch());
                 m_placementStrategy.addNewBackupPeer(joinedPeer);
 
-                List<BackupPeer> peers = m_boot.getAvailableBackuppeerIds();
+                List<BackupPeer> peers = m_boot.getAvailableBackupPeers();
                 for (BackupPeer peer : peers) {
                     if (peer.getNodeID() == joinedPeer.getNodeID()) {
                         BackupRange currentBackupRange;
@@ -584,7 +584,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
         // First chunk to register -> initialize backup range
         if (m_currentBackupRange == null) {
             System.out.println("Initializing first backup range!");
-            List<BackupPeer> availablePeers = m_boot.getAvailableBackuppeerIds();
+            List<BackupPeer> availablePeers = m_boot.getAvailableBackupPeers();
             if (m_placementStrategy instanceof CopysetPlacement &&
                     availablePeers.size() < m_placementStrategy.getReplicationFactor() * 5) {
 
@@ -672,7 +672,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
 
         m_lock.writeLock().lock();
         backupRange = m_placementStrategy.determineBackupPeers((short) m_backupRanges.size(),
-                m_boot.getAvailableBackuppeerIds(), m_currentBackupRange);
+                m_boot.getAvailableBackupPeers(), m_currentBackupRange);
         m_lock.writeLock().unlock();
 
         if (backupRange != null) {

@@ -38,14 +38,11 @@ public final class NodesConfiguration {
 
     private NodeEntry[] m_nodes = new NodeEntry[NodeID.MAX_ID + 1];
     private short m_ownID = NodeID.INVALID_ID;
-    private final NodeInformationProvider m_provider;
 
     /**
      * Creates an instance of NodesConfiguration
      */
-    NodesConfiguration(final NodeInformationProvider p_nodeInformationProvider) {
-        m_provider = p_nodeInformationProvider;
-    }
+    NodesConfiguration() {}
 
     /**
      * Gets the configured node
@@ -99,21 +96,6 @@ public final class NodesConfiguration {
         }
 
         return builder.toString();
-    }
-
-    /**
-     * Get the NodeEntry of the specified node ID.
-     *
-     * @param p_nodeID
-     *         Node ID to get the entry of.
-     * @return NodeEntry containing information about the node or null if it does not exist.
-     */
-    NodeEntry getNode(final short p_nodeID) {
-        if (m_nodes[p_nodeID & 0xFFFF] == null) {
-            m_nodes[p_nodeID & 0xFFFF] = m_provider.getNodeEntry(p_nodeID);
-        }
-
-        return m_nodes[p_nodeID & 0xFFFF];
     }
 
     /**

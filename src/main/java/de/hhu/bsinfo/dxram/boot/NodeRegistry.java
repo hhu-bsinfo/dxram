@@ -18,8 +18,10 @@ package de.hhu.bsinfo.dxram.boot;
 
 
 import com.google.common.collect.Sets;
+import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.serialization.*;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.utils.CloseableUtils;
@@ -28,18 +30,24 @@ import org.apache.curator.x.discovery.details.JsonInstanceSerializer;
 import org.apache.curator.x.discovery.details.ServiceCacheListener;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonRootName;
+import org.codehaus.jackson.type.JavaType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import static de.hhu.bsinfo.dxram.engine.DXRAMEngine.runOnMainThread;
 
 public class NodeRegistry implements ServiceCacheListener {
 
@@ -59,18 +67,22 @@ public class NodeRegistry implements ServiceCacheListener {
     private final static String BASE_PATH = "/discovery";
     private final static String SERVICE_NAME = "dxram";
     private final static String THREAD_NAME = "discovery";
+    private final static String DISCOVERY_PATH = String.format("%s/%s", BASE_PATH, SERVICE_NAME);
 
-    private final ConcurrentHashMap<String, NodeDetails> m_serviceMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Short, NodeDetails> m_serviceMap = new ConcurrentHashMap<>();
+
+    private static final InetSocketAddress INVALID_ADDRESS = new InetSocketAddress("255.255.255.255", 0xFFFF);
 
     public interface Listener {
         void onPeerJoined(final NodeDetails p_nodeDetails);
         void onPeerLeft(final NodeDetails p_nodeDetails);
         void onSuperpeerJoined(final NodeDetails p_nodeDetails);
         void onSuperpeerLeft(final NodeDetails p_nodeDetails);
+        void onNodeUpdated(final NodeDetails p_nodeDetails);
     }
 
     private enum ListenerEvent {
-        PEER_JOINED, PEER_LEFT, SUPERPEER_JOINED, SUPERPEER_LEFT
+        PEER_JOINED, PEER_LEFT, SUPERPEER_JOINED, SUPERPEER_LEFT, NODE_UPDATED
     }
 
     NodeRegistry(@NotNull final CuratorFramework p_curator, @Nullable final Listener p_listener) {
@@ -83,6 +95,8 @@ public class NodeRegistry implements ServiceCacheListener {
             log.warn("Registry is already running");
             return;
         }
+
+        m_serviceMap.put(p_details.getId(), p_details);
 
         m_instance = p_details.toServiceInstance();
 
@@ -136,20 +150,69 @@ public class NodeRegistry implements ServiceCacheListener {
             return;
         }
 
-        switch (p_event) {
-            case PEER_JOINED:
-                m_listener.onPeerJoined(p_nodeDetails);
-                break;
-            case SUPERPEER_JOINED:
-                m_listener.onSuperpeerJoined(p_nodeDetails);
-                break;
-            case PEER_LEFT:
-                m_listener.onPeerLeft(p_nodeDetails);
-                break;
-            case SUPERPEER_LEFT:
-                m_listener.onSuperpeerLeft(p_nodeDetails);
-                break;
+        runOnMainThread(() -> {
+            switch (p_event) {
+                case PEER_JOINED:
+                    m_listener.onPeerJoined(p_nodeDetails);
+                    break;
+                case SUPERPEER_JOINED:
+                    m_listener.onSuperpeerJoined(p_nodeDetails);
+                    break;
+                case PEER_LEFT:
+                    m_listener.onPeerLeft(p_nodeDetails);
+                    break;
+                case SUPERPEER_LEFT:
+                    m_listener.onSuperpeerLeft(p_nodeDetails);
+                    break;
+                case NODE_UPDATED:
+                    m_listener.onNodeUpdated(p_nodeDetails);
+                    break;
+            }
+        });
+    }
+
+    @Nullable
+    public NodeDetails getDetails(final short p_nodeId) {
+        NodeDetails details = m_serviceMap.get(p_nodeId);
+
+        return details != null ? details : getRemoteDetails(p_nodeId);
+    }
+
+    private NodeDetails getRemoteDetails(short p_nodeId) {
+        byte[] bootBytes;
+
+        try {
+            bootBytes = m_curator.getData().forPath(String.format("%s/%s", DISCOVERY_PATH, NodeID.toHexStringShort(p_nodeId)));
+        } catch (Exception p_e) {
+            return null;
         }
+
+        try {
+            return serializer.deserialize(bootBytes).getPayload();
+        } catch (Exception p_e) {
+            log.warn("Couldn't deserialize remote node details");
+            return null;
+        }
+    }
+
+    @Nullable
+    public NodeDetails getDetails() {
+        NodeDetails details = m_instance.getPayload();
+
+        if (details == null) {
+            return null;
+        }
+
+        return details;
+    }
+
+    /**
+     * Returns all NodeDetails this node knows of.
+     *
+     * @return All known NodeDetails.
+     */
+    public Collection<NodeDetails> getAll() {
+        return m_serviceMap.values();
     }
 
     @Override
@@ -160,11 +223,14 @@ public class NodeRegistry implements ServiceCacheListener {
 
         Set<NodeDetails> localDetails = new HashSet<>(m_serviceMap.values());
 
-        Sets.SetView<NodeDetails> joinedNodes = Sets.difference(remoteDetails, localDetails);
-        Sets.SetView<NodeDetails> leftNodes = Sets.difference(localDetails, remoteDetails);
+        Sets.SetView<NodeDetails> changedNodes = Sets.difference(remoteDetails, localDetails);
+        for (NodeDetails details : changedNodes) {
+            NodeDetails oldDetails = m_serviceMap.put(details.getId(), details);
 
-        for (NodeDetails details : joinedNodes) {
-            m_serviceMap.put(NodeID.toHexStringShort(details.getId()), details);
+            if (oldDetails != null) {
+                notifyListener(ListenerEvent.NODE_UPDATED, details);
+                continue;
+            }
 
             if (details.getRole().equals(NodeRole.SUPERPEER)) {
                 notifyListener(ListenerEvent.SUPERPEER_JOINED, details);
@@ -173,15 +239,16 @@ public class NodeRegistry implements ServiceCacheListener {
             }
         }
 
-        for (NodeDetails details : leftNodes) {
-            m_serviceMap.remove(NodeID.toHexString(details.getId()));
-
-            if (details.getRole().equals(NodeRole.SUPERPEER)) {
-                notifyListener(ListenerEvent.SUPERPEER_LEFT, details);
-            } else {
-                notifyListener(ListenerEvent.PEER_LEFT, details);
-            }
-        }
+//        Sets.SetView<NodeDetails> leftNodes = Sets.difference(localDetails, remoteDetails);
+//        for (NodeDetails details : leftNodes) {
+//            m_serviceMap.remove(details.getId());
+//
+//            if (details.getRole().equals(NodeRole.SUPERPEER)) {
+//                notifyListener(ListenerEvent.SUPERPEER_LEFT, details);
+//            } else {
+//                notifyListener(ListenerEvent.PEER_LEFT, details);
+//            }
+//        }
     }
 
     @Override
@@ -298,6 +365,35 @@ public class NodeRegistry implements ServiceCacheListener {
             return m_capabilities;
         }
 
+        public InetSocketAddress getAddress() {
+            return new InetSocketAddress(m_ip, m_port);
+        }
+
+        public NodeDetails withCapabilities(int p_capabilities) {
+            return new NodeDetails(m_id, m_ip, m_port, m_rack, m_switch, m_role, m_online, m_availableForBackup, p_capabilities);
+        }
+
+        @Override
+        public boolean equals(Object p_o) {
+            if (this == p_o) return true;
+            if (p_o == null || getClass() != p_o.getClass()) return false;
+            NodeDetails details = (NodeDetails) p_o;
+            return m_id == details.m_id &&
+                    m_port == details.m_port &&
+                    m_rack == details.m_rack &&
+                    m_switch == details.m_switch &&
+                    m_online == details.m_online &&
+                    m_availableForBackup == details.m_availableForBackup &&
+                    m_capabilities == details.m_capabilities &&
+                    Objects.equals(m_ip, details.m_ip) &&
+                    m_role == details.m_role;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(m_id);
+        }
+
         @Override
         public String toString() {
             return String.format("[%c|%04X](%s:%d)", m_role.getAcronym(), m_id, m_ip, m_port);
@@ -306,6 +402,52 @@ public class NodeRegistry implements ServiceCacheListener {
         ServiceInstance<NodeDetails> toServiceInstance() {
             return new ServiceInstance<>(SERVICE_NAME, NodeID.toHexStringShort(m_id), m_ip,
                     m_port, 0, this, System.currentTimeMillis(), ServiceType.DYNAMIC, null, true);
+        }
+
+        public byte[] toByteArray() {
+            ByteBuffer buffer = ByteBuffer.allocate(3 * Short.BYTES + 2 * Integer.BYTES +
+                    Character.BYTES + 2 * Byte.BYTES + ObjectSizeUtil.sizeofString(m_ip));
+            ByteBufferImExporter exporter = new ByteBufferImExporter(buffer);
+
+            exporter.writeShort(m_id);
+            exporter.writeString(m_ip);
+            exporter.writeInt(m_port);
+            exporter.writeShort(m_rack);
+            exporter.writeShort(m_switch);
+            exporter.writeChar(m_role.getAcronym());
+            exporter.writeBoolean(m_online);
+            exporter.writeBoolean(m_availableForBackup);
+            exporter.writeInt(m_capabilities);
+
+            return buffer.array();
+        }
+
+        public static NodeDetails fromByteArray(final byte[] p_bytes) {
+            ByteBuffer buffer = ByteBuffer.wrap(p_bytes);
+            ByteBufferImExporter importer = new ByteBufferImExporter(buffer);
+
+            short tmpId = 0;
+            String tmpIp = "";
+            int tmpPort = 0;
+            short tmpRack = 0;
+            short tmpSwitch = 0;
+            char tmpRole = '0';
+            boolean tmpOnline = false;
+            boolean tmpBackup = false;
+            int tmpCapabilites = 0;
+            
+            tmpId = importer.readShort(tmpId);
+            tmpIp = importer.readString(tmpIp);
+            tmpPort = importer.readInt(tmpPort);
+            tmpRack = importer.readShort(tmpRack);
+            tmpSwitch = importer.readShort(tmpSwitch);
+            tmpRole = importer.readChar(tmpRole);
+            tmpOnline = importer.readBoolean(tmpOnline);
+            tmpBackup = importer.readBoolean(tmpBackup);
+            tmpCapabilites = importer.readInt(tmpCapabilites);
+
+            return new NodeDetails(tmpId, tmpIp, tmpPort, tmpRack, tmpSwitch,
+                    NodeRole.getRoleByAcronym(tmpRole), tmpOnline, tmpBackup, tmpCapabilites);
         }
 
         public static class Builder {

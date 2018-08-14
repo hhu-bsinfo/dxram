@@ -171,6 +171,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
             }
 
             try {
+                LOGGER.info("Loading class %s", classname);
                 Class<?> clazz = Class.forName(classname, true, ucl);
 
                 if (AbstractApplication.class.equals(clazz.getSuperclass())) {
@@ -213,6 +214,8 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         if (jarEntry == null) {
             return null;
         }
+
+        LOGGER.info("Next jar entry is %s", jarEntry.getName());
 
         if (jarEntry.getName().endsWith(".class")) {
             String classname = jarEntry.getName().replaceAll("/", "\\.");

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -855,7 +856,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         // Inform all peers (this is done by all superpeers)
         for (short peer : m_peers) {
-            if (peer != p_failedNode && m_boot.getNodeRole(peer) == NodeRole.PEER) {
+            if (peer != p_failedNode && m_boot.getDetails(peer).getRole() == NodeRole.PEER) {
 
                 LOGGER.debug("Informing peer 0x%X about failure of 0x%X", peer, p_failedNode);
 
@@ -1164,7 +1165,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         }
 
         if (m_nodeID == contactSuperpeer) {
-            if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+            if (m_boot.getDetails().getRole() == NodeRole.SUPERPEER) {
 
                 LOGGER.trace("Setting up new ring, I am 0x%X", m_nodeID);
 
@@ -1180,9 +1181,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
                 LOGGER.trace("Contacting 0x%X to join the ring, I am 0x%X", contactSuperpeer, m_nodeID);
 
-                NodesConfiguration.NodeEntry entry = m_boot.getNodesConfiguration().getOwnNodeEntry();
-
-                joinRequest = new JoinRequest(contactSuperpeer, entry);
+                joinRequest = new JoinRequest(contactSuperpeer, m_boot.getDetails());
                 try {
                     m_network.sendSync(joinRequest);
                 } catch (final NetworkException e) {
@@ -1199,8 +1198,6 @@ public class OverlaySuperpeer implements MessageReceiver {
             m_superpeers = joinResponse.getSuperpeers();
 
             m_peers = joinResponse.getPeers();
-
-            m_boot.putOnlineNodes(joinResponse.getOnlineNodes());
 
             newPeers = m_metadata.storeMetadata(joinResponse.getMetadata());
             if (newPeers != null) {
@@ -1226,10 +1223,11 @@ public class OverlaySuperpeer implements MessageReceiver {
         // Inform all peers and superpeers about joining
         m_overlayLock.readLock().lock();
         // Inform all superpeers
+        NodeRegistry.NodeDetails details = m_boot.getDetails();
         for (short superpeer : m_superpeers) {
-            InetSocketAddress socketAddress = m_boot.getNodeAddress(m_nodeID);
+            InetSocketAddress socketAddress = details.getAddress();
             NodeJoinEventRequest request = new NodeJoinEventRequest(superpeer, m_nodeID, NodeRole.SUPERPEER,
-                    NodeCapabilities.NONE, m_boot.getRack(), m_boot.getSwitch(), false,
+                    NodeCapabilities.NONE, details.getRack(), details.getSwitch(), false,
                     new IPV4Unit(socketAddress.getHostName(), socketAddress.getPort()));
             try {
                 m_network.sendSync(request);
@@ -1243,9 +1241,9 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         // Inform own peers
         for (short peer : m_peers) {
-            InetSocketAddress socketAddress = m_boot.getNodeAddress(m_nodeID);
+            InetSocketAddress socketAddress = details.getAddress();
             NodeJoinEventRequest request = new NodeJoinEventRequest(peer, m_nodeID, NodeRole.SUPERPEER,
-                    NodeCapabilities.NONE, m_boot.getRack(), m_boot.getSwitch(), false,
+                    NodeCapabilities.NONE, details.getRack(), details.getSwitch(), false,
                     new IPV4Unit(socketAddress.getHostName(), socketAddress.getPort()));
             try {
                 m_network.sendSync(request);
@@ -1363,10 +1361,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         LOGGER.info("Received JoinRequest from 0x%X", p_joinRequest.getSource());
 
-        m_boot.getNodesConfiguration().addNode(p_joinRequest.getEntry());
-
-        LOGGER.info("Added new node (0x%X, %s)", p_joinRequest.getSource(), p_joinRequest.getEntry().getAddress());
-
         joiningNode = p_joinRequest.getNodeId();
         newNodeisSuperpeer = p_joinRequest.isSuperPeer();
 
@@ -1396,7 +1390,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                 try {
                     m_network.sendMessage(
                             new JoinResponse(p_joinRequest, NodeID.INVALID_ID, joiningNodesPredecessor, m_nodeID,
-                                    m_superpeers, peers, m_boot.getOnlineNodes(),
+                                    m_superpeers, peers, null,
                                     metadata));
                 } catch (final NetworkException e) {
                     // Joining node is not available anymore -> ignore request and return directly
@@ -1447,7 +1441,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                     m_network.sendMessage(
                             new JoinResponse(p_joinRequest, NodeID.INVALID_ID, NodeID.INVALID_ID, NodeID.INVALID_ID,
                                     m_superpeers, null,
-                                    m_boot.getOnlineNodes(), null));
+                                    null, null));
                 } catch (final NetworkException e) {
                     // Joining node is not available anymore, ignore request
                 }

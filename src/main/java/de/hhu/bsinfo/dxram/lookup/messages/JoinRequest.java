@@ -20,8 +20,10 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.boot.NodesConfiguration;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Join Request
@@ -30,17 +32,15 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  */
 public class JoinRequest extends Request {
 
-    // Attributes
-    private NodesConfiguration.NodeEntry m_entry;
+    private byte[] m_nodeDetails;
 
-    // Constructors
+    private NodeRegistry.NodeDetails m_cachedDetails = null;
 
     /**
      * Creates an instance of JoinRequest
      */
     public JoinRequest() {
         super();
-        m_entry = new NodesConfiguration.NodeEntry(false);
     }
 
     /**
@@ -48,9 +48,17 @@ public class JoinRequest extends Request {
      *
      *  @param p_destination The destination's node id.
      */
-    public JoinRequest(final short p_destination, final NodesConfiguration.NodeEntry p_entry) {
+    public JoinRequest(final short p_destination, final NodeRegistry.NodeDetails p_details) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_JOIN_REQUEST);
-        m_entry = p_entry;
+        m_nodeDetails = p_details.toByteArray();
+    }
+
+    public NodeRegistry.NodeDetails getNodeDetails() {
+        if (m_cachedDetails == null) {
+            m_cachedDetails = NodeRegistry.NodeDetails.fromByteArray(m_nodeDetails);
+        }
+
+        return m_cachedDetails;
     }
 
     // Getters
@@ -61,7 +69,7 @@ public class JoinRequest extends Request {
      * @return the NodeID
      */
     public final short getNodeId() {
-        return m_entry.getNodeID();
+        return getNodeDetails().getId();
     }
 
     /**
@@ -70,26 +78,22 @@ public class JoinRequest extends Request {
      * @return true if the new node is a superpeer, false otherwise
      */
     public final boolean isSuperPeer() {
-        return m_entry.getRole() == NodeRole.SUPERPEER;
+        return getNodeDetails().getRole() == NodeRole.SUPERPEER;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return m_entry.sizeofObject();
+        return ObjectSizeUtil.sizeofByteArray(m_nodeDetails);
     }
 
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        m_entry.exportObject(p_exporter);
+        p_exporter.writeByteArray(m_nodeDetails);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_entry.importObject(p_importer);
-    }
-
-    public NodesConfiguration.NodeEntry getEntry() {
-        return m_entry;
+        m_nodeDetails = p_importer.readByteArray(m_nodeDetails);
     }
 }

@@ -28,6 +28,10 @@ if (isDevelop && new File('../dxgraph').exists()) {
     includeBuild('../dxgraph')
 }
 
+if (isDevelop && new File('../dxterm').exists()) {
+    includeBuild('../dxterm')
+}
+
 if (isDevelop && new File('../dxapp-helloworld').exists()) {
     includeBuild('../dxapp-helloworld')
 }
