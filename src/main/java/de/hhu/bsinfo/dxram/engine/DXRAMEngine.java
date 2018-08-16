@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.logging.log4j.LogManager;
@@ -47,8 +49,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     private volatile boolean m_triggerReboot;
 
     private Map<String, String> m_servicesShortName = new HashMap<>();
-
-    private static final BlockingQueue<Runnable> m_tasks = new LinkedBlockingQueue<>();
 
     /**
      * Constructor
@@ -318,16 +318,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         }
 
         try {
-            m_tasks.take().run();
-        } catch (InterruptedException p_e) {
-            // Ignored
+            Thread.sleep(1000);
+        } catch (final InterruptedException ignored) {
         }
 
         return true;
-    }
-
-    public static void runOnMainThread(final Runnable p_runnable) {
-        m_tasks.add(p_runnable);
     }
 
     /**
@@ -379,7 +374,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * Trigger a soft reboot on the next update cycle
      */
     public void triggerSoftReboot() {
-        runOnMainThread(() -> m_triggerReboot = true);
+         m_triggerReboot = true;
     }
 
     /**

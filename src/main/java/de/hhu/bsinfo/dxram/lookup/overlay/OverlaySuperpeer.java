@@ -762,9 +762,6 @@ public class OverlaySuperpeer implements MessageReceiver {
 
             // Take over failed superpeer's peers
             takeOverPeers(m_predecessor);
-
-            // Clean-up zookeeper
-            m_boot.singleNodeCleanup(p_failedNode, NodeRole.SUPERPEER);
         }
 
         // Send failed superpeer's metadata to this superpeers successor if it is the last backup superpeer
@@ -844,13 +841,6 @@ public class OverlaySuperpeer implements MessageReceiver {
         LOGGER.info("Starting failure handling for failed node 0x%X", p_failedNode);
 
         m_overlayLock.writeLock().lock();
-
-        LOGGER.info("Initiating ZooKeeper cleanup for failed node 0x%X", p_failedNode);
-
-        if (OverlayHelper.containsPeer(p_failedNode, m_peers)) {
-            // Clean-up zookeeper
-            m_boot.singleNodeCleanup(p_failedNode, NodeRole.PEER);
-        }
 
         LOGGER.info("Informing all other peers about failed node 0x%X", p_failedNode);
 

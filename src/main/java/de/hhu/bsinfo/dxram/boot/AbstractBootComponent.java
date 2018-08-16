@@ -137,14 +137,4 @@ public abstract class AbstractBootComponent<T extends AbstractDXRAMComponentConf
     public abstract boolean isNodeOnline(final short p_nodeId);
 
     public abstract int getNodeCapabilities(final short p_nodeId);
-
-    /**
-     * Report that we detected a node failure.
-     *
-     * @param p_nodeId
-     *         the failed node
-     * @param p_role
-     *         failed node's role
-     */
-    public abstract void singleNodeCleanup(short p_nodeId, NodeRole p_role);
 }

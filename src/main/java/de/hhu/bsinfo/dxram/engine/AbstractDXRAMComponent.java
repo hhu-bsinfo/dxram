@@ -139,6 +139,14 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
     }
 
     /**
+     * Called before the component is initialized. Get all the components your own component depends on.
+     *
+     * @param p_componentAccessor
+     *         Component accessor that provides access to other components
+     */
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {}
+
+    /**
      * Check if the component supports the superpeer node role
      *
      * @return True if supporting, false otherwise
@@ -151,14 +159,6 @@ public abstract class AbstractDXRAMComponent<T extends AbstractDXRAMComponentCon
      * @return True if supporting, false otherwise
      */
     protected abstract boolean supportsPeer();
-
-    /**
-     * Called before the component is initialized. Get all the components your own component depends on.
-     *
-     * @param p_componentAccessor
-     *         Component accessor that provides access to other components
-     */
-    protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
 
     /**
      * Called when the component is initialized. Setup data structures, get dependent components, read settings etc.

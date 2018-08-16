@@ -54,6 +54,9 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private short m_switch = 0;
 
+    @Expose
+    private boolean m_isClient = false;
+
     /**
      * Constructor
      */
@@ -104,6 +107,15 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
     }
 
     /**
+     * Indicates if this node is a client.
+     *
+     * @return Ture, if this node is a client; false else.
+     */
+    public boolean isClient() {
+        return m_isClient;
+    }
+
+    /**
      * Nodes configuration
      * We can't use the NodesConfiguration class with the configuration because the nodes in that class
      * are already mapped to their node ids
@@ -115,10 +127,13 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_bitfieldSize.getBytes() < 2048 * 1024) {
-
             LOGGER.warn("Bitfield size is rather small. Not all node IDs may be addressable because of high " +
                     "false positives rate!");
+        }
 
+        if (p_config.getEngineConfig().getRole() == NodeRole.SUPERPEER && m_isClient) {
+            LOGGER.error("Client nodes can't be superpeers");
+            return false;
         }
 
         return true;

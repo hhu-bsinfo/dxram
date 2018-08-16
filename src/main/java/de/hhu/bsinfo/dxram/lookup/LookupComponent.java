@@ -24,6 +24,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.data.DataStructure;
@@ -685,33 +686,12 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
     @Override
     public boolean finishInitComponent() {
-
         if (m_boot.getNodeRole() == NodeRole.PEER) {
-            InetSocketAddress socketAddress = m_boot.getNodeAddress(m_boot.getNodeId());
+            NodeRegistry.NodeDetails details = m_boot.getDetails();
 
-            int capabilities = 0;
-
-            if (m_memory.getConfig().getKeyValueStoreSize().getBytes() > 0L) {
-
-                capabilities |= NodeCapabilities.STORAGE;
-            }
-
-            if (m_backup.isActive()) {
-
-                capabilities |= NodeCapabilities.BACKUP_SRC;
-            }
-
-            if (m_backup.isActiveAndAvailableForBackup()) {
-
-                capabilities |= NodeCapabilities.BACKUP_DST;
-            }
-
-            LOGGER.info(String.format("Detected capabilities %s", NodeCapabilities.toString(capabilities)));
-
-            m_boot.updateNodeCapabilities(capabilities);
-
+            // Inform superpeer that this peer finished its startup process
             m_peer.finishStartup(m_boot.getRack(), m_boot.getSwitch(), m_backup.isActiveAndAvailableForBackup(),
-                    capabilities, new IPV4Unit(socketAddress.getHostString(), socketAddress.getPort()));
+                    details.getCapabilities(), new IPV4Unit(details.getIp(), details.getPort()));
         }
 
         return true;

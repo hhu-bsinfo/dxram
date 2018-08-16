@@ -106,7 +106,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      * @return whether backup is enabled and this peer is used for logging/recovery or not
      */
     public boolean isActiveAndAvailableForBackup() {
-        return getConfig().isBackupActive() && getConfig().availableForBackup();
+        return getConfig().isBackupActive() && getConfig().isAvailableForBackup();
     }
 
     /**
@@ -484,7 +484,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             if (getConfig().isBackupActive()) {
 
-                if (!getConfig().availableForBackup()) {
+                if (!getConfig().isAvailableForBackup()) {
 
                     LOGGER.warn(
                             "--------------------------------------------------------------------------------------");

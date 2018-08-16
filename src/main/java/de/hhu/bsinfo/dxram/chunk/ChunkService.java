@@ -422,16 +422,16 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             sizes[i] = p_dataStructures[i].sizeofObject();
         }
 
-        int count = 0;
         long[] ids = createRemote(p_peer, sizes);
         if (ids != null) {
             for (int i = 0; i < ids.length; i++) {
                 p_dataStructures[i].setID(ids[i]);
                 p_dataStructures[i].setState(ChunkState.OK);
             }
+            return ids.length;
         }
 
-        return count;
+        return 0;
     }
 
     /**

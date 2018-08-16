@@ -18,10 +18,10 @@ package de.hhu.bsinfo.dxram.boot;
 
 
 import com.google.common.collect.Sets;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
-import de.hhu.bsinfo.dxutils.serialization.*;
+import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.utils.CloseableUtils;
@@ -30,10 +30,7 @@ import org.apache.curator.x.discovery.details.JsonInstanceSerializer;
 import org.apache.curator.x.discovery.details.ServiceCacheListener;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.annotate.JsonRootName;
-import org.codehaus.jackson.type.JavaType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -42,13 +39,17 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import static de.hhu.bsinfo.dxram.engine.DXRAMEngine.runOnMainThread;
-
+@SuppressWarnings("WeakerAccess")
 public class NodeRegistry implements ServiceCacheListener {
 
     private final static Logger log = LoggerFactory.getLogger(NodeRegistry.class);
@@ -64,14 +65,14 @@ public class NodeRegistry implements ServiceCacheListener {
     private ServiceInstance<NodeDetails> m_instance;
     private ServiceCache<NodeDetails> m_cache;
 
-    private final static String BASE_PATH = "/discovery";
-    private final static String SERVICE_NAME = "dxram";
+    private final static String BASE_PATH = "/dxram";
+    private final static String SERVICE_NAME = "nodes";
     private final static String THREAD_NAME = "discovery";
     private final static String DISCOVERY_PATH = String.format("%s/%s", BASE_PATH, SERVICE_NAME);
 
     private final ConcurrentHashMap<Short, NodeDetails> m_serviceMap = new ConcurrentHashMap<>();
 
-    private static final InetSocketAddress INVALID_ADDRESS = new InetSocketAddress("255.255.255.255", 0xFFFF);
+    private final ExecutorService m_executor = Executors.newSingleThreadExecutor(runnable -> new Thread(runnable, THREAD_NAME));
 
     public interface Listener {
         void onPeerJoined(final NodeDetails p_nodeDetails);
@@ -90,6 +91,12 @@ public class NodeRegistry implements ServiceCacheListener {
         m_listener = p_listener;
     }
 
+    /**
+     * Starts the node registry and service discovery.
+     *
+     * @param p_details This node's details.
+     * @throws Exception On ZooKeeper errors.
+     */
     public void start(final NodeDetails p_details) throws Exception {
         if (m_isRunning.get()) {
             log.warn("Registry is already running");
@@ -109,15 +116,19 @@ public class NodeRegistry implements ServiceCacheListener {
 
         m_cache = m_serviceDiscovery.serviceCacheBuilder()
                 .name(SERVICE_NAME)
-                .threadFactory(runnable -> new Thread(runnable, THREAD_NAME))
+                .executorService(m_executor)
                 .build();
 
         m_cache.addListener(this);
 
-        m_serviceDiscovery.start();
+        // Start cache first so that it gets updated immediately
         m_cache.start();
+        m_serviceDiscovery.start();
     }
 
+    /**
+     * Closes the node registry and stops service discovery.
+     */
     public void close() {
         try {
             m_cache.close();
@@ -131,6 +142,11 @@ public class NodeRegistry implements ServiceCacheListener {
         }
     }
 
+    /**
+     * Updates a specific node's details within ZooKeeper.
+     *
+     * @param p_details The node's details.
+     */
     public void updateNodeDetails(NodeDetails p_details) {
         ServiceInstance<NodeDetails> serviceInstance = p_details.toServiceInstance();
 
@@ -145,12 +161,18 @@ public class NodeRegistry implements ServiceCacheListener {
         }
     }
 
+    /**
+     * Informs the registered listener about changes.
+     *
+     * @param p_event The event.
+     * @param p_nodeDetails The node's details.
+     */
     private void notifyListener(final ListenerEvent p_event, final NodeDetails p_nodeDetails) {
         if (m_listener == null) {
             return;
         }
 
-        runOnMainThread(() -> {
+//        runOnMainThread(() -> {
             switch (p_event) {
                 case PEER_JOINED:
                     m_listener.onPeerJoined(p_nodeDetails);
@@ -168,9 +190,15 @@ public class NodeRegistry implements ServiceCacheListener {
                     m_listener.onNodeUpdated(p_nodeDetails);
                     break;
             }
-        });
+//        });
     }
 
+    /**
+     * Returns the specified node's details.
+     *
+     * @param p_nodeId The node's id.
+     * @return The specified node's details.
+     */
     @Nullable
     public NodeDetails getDetails(final short p_nodeId) {
         NodeDetails details = m_serviceMap.get(p_nodeId);
@@ -178,6 +206,12 @@ public class NodeRegistry implements ServiceCacheListener {
         return details != null ? details : getRemoteDetails(p_nodeId);
     }
 
+    /**
+     * Retrieves the specified node's details from ZooKeeper.
+     *
+     * @param p_nodeId The node's id.
+     * @return The specified node's details.
+     */
     private NodeDetails getRemoteDetails(short p_nodeId) {
         byte[] bootBytes;
 
@@ -195,6 +229,11 @@ public class NodeRegistry implements ServiceCacheListener {
         }
     }
 
+    /**
+     * Returns this node's details.
+     *
+     * @return This node's details.
+     */
     @Nullable
     public NodeDetails getDetails() {
         NodeDetails details = m_instance.getPayload();
@@ -215,15 +254,20 @@ public class NodeRegistry implements ServiceCacheListener {
         return m_serviceMap.values();
     }
 
+    /**
+     * Called when the cache has changed (instances added/deleted, etc.)
+     */
     @Override
     public void cacheChanged() {
-        Set<NodeDetails> remoteDetails = m_cache.getInstances().stream()
+        log.info("Service discovery cache changed");
+
+        final Set<NodeDetails> remoteDetails = m_cache.getInstances().stream()
                 .map(ServiceInstance::getPayload)
                 .collect(Collectors.toSet());
 
-        Set<NodeDetails> localDetails = new HashSet<>(m_serviceMap.values());
+        final Set<NodeDetails> localDetails = new HashSet<>(m_serviceMap.values());
 
-        Sets.SetView<NodeDetails> changedNodes = Sets.difference(remoteDetails, localDetails);
+        final Sets.SetView<NodeDetails> changedNodes = Sets.difference(remoteDetails, localDetails);
         for (NodeDetails details : changedNodes) {
             NodeDetails oldDetails = m_serviceMap.put(details.getId(), details);
 
@@ -239,23 +283,40 @@ public class NodeRegistry implements ServiceCacheListener {
             }
         }
 
-//        Sets.SetView<NodeDetails> leftNodes = Sets.difference(localDetails, remoteDetails);
-//        for (NodeDetails details : leftNodes) {
-//            m_serviceMap.remove(details.getId());
-//
-//            if (details.getRole().equals(NodeRole.SUPERPEER)) {
-//                notifyListener(ListenerEvent.SUPERPEER_LEFT, details);
-//            } else {
-//                notifyListener(ListenerEvent.PEER_LEFT, details);
-//            }
-//        }
+        final Set<Short> remoteIds = remoteDetails.stream().map(NodeDetails::getId).collect(Collectors.toSet());
+        final Set<Short> localIds = localDetails.stream().map(NodeDetails::getId).collect(Collectors.toSet());
+
+        final Sets.SetView<Short> leftNodeIds = Sets.difference(localIds, remoteIds);
+        NodeDetails leftNode;
+        for(Short nodeId : leftNodeIds) {
+            leftNode = m_serviceMap.get(nodeId);
+
+            if (!leftNode.isOnline()) {
+                continue;
+            }
+
+            m_serviceMap.put(nodeId, leftNode.withOnline(false));
+
+            if (leftNode.getRole().equals(NodeRole.SUPERPEER)) {
+                notifyListener(ListenerEvent.SUPERPEER_LEFT, leftNode);
+            } else {
+                notifyListener(ListenerEvent.PEER_LEFT, leftNode);
+            }
+        }
     }
 
+    /**
+     * Called when there is a state change in the connection.
+     *
+     * @param p_client The client.
+     * @param p_newState The new state.
+     */
     @Override
-    public void stateChanged(CuratorFramework client, ConnectionState newState) {
-        log.info("Curator connection state changed to {}", newState.isConnected() ? "CONNECTED" : "DISCONNECTED");
+    public void stateChanged(CuratorFramework p_client, ConnectionState p_newState) {
+        log.info("Curator connection state changed to {}", p_newState.isConnected() ? "CONNECTED" : "DISCONNECTED");
     }
 
+    @SuppressWarnings("unused")
     @JsonRootName("node")
     public static final class NodeDetails {
 
@@ -373,6 +434,10 @@ public class NodeRegistry implements ServiceCacheListener {
             return new NodeDetails(m_id, m_ip, m_port, m_rack, m_switch, m_role, m_online, m_availableForBackup, p_capabilities);
         }
 
+        public NodeDetails withOnline(boolean p_isOnline) {
+            return new NodeDetails(m_id, m_ip, m_port, m_rack, m_switch, m_role, p_isOnline, m_availableForBackup, m_capabilities);
+        }
+
         @Override
         public boolean equals(Object p_o) {
             if (this == p_o) return true;
@@ -432,8 +497,8 @@ public class NodeRegistry implements ServiceCacheListener {
             short tmpRack = 0;
             short tmpSwitch = 0;
             char tmpRole = '0';
-            boolean tmpOnline = false;
-            boolean tmpBackup = false;
+            boolean tmpOnline;
+            boolean tmpBackup;
             int tmpCapabilites = 0;
             
             tmpId = importer.readShort(tmpId);
@@ -442,8 +507,8 @@ public class NodeRegistry implements ServiceCacheListener {
             tmpRack = importer.readShort(tmpRack);
             tmpSwitch = importer.readShort(tmpSwitch);
             tmpRole = importer.readChar(tmpRole);
-            tmpOnline = importer.readBoolean(tmpOnline);
-            tmpBackup = importer.readBoolean(tmpBackup);
+            tmpOnline = importer.readBoolean(false);
+            tmpBackup = importer.readBoolean(false);
             tmpCapabilites = importer.readInt(tmpCapabilites);
 
             return new NodeDetails(tmpId, tmpIp, tmpPort, tmpRack, tmpSwitch,

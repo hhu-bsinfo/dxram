@@ -59,7 +59,7 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
      * like replicating own chunks, are enabled.
      * Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
      */
-    boolean availableForBackup() {
+    public boolean isAvailableForBackup() {
         return m_availableForBackup;
     }
 
