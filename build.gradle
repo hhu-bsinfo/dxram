@@ -94,6 +94,11 @@ dependencies {
 
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.assertj:assertj-core:3.9.0'
+    testImplementation 'com.google.guava:guava:26.0-jre'
+    testImplementation 'org.apache.zookeeper:zookeeper:3.4.13'
+    testImplementation ('org.apache.curator:curator-x-discovery:4.0.1') {
+        exclude group: 'org.apache.zookeeper', module: 'zookeeper'
+    }
 }
 
 artifacts {
