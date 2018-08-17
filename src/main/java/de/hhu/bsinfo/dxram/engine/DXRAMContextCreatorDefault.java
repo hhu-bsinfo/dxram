@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
- * Department Operating Systems
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
- * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
-
 package de.hhu.bsinfo.dxram.engine;
 
 import java.io.File;
@@ -33,39 +17,38 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Handler for DXRAM context, loading configuration, creating default configuration, configuration overriding
+ * The default context creator which loads a configuration from a file, creates a default configuration and writes
+ * it back to a file if none exists and handles config parameter overriding using JVM arguments
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.10.2016
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.08.2017
  */
-class DXRAMContextHandler {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMContextHandler.class.getSimpleName());
+public class DXRAMContextCreatorDefault implements DXRAMContextCreator {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(
+            DXRAMContextCreatorDefault.class.getSimpleName());
 
     private static final String DXRAM_CONFIG_FILE_PATH = "config/dxram.json";
 
-    private final DXRAMComponentManager m_componentManager;
-    private final DXRAMServiceManager m_serviceManager;
-    private DXRAMContext m_context = new DXRAMContext();
+    @Override
+    public DXRAMContext create(final DXRAMComponentManager p_componentManager,
+            final DXRAMServiceManager p_serviceManager) {
+        // check vm arguments for configuration override
+        String config = System.getProperty("dxram.config");
 
-    /**
-     * Constructor
-     *
-     * @param p_componentManager
-     *         the DXRAMComponentManager
-     * @param p_serviceManager
-     *         the DXRAMServiceManager
-     */
-    DXRAMContextHandler(final DXRAMComponentManager p_componentManager, final DXRAMServiceManager p_serviceManager) {
-        m_componentManager = p_componentManager;
-        m_serviceManager = p_serviceManager;
-    }
+        if (config == null) {
+            config = "";
+        } else {
+            LOGGER.info("Loading configuration file: %s", config);
+        }
 
-    /**
-     * Get the DXRAM context
-     *
-     * @return DXRAM context
-     */
-    DXRAMContext getContext() {
-        return m_context;
+        // check if a config needs to be created
+        if (config.isEmpty() || !new File(config).exists()) {
+            createDefaultConfiguration(config, p_componentManager, p_serviceManager);
+
+            LOGGER.info("Default configuration created (%s), please restart DXRAM", config);
+            return null;
+        }
+
+        return loadConfiguration(config);
     }
 
     /**
@@ -73,9 +56,9 @@ class DXRAMContextHandler {
      *
      * @param p_configFilePath
      *         Path for configuration file
-     * @return True if creating config file successful, false otherwise
      */
-    boolean createDefaultConfiguration(final String p_configFilePath) {
+    private static void createDefaultConfiguration(final String p_configFilePath,
+            final DXRAMComponentManager p_componentManager, final DXRAMServiceManager p_serviceManager) {
         LOGGER.info("No valid configuration found or specified via vm argument -Ddxram.config, creating default " +
                 " configuration '%s'...", p_configFilePath);
 
@@ -91,26 +74,26 @@ class DXRAMContextHandler {
         if (file.exists()) {
             if (!file.delete()) {
                 LOGGER.error("Deleting existing config file %s failed", file);
-                return false;
+                return;
             }
         }
 
         try {
             if (!file.createNewFile()) {
                 LOGGER.error("Creating new config file %s failed", file);
-                return false;
+                return;
             }
         } catch (final IOException e) {
             LOGGER.error("Creating new config file %s failed: %s", file, e.getMessage());
-            return false;
+            return;
         }
 
-        m_context = new DXRAMContext();
-        m_context.createDefaultComponents(m_componentManager);
-        m_context.createDefaultServices(m_serviceManager);
+        DXRAMContext context = new DXRAMContext();
+        context.createDefaultComponents(p_componentManager);
+        context.createDefaultServices(p_serviceManager);
 
         Gson gson = DXRAMGsonContext.createGsonInstance();
-        String jsonString = gson.toJson(m_context);
+        String jsonString = gson.toJson(context);
 
         try {
             PrintWriter writer = new PrintWriter(file);
@@ -119,8 +102,6 @@ class DXRAMContextHandler {
         } catch (final FileNotFoundException e) {
             // we can ignored this here, already checked that
         }
-
-        return true;
     }
 
     /**
@@ -128,54 +109,44 @@ class DXRAMContextHandler {
      *
      * @param p_configFilePath
      *         Path to existing configuration file
-     * @return True if loading successful, false on error
+     * @return DXRAMContext instance on success, null on failure
      */
-    boolean loadConfiguration(final String p_configFilePath) {
+    private static DXRAMContext loadConfiguration(final String p_configFilePath) {
         LOGGER.info("Loading configuration '%s'...", p_configFilePath);
 
         Gson gson = DXRAMGsonContext.createGsonInstance();
 
         JsonElement element;
+
         try {
             element = gson.fromJson(new String(Files.readAllBytes(Paths.get(p_configFilePath))), JsonElement.class);
         } catch (final Exception e) {
             LOGGER.error("Could not load configuration '%s': %s", p_configFilePath, e.getMessage());
-            return false;
+            return null;
         }
 
         if (element == null) {
             LOGGER.error("Could not load configuration '%s': empty configuration file", p_configFilePath);
-            return false;
+            return null;
         }
 
         overrideConfigurationWithVMArguments(element.getAsJsonObject());
 
+        DXRAMContext context;
+
         try {
-            m_context = gson.fromJson(element, DXRAMContext.class);
+            context = gson.fromJson(element, DXRAMContext.class);
         } catch (final Exception e) {
             LOGGER.error("Loading configuration '%s' failed: %s", p_configFilePath, e.getMessage());
-            return false;
+            return null;
         }
 
-        if (m_context == null) {
+        if (context == null) {
             LOGGER.error("Loading configuration '%s' failed: context null", p_configFilePath);
-            return false;
+            return null;
         }
 
-        // verify configuration values
-        if (!m_context.verifyConfigurationValuesComponents()) {
-            return false;
-        }
-
-        if (!m_context.verifyConfigurationValuesComponents()) {
-            return false;
-        }
-
-        // create component/service instances
-        m_context.createComponentsFromConfig(m_componentManager, m_context.getConfig().getEngineConfig().getRole());
-        m_context.createServicesFromConfig(m_serviceManager, m_context.getConfig().getEngineConfig().getRole());
-
-        return true;
+        return context;
     }
 
     /**
@@ -189,14 +160,15 @@ class DXRAMContextHandler {
         Enumeration e = props.propertyNames();
 
         while (e.hasMoreElements()) {
-
             String key = (String) e.nextElement();
+
             if (key.startsWith("dxram.") && !"dxram.config".equals(key)) {
 
                 String[] tokens = key.split("\\.");
 
                 JsonObject parent = p_object;
                 JsonObject child = null;
+
                 // skip dxram token
                 for (int i = 1; i < tokens.length; i++) {
 

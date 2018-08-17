@@ -168,7 +168,7 @@ public class Worker extends Thread {
 
             m_isIdle = true;
             try {
-                Thread.sleep(10);
+                Thread.sleep(100);
             } catch (final InterruptedException ignored) {
             }
         }

@@ -37,6 +37,8 @@ import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMContextCreator;
+import de.hhu.bsinfo.dxram.engine.DXRAMContextCreatorDefault;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.engine.NullComponent;
@@ -107,7 +109,7 @@ public final class DXRAM {
 
         System.out.println("Starting DXRAM, version " + dxram.getVersion());
 
-        if (!dxram.initialize(true)) {
+        if (!dxram.initialize(new DXRAMContextCreatorDefault(), true)) {
             System.out.println("Initializing DXRAM failed.");
             System.exit(-1);
         }
@@ -131,13 +133,15 @@ public final class DXRAM {
     /**
      * Initialize the instance.
      *
+     * @param p_contextCreator
+     *         Context creator to use
      * @param p_autoShutdown
      *         True to have DXRAM shut down automatically when the application quits.
      *         If false, the caller has to take care of shutting down the instance by calling shutdown when done.
      * @return True if initializing was successful, false otherwise.
      */
-    public boolean initialize(final boolean p_autoShutdown) {
-        boolean ret = m_engine.init();
+    public boolean initialize(final DXRAMContextCreator p_contextCreator, final boolean p_autoShutdown) {
+        boolean ret = m_engine.init(p_contextCreator);
         if (!ret) {
             return false;
         }
