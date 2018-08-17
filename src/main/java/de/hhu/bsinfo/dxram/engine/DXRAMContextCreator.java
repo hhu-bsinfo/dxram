@@ -5,7 +5,7 @@ package de.hhu.bsinfo.dxram.engine;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.08.2017
  */
-public interface DXRAMContextCreator {
+public abstract class AbstractDXRAMContextCreator {
     /**
      * Create a DXRAMContext instance
      *

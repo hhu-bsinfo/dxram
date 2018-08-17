@@ -226,7 +226,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             return false;
         }
 
-        if (!m_context.verifyConfigurationValuesComponents()) {
+        if (!m_context.verifyConfigurationValuesServices()) {
             return false;
         }
 
