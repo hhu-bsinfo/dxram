@@ -22,9 +22,9 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.08.2017
  */
-public class DXRAMContextCreatorDefault implements DXRAMContextCreator {
+public class DXRAMContextCreatorFile implements DXRAMContextCreator {
     private static final Logger LOGGER = LogManager.getFormatterLogger(
-            DXRAMContextCreatorDefault.class.getSimpleName());
+            DXRAMContextCreatorFile.class.getSimpleName());
 
     private static final String DXRAM_CONFIG_FILE_PATH = "config/dxram.json";
 

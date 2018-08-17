@@ -38,7 +38,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMContextCreator;
-import de.hhu.bsinfo.dxram.engine.DXRAMContextCreatorDefault;
+import de.hhu.bsinfo.dxram.engine.DXRAMContextCreatorFile;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.engine.NullComponent;
@@ -109,7 +109,7 @@ public final class DXRAM {
 
         System.out.println("Starting DXRAM, version " + dxram.getVersion());
 
-        if (!dxram.initialize(new DXRAMContextCreatorDefault(), true)) {
+        if (!dxram.initialize(new DXRAMContextCreatorFile(), true)) {
             System.out.println("Initializing DXRAM failed.");
             System.exit(-1);
         }
