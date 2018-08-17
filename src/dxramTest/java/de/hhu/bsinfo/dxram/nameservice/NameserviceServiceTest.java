@@ -16,17 +16,15 @@
 
 package de.hhu.bsinfo.dxram.nameservice;
 
-import de.hhu.bsinfo.dxram.ClientInstance;
-import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
-import de.hhu.bsinfo.dxram.DXRAMRunnerConfiguration;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-@RunWith(DXRAMJunitRunner.class)
-@DXRAMRunnerConfiguration(expectedNodes = 3)
+import de.hhu.bsinfo.dxram.ClientInstance;
+import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.data.ChunkID;
+
+//@RunWith(DXRAMJunitRunner.class)
+//@DXRAMRunnerConfiguration(expectedNodes = 3)
 public class NameserviceServiceTest {
 
     @ClientInstance

@@ -16,20 +16,25 @@
 
 package de.hhu.bsinfo.dxram.chunk;
 
-import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.ClientInstance;
-import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
-import de.hhu.bsinfo.dxram.DXRAMRunnerConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@RunWith(DXRAMJunitRunner.class)
-@DXRAMRunnerConfiguration(expectedNodes = 3)
-public class ChunkServiceTest {
+import de.hhu.bsinfo.dxram.ClientInstance;
+import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
+import de.hhu.bsinfo.dxram.DXRAMRunnerConfiguration;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 
+@RunWith(DXRAMJunitRunner.class)
+@DXRAMRunnerConfiguration(runTestOnNodeRole = NodeRole.PEER, runTestOnNodeIdx = 0,
+        zookeeperPath = "/home/nothaas/zookeeper", nodes = {
+        @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.SUPERPEER, zookeeperIP = "127.0.0.1", zookeeperPort = 2181),
+        @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.PEER, zookeeperIP = "127.0.0.1", zookeeperPort = 2181)
+})
+public class ChunkServiceTest {
     @ClientInstance
-    private DXRAM m_instance = null;
+    private DXRAM m_instance;
 
     @Test
     public void testChunkPut() {

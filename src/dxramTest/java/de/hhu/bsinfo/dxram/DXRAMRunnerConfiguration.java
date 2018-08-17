@@ -16,15 +16,31 @@
 
 package de.hhu.bsinfo.dxram;
 
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import de.hhu.bsinfo.dxram.util.NodeRole;
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface DXRAMRunnerConfiguration {
+    NodeRole runTestOnNodeRole();
 
-    int expectedNodes();
+    int runTestOnNodeIdx();
+
+    String zookeeperPath();
+
+    Node[] nodes();
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    @interface Node {
+        NodeRole nodeRole();
+
+        String zookeeperIP();
+
+        int zookeeperPort();
+    }
 }
