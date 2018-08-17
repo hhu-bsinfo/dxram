@@ -14,22 +14,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.remote;
+package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
+import de.hhu.bsinfo.dxram.ClientInstance;
+import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
+import de.hhu.bsinfo.dxram.DXRAMRunnerConfiguration;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(DXRAMJunitRunner.class)
-@DXRAMRunnerConfiguration(superPeers = 2)
-public class DXRAMRemoteTest {
+@DXRAMRunnerConfiguration(expectedNodes = 3)
+public class ChunkServiceTest {
 
-    @DXRAMInstance
+    @ClientInstance
     private DXRAM m_instance = null;
 
     @Test
@@ -37,15 +36,6 @@ public class DXRAMRemoteTest {
         ChunkService chunkService = m_instance.getService(ChunkService.class);
         long[] chunkIds = chunkService.create(64, 2);
 
-        assertEquals(chunkIds.length, 2);
-    }
-
-    @Test
-    public void testNameService() {
-        NameserviceService nameserviceService = m_instance.getService(NameserviceService.class);
-        nameserviceService.register(ChunkID.getChunkID((short) 0x1234, 42), "TEST");
-        long chunkId = nameserviceService.getChunkID("TEST", 1000);
-
-        assertEquals(42, ChunkID.getLocalID(chunkId));
+        Assert.assertEquals(chunkIds.length, 2);
     }
 }

@@ -14,9 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.remote;
+package de.hhu.bsinfo.dxram;
 
-import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import org.junit.Test;
 import org.junit.runner.Description;
@@ -50,6 +49,12 @@ public class DXRAMJunitRunner extends Runner {
     @Override
     public void run(RunNotifier notifier) {
 
+        DXRAMRunnerConfiguration config = (DXRAMRunnerConfiguration) m_testClass.getAnnotation(DXRAMRunnerConfiguration.class);
+
+        if (config == null) {
+            throw new RuntimeException(String.format("DXRAMRunnerConfiguration annotation not found (%s)", m_testClass.getSimpleName()));
+        }
+
         System.setProperty("dxram.config", "/home/krakowski/dxram/config/dxram.json");
         System.setProperty("dxram.m_config.m_engineConfig.m_address.m_port", "22223");
 
@@ -59,25 +64,10 @@ public class DXRAMJunitRunner extends Runner {
             System.exit(-1);
         }
 
-        BootService bootService = m_instance.getService(BootService.class);
-
-        List<Short> onlineNodes = bootService.getOnlineNodeIDs();
-        while (onlineNodes.size() != 3) {
-
-            // Wait until DXRam finds other nodes
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException p_e) {
-                p_e.printStackTrace();
-            }
-
-            onlineNodes = bootService.getOnlineNodeIDs();
-        }
-
-        Set<Field> annotatedFields = findFields(m_testClass, DXRAMInstance.class);
+        Set<Field> annotatedFields = findFields(m_testClass, ClientInstance.class);
 
         if (annotatedFields.size() != 1) {
-            throw new IllegalStateException("Detected more than one DXRAMInstance annotation");
+            throw new IllegalStateException("Detected more than one ClientInstance annotation");
         }
 
         Field instanceField = annotatedFields.iterator().next();
@@ -109,14 +99,16 @@ public class DXRAMJunitRunner extends Runner {
     }
 
     /**
-     * @return null safe set
+     * Searches for annotated fields within the specified class.
+     *
+     * @return A Set containing all fields annotated by the specified annotation.
      */
-    private static Set<Field> findFields(Class<?> classs, Class<? extends Annotation> ann) {
+    private static Set<Field> findFields(Class<?> classs, Class<? extends Annotation> annotation) {
         Set<Field> set = new HashSet<>();
         Class<?> c = classs;
         while (c != null) {
             for (Field field : c.getDeclaredFields()) {
-                if (field.isAnnotationPresent(ann)) {
+                if (field.isAnnotationPresent(annotation)) {
                     set.add(field);
                 }
             }

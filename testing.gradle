@@ -14,11 +14,23 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.remote;
+sourceSets {
+    dxramTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file("src/dxramTest/java")
+        }
+        resources.srcDir file("src/dxramTest/resources")
+    }
+}
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
+configurations {
+    dxramTestImplementation.extendsFrom testImplementation
+}
 
-@Retention(RetentionPolicy.RUNTIME)
-public @interface DXRAMInstance {
+task dxramTest(type: Test, group: 'verification') {
+    testClassesDirs = sourceSets.dxramTest.output.classesDirs
+    classpath = sourceSets.dxramTest.runtimeClasspath
+    outputs.upToDateWhen { false }
 }
