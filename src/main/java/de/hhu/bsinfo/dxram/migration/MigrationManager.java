@@ -92,7 +92,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
     public Future<Void> migrateRange(final short p_target, final long p_startId, final long p_endId) {
 
-        MigrationIdentifier identifier = new MigrationIdentifier(m_boot.getNodeID(), p_target, p_startId, p_endId);
+        MigrationIdentifier identifier = new MigrationIdentifier(m_boot.getNodeId(), p_target, p_startId, p_endId);
 
         MigrationTask[] tasks = createMigrationTasks(identifier);
 
@@ -225,7 +225,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
         int chunkCount = (int) (p_endId - p_startId + 1);
 
-        if (m_boot.getNodeID() == p_identifier.getTarget()) {
+        if (m_boot.getNodeId() == p_identifier.getTarget()) {
 
             log.error("The migration target has to be another node");
 
