@@ -31,7 +31,6 @@ import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.atomic.AtomicValue;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicInteger;
 import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.Nullable;
 
 import java.net.InetSocketAddress;
@@ -164,6 +163,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      */
     @Override
     protected boolean shutdownComponent() {
+        m_nodeRegistry.close();
         m_curatorClient.close();
         return true;
     }

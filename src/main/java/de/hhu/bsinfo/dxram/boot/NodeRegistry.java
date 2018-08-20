@@ -36,7 +36,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -130,16 +129,9 @@ public class NodeRegistry implements ServiceCacheListener {
      * Closes the node registry and stops service discovery.
      */
     public void close() {
-        try {
-            m_cache.close();
-            m_serviceDiscovery.close();
-        } catch (IOException p_e) {
-            log.error("Closing node registry failed", p_e);
-        } finally {
-            CloseableUtils.closeQuietly(m_cache);
-            CloseableUtils.closeQuietly(m_serviceDiscovery);
-            m_isRunning.set(false);
-        }
+        CloseableUtils.closeQuietly(m_cache);
+        CloseableUtils.closeQuietly(m_serviceDiscovery);
+        m_isRunning.set(false);
     }
 
     /**
