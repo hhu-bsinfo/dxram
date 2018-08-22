@@ -173,10 +173,6 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
         return m_migrationManager.migrateRange(p_target, p_startChunkID, p_endChunkID);
     }
 
-    public MigrationManager getMigrationManager() {
-        return m_migrationManager;
-    }
-
     // TODO(krakowski)
     //  Remove old method
 //    public boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {

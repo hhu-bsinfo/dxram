@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 
 import com.google.gson.Gson;
@@ -27,7 +28,9 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     // component dependencies
     private ApplicationComponent m_application;
 
-    private List<AbstractApplication> m_applications;
+//    private List<AbstractApplication> m_applications;
+
+    private final HashMap<String, AbstractApplication> m_applications = new HashMap<>();
 
     /**
      * Constructor
@@ -54,8 +57,6 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     @Override
     protected boolean startService(final DXRAMContext.Config p_config) {
         List<Class<? extends AbstractApplication>> applicationClasses = m_application.getApplicationClasses();
-
-        m_applications = new ArrayList<>();
 
         LOGGER.debug("Loading %d applications...", applicationClasses.size());
 
@@ -119,7 +120,11 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
             app.setEngine(getParentEngine());
 
-            m_applications.add(app);
+            AbstractApplication oldApp = m_applications.putIfAbsent(app.getApplicationName(), app);
+
+            if (oldApp != null) {
+                LOGGER.warn("Application %s was already registered", oldApp.getApplicationName());
+            }
         }
 
         return true;
@@ -129,11 +134,13 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     protected boolean shutdownService() {
         LOGGER.debug("Shutting down all running applications (%d)...", m_applications.size());
 
-        for (AbstractApplication app : m_applications) {
+        List<AbstractApplication> apps = new ArrayList<>(m_applications.values());
+
+        for (AbstractApplication app : apps) {
             app.signalShutdown();
         }
 
-        for (AbstractApplication app : m_applications) {
+        for (AbstractApplication app : apps) {
             LOGGER.debug("Waiting for application '%s' to finish shutdown...", app.getApplicationName());
 
             try {
@@ -152,20 +159,20 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
     @Override
     protected void engineInitFinished() {
-        LOGGER.info("Loading external dependencies...");
-
-        // load external dependencies first, otherwise the app might crash
-        for (AbstractApplication app : m_applications) {
-            m_application.loadExternalDependencies(app);
+        if (!getConfig().isAutostartEnabled()) {
+            LOGGER.info("Application autostart is disabled");
+            return;
         }
 
-        m_applications.sort(Comparator.comparingInt(AbstractApplication::getInitOrderId));
+        List<AbstractApplication> apps = new ArrayList<>(m_applications.values());
+
+        apps.sort(Comparator.comparingInt(AbstractApplication::getInitOrderId));
 
         LOGGER.info("Initializing applications...");
 
         // initialize sequentially to allow applications to setup stuff that might be required by other applications
         // e.g. use a dxapp as some sort of library
-        for (AbstractApplication app : m_applications) {
+        for (AbstractApplication app : apps) {
             System.out.println("init order id: " + app.getInitOrderId());
             app.init();
         }
@@ -173,7 +180,7 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
         LOGGER.info("Starting applications...");
 
         // start all applications
-        for (AbstractApplication app : m_applications) {
+        for (AbstractApplication app : apps) {
             app.start();
         }
     }
@@ -265,6 +272,29 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
             // we can ignored this here, already checked
         }
 
+        return true;
+    }
+
+    /**
+     * Starts the application with the specified name.
+     *
+     * @param p_name The application's name.
+     * @return True if the application was started successfully; false else.
+     */
+    public boolean startApplication(final String p_name) {
+        AbstractApplication app = m_applications.get(p_name);
+        if (app == null) {
+            LOGGER.warn("Application %s was not registered", p_name);
+            return false;
+        }
+
+        if (app.isAlive()) {
+            LOGGER.warn("Application %s is already running", p_name);
+            return false;
+        }
+
+        app.init();
+        app.start();
         return true;
     }
 }

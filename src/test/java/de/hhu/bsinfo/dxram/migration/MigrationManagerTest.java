@@ -40,7 +40,7 @@ public class MigrationManagerTest {
     private static final int WORKER_COUNT = 16;
 
     private static final MigrationIdentifier IDENTIFIER =
-            new MigrationIdentifier((short) 0x00, (short) 0x42, CHUNK_START_ID, CHUNK_END_ID);
+            new MigrationIdentifier((short) 0x00, (short) 0x42, CHUNK_START_ID, CHUNK_END_ID, );
 
     private MigrationManager manager = null;
 
@@ -52,7 +52,7 @@ public class MigrationManagerTest {
 
         manager = new MigrationManager(WORKER_COUNT, componentAccessor);
 
-        MigrationTask[] tasks = manager.createMigrationTasks(IDENTIFIER);
+        MigrationTask[] tasks = manager.createMigrationTasks(, IDENTIFIER, );
 
         assertEquals(WORKER_COUNT, tasks.length);
 

@@ -27,9 +27,7 @@ public class MigrationTask implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(MigrationTask.class);
 
     private final MigrationIdentifier m_identifier;
-
     private final long m_startId;
-
     private final long m_endId;
 
     private final ChunkMigrator m_migrator;
