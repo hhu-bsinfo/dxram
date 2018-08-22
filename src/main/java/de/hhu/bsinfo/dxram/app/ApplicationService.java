@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -159,15 +160,12 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
     @Override
     protected void engineInitFinished() {
-        if (!getConfig().isAutostartEnabled()) {
-            LOGGER.info("Application autostart is disabled");
-            return;
-        }
 
-        List<AbstractApplication> apps = new ArrayList<>(m_applications.values());
-
-        apps.sort(Comparator.comparingInt(AbstractApplication::getInitOrderId));
-
+        List<AbstractApplication> apps = m_applications.values().stream()
+                .filter(app -> getConfig().isAutostartEnabled(app.getApplicationName()))
+                .sorted(Comparator.comparingInt(AbstractApplication::getInitOrderId))
+                .collect(Collectors.toList());
+        
         LOGGER.info("Initializing applications...");
 
         // initialize sequentially to allow applications to setup stuff that might be required by other applications
