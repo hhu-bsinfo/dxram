@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.migration;
 
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -168,81 +168,9 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      * @param p_endChunkID The last chunk id
      * @param p_target The target node
      */
-    public Future<Void> migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
-
-        return m_migrationManager.migrateRange(p_target, p_startChunkID, p_endChunkID);
+    public CompletableFuture<MigrationStatus> migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
+        return m_migrationManager.migrateRange(p_target, new LongRange(p_startChunkID, p_endChunkID));
     }
-
-    // TODO(krakowski)
-    //  Remove old method
-//    public boolean migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
-//        long[] chunkIDs;
-//        short[] backupPeers;
-//        int counter;
-//        int chunkSize;
-//        long iter;
-//        long size;
-//        DataStructure chunk;
-//        DataStructure[] chunks;
-//
-//        if (p_startChunkID > p_endChunkID) {
-//            throw new IllegalArgumentException("Start id must be less than end id");
-//        }
-//
-//        if (p_target == m_boot.getNodeID()) {
-//            throw new IllegalArgumentException("Target has to be another node");
-//        }
-//
-//        m_migrationLock.lock();
-//
-//        iter = p_startChunkID;
-//
-//        while (true) {
-//            // Send chunks to p_target
-//            chunks = new DataStructure[(int) (p_endChunkID - iter + 1)];
-//            counter = 0;
-//            size = 0;
-//            m_memoryManager.lockAccess();
-//            while (iter <= p_endChunkID) {
-//                if (m_memoryManager.exists(iter)) {
-//                    chunk = new DSByteArray(iter, m_memoryManager.get(iter));
-//
-//                    chunks[counter] = chunk;
-//                    chunkIDs[counter++] = chunk.getID();
-//                    size += chunk.sizeofObject();
-//                } else {
-//
-//                    LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", iter);
-//
-//                }
-//                iter++;
-//            }
-//            m_memoryManager.unlockAccess();
-//
-//
-//            LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
-//
-//            try {
-//                m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter)));
-//            } catch (final NetworkException e) {
-//
-//                LOGGER.error("Could not migrate chunks");
-//
-//            }
-//
-//            if (iter > p_endChunkID) {
-//                break;
-//            }
-//        }
-//
-//        ret = true;
-//
-//        m_migrationLock.unlock();
-//
-//        LOGGER.info("All chunks migrated");
-//
-//        return ret;
-//    }
 
     /**
      * Migrates all chunks to another node.
@@ -287,6 +215,15 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
         }
     }
 
+    /**
+     * Returns the number of active worker threads.
+     *
+     * @return The number of active worker threads.
+     */
+    public int getWorkerCount() {
+        return m_migrationManager.getWorkerCount();
+    }
+
     @Override
     public void onIncomingMessage(final Message p_message) {
 
@@ -324,7 +261,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_migrationManager = new MigrationManager(16, p_componentAccessor);
+        m_migrationManager = new MigrationManager(1, p_componentAccessor);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);

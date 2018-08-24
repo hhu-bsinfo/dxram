@@ -18,13 +18,15 @@ package de.hhu.bsinfo.dxram.migration;
 
 import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 
+import java.util.List;
+
 public interface ChunkMigrator {
 
     enum Status {
         SENT, NOT_SENT, INVALID_ARG
     }
 
-    Status migrate(MigrationIdentifier p_identifier, long p_startId, long p_endId);
+    Status migrate(MigrationIdentifier p_identifier, List<LongRange> p_ranges);
 
     void onStatus(MigrationIdentifier p_identifier, long p_startId, long p_endId, Status p_result);
 }

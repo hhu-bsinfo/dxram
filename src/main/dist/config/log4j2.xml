@@ -13,7 +13,7 @@
         <!-- Do not let zookeeper flood our log-->
         <Logger name="org.apache.zookeeper" level="OFF"/>
 
-        <Root level="debug">
+        <Root level="info">
             <AppenderRef ref="ConsoleAsync"/>
         </Root>
     </Loggers>

@@ -2,12 +2,18 @@ package de.hhu.bsinfo.dxram.app;
 
 import com.google.gson.annotations.Expose;
 
+import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Base class to implement and run applications on DXRAM peer nodes
@@ -16,6 +22,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
  */
 public abstract class AbstractApplication extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractApplication.class.getSimpleName());
+
+    private String m_args[] = new String[0];
 
     // config values
     /**
@@ -98,7 +106,16 @@ public abstract class AbstractApplication extends Thread {
      * Note: As every main of every application is run in a separate thread, you can not make assumption about the
      * order of execution. Implement all application main's independent of each other.
      */
-    public abstract void main();
+    public abstract void main(CommandLine p_commandLine);
+
+    /**
+     * Returns all options supported by the application.
+     *
+     * @return All options supported by the application.
+     */
+    protected List<Option> getOptions() {
+        return Collections.emptyList();
+    }
 
     /**
      * Signal by DXRAM to shut down your application.
@@ -120,10 +137,22 @@ public abstract class AbstractApplication extends Thread {
     public void run() {
         setName(getApplicationName());
 
+        Options options = new Options();
+        getOptions().forEach(options::addOption);
+
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        try {
+            cmd = parser.parse(options, m_args);
+        } catch (ParseException p_e) {
+            LOGGER.error("Application options could not be parsed", p_e);
+            return;
+        }
+
         LOGGER.info("Starting '%s'...", getName());
 
         try {
-            main();
+            main(cmd);
         } catch (final Exception e) {
             LOGGER.info("Exception in application", e);
         }
@@ -165,5 +194,18 @@ public abstract class AbstractApplication extends Thread {
      */
     void setEngine(final DXRAMEngine p_dxram) {
         m_dxram = p_dxram;
+    }
+
+    /**
+     * Sets the application's arguments.
+     *
+     * @param p_args The arguments.
+     */
+    void setArguments(final String[] p_args) {
+        if (p_args == null) {
+            return;
+        }
+
+        m_args = Arrays.copyOf(p_args, p_args.length);
     }
 }

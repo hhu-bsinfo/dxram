@@ -1,5 +1,13 @@
 package de.hhu.bsinfo.dxram.app;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
+import org.jetbrains.annotations.Nullable;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -7,29 +15,18 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 
 /**
  * Service to run applications locally on the DXRAM instance with access to all exposed services
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
+ * @author Filip Krakowski, Filip.Krakowski@Uni-Duesseldorf.de, 22.08.2018
  */
 public class ApplicationService extends AbstractDXRAMService<ApplicationServiceConfig> {
     // component dependencies
-    private ApplicationComponent m_application;
-
-//    private List<AbstractApplication> m_applications;
+    private ApplicationComponent m_appComponent;
 
     private final HashMap<String, AbstractApplication> m_applications = new HashMap<>();
 
@@ -52,82 +49,11 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_application = p_componentAccessor.getComponent(ApplicationComponent.class);
+        m_appComponent = p_componentAccessor.getComponent(ApplicationComponent.class);
     }
 
     @Override
     protected boolean startService(final DXRAMContext.Config p_config) {
-        List<Class<? extends AbstractApplication>> applicationClasses = m_application.getApplicationClasses();
-
-        LOGGER.debug("Loading %d applications...", applicationClasses.size());
-
-        DXRAMVersion curVersion = getParentEngine().getVersion();
-
-        for (Class<? extends AbstractApplication> appClass : applicationClasses) {
-            // check if a configuration file for the application exists
-            AbstractApplication app;
-            File configFile = new File(m_application.getApplicationPath() + '/' + appClass.getSimpleName() + ".conf");
-
-            if (configFile.exists()) {
-                app = loadFromConfiguration(appClass, configFile.getAbsolutePath());
-
-                // loading failed
-                if (app == null) {
-                    continue;
-                }
-            } else {
-                try {
-                    app = appClass.newInstance();
-                } catch (IllegalAccessException | InstantiationException e) {
-                    LOGGER.error("Creating instance of application class %s failed: %s", appClass.getName(),
-                            e.getMessage());
-
-                    continue;
-                }
-
-                // generate configuration file
-                if (app.useConfigurationFile()) {
-                    LOGGER.debug("Missing config for application '%s', creating...", app.getName());
-
-                    if (!createDefaultConfiguration(app, configFile.getAbsolutePath())) {
-                        continue;
-                    }
-                }
-            }
-
-            if (!app.isEnabled()) {
-                LOGGER.debug("Application '%s' disabled", app.getApplicationName());
-
-                continue;
-            }
-
-            // verify if built against current version
-            DXRAMVersion version = app.getBuiltAgainstVersion();
-
-            if (version.getMajor() < curVersion.getMajor()) {
-                LOGGER.error("Cannot load application '%s', major version (%s) not matching current DXRAM version " +
-                                "(%s), update your application and ensure compatibility with the current DXRAM version",
-                        app.getName(), version, curVersion);
-
-                continue;
-            }
-
-            if (version.getMinor() < curVersion.getMinor()) {
-                LOGGER.warn(
-                        "Application '%s' built against DXRAM version %s, current version %s. Your application " +
-                                "might need minor updating to ensure full compatibility with the current version.",
-                        app.getName(), version, curVersion);
-            }
-
-            app.setEngine(getParentEngine());
-
-            AbstractApplication oldApp = m_applications.putIfAbsent(app.getApplicationName(), app);
-
-            if (oldApp != null) {
-                LOGGER.warn("Application %s was already registered", oldApp.getApplicationName());
-            }
-        }
-
         return true;
     }
 
@@ -160,27 +86,7 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
     @Override
     protected void engineInitFinished() {
-
-        List<AbstractApplication> apps = m_applications.values().stream()
-                .filter(app -> getConfig().isAutostartEnabled(app.getApplicationName()))
-                .sorted(Comparator.comparingInt(AbstractApplication::getInitOrderId))
-                .collect(Collectors.toList());
-        
-        LOGGER.info("Initializing applications...");
-
-        // initialize sequentially to allow applications to setup stuff that might be required by other applications
-        // e.g. use a dxapp as some sort of library
-        for (AbstractApplication app : apps) {
-            System.out.println("init order id: " + app.getInitOrderId());
-            app.init();
-        }
-
-        LOGGER.info("Starting applications...");
-
-        // start all applications
-        for (AbstractApplication app : apps) {
-            app.start();
-        }
+        getConfig().getAutoStartApps().forEach(clazz -> startApplication(clazz, null));
     }
 
     @Override
@@ -198,6 +104,7 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
      *         Path to existing configuration file
      * @return Application instance with configuration values loaded or null if loading failed
      */
+    @Nullable
     private AbstractApplication loadFromConfiguration(Class<? extends AbstractApplication> p_appClass,
             final String p_configFilePath) {
         AbstractApplication app;
@@ -274,23 +181,78 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     }
 
     /**
-     * Starts the application with the specified name.
+     * Starts the application with the specified class.
      *
-     * @param p_name The application's name.
+     * @param p_class The fully qualified name of the application's class.
      * @return True if the application was started successfully; false else.
      */
-    public boolean startApplication(final String p_name) {
-        AbstractApplication app = m_applications.get(p_name);
+    public boolean startApplication(final String p_class, final String[] p_args) {
+        if (p_class.isEmpty()) {
+            return false;
+        }
+
+        Class<? extends AbstractApplication> appClass = m_appComponent.getApplicationClass(p_class);
+
+        if (appClass == null) {
+            LOGGER.warn("Application class %s was not found", p_class);
+            return false;
+        }
+
+        AbstractApplication app;
+        File configFile = new File(m_appComponent.getApplicationPath() + '/' + appClass.getSimpleName() + ".conf");
+
+        if (configFile.exists()) {
+            app = loadFromConfiguration(appClass, configFile.getAbsolutePath());
+        } else {
+            try {
+                app = appClass.newInstance();
+            } catch (IllegalAccessException | InstantiationException e) {
+                LOGGER.error("Creating instance of application class %s failed: %s", appClass.getName(),
+                        e.getMessage());
+                return false;
+            }
+
+            // generate configuration file
+            if (app.useConfigurationFile()) {
+                LOGGER.debug("Missing config for application '%s', creating...", app.getName());
+
+                if (!createDefaultConfiguration(app, configFile.getAbsolutePath())) {
+                    return false;
+                }
+            }
+        }
+
         if (app == null) {
-            LOGGER.warn("Application %s was not registered", p_name);
+            LOGGER.warn("Application %s could not be loaded", p_class);
             return false;
         }
 
-        if (app.isAlive()) {
-            LOGGER.warn("Application %s is already running", p_name);
+        if (!app.isEnabled()) {
+            LOGGER.debug("Application '%s' disabled", app.getApplicationName());
             return false;
         }
 
+        // verify if built against current version
+        DXRAMVersion engineVersion = getParentEngine().getVersion();
+        DXRAMVersion appVersion = app.getBuiltAgainstVersion();
+
+        if (appVersion.getMajor() < engineVersion.getMajor()) {
+            LOGGER.error("Cannot load application '%s', major version (%s) not matching current DXRAM version " +
+                            "(%s), update your application and ensure compatibility with the current DXRAM version",
+                    app.getName(), appVersion, engineVersion);
+
+            return false;
+        }
+
+        if (appVersion.getMinor() < engineVersion.getMinor()) {
+            LOGGER.warn(
+                    "Application '%s' built against DXRAM version %s, current version %s. Your application " +
+                            "might need minor updating to ensure full compatibility with the current version.",
+                    app.getName(), appVersion, engineVersion);
+        }
+
+        app.setEngine(getParentEngine());
+        app.setArguments(p_args);
         app.init();
         app.start();
         return true;

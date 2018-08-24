@@ -16,10 +16,14 @@
 
 package de.hhu.bsinfo.dxram.migration;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("WeakerAccess")
 public class MigrationTask implements Runnable {
@@ -27,34 +31,34 @@ public class MigrationTask implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(MigrationTask.class);
 
     private final MigrationIdentifier m_identifier;
-    private final long m_startId;
-    private final long m_endId;
+
+    private final List<LongRange> m_ranges;
 
     private final ChunkMigrator m_migrator;
 
-    public MigrationTask(ChunkMigrator p_migrator, MigrationIdentifier p_identifier, long p_startId, long p_endId) {
-
+    public MigrationTask(ChunkMigrator p_migrator, MigrationIdentifier p_identifier, List<LongRange> p_ranges) {
         m_migrator = p_migrator;
-
         m_identifier = p_identifier;
+        m_ranges = p_ranges;
+    }
 
-        m_startId = p_startId;
-
-        m_endId = p_endId;
+    public MigrationIdentifier getIdentifier() {
+        return m_identifier;
     }
 
     public int getChunkCount() {
+        return m_ranges.stream()
+                .map(LongRange::size)
+                .reduce(0, (a,b) -> a + b);
+    }
 
-        return (int) (m_endId - m_startId + 1);
+    public List<LongRange> getRanges() {
+        return m_ranges;
     }
 
     @Override
     public void run() {
-
-        log.debug("Starting Migration for Chunks [{} , {}]", ChunkID.toHexString(m_startId), ChunkID.toHexString(m_endId));
-
-        ChunkMigrator.Status status = m_migrator.migrate(m_identifier, m_startId, m_endId);
-
-        m_migrator.onStatus(m_identifier, m_startId, m_endId, status);
+        log.debug("Starting Migration {} for Chunks {}", m_identifier, LongRange.collectionToString(m_ranges));
+        ChunkMigrator.Status status = m_migrator.migrate(m_identifier, m_ranges);
     }
 }

@@ -9,6 +9,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -24,7 +26,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
 public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComponentConfig> {
-    private List<Class<? extends AbstractApplication>> m_applicationClasses = new ArrayList<>();
+
+    private final HashMap<String, Class<? extends  AbstractApplication>> m_applicationClasses = new HashMap<>();
+
+//    private List<Class<? extends AbstractApplication>> m_applicationClasses = new ArrayList<>();
 
     /**
      * Constructor
@@ -49,7 +54,11 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
      * @return Loaded classes implementing the application interface
      */
     List<Class<? extends AbstractApplication>> getApplicationClasses() {
-        return m_applicationClasses;
+        return new ArrayList<>(m_applicationClasses.values());
+    }
+
+    Class<? extends AbstractApplication> getApplicationClass(final String p_class) {
+        return m_applicationClasses.get(p_class);
     }
 
     @Override
@@ -77,10 +86,12 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
             File[] files = dir.listFiles();
 
             if (files != null) {
-                for (File file : files) {
-                    m_applicationClasses.addAll(getApplicationClasses(file));
-                }
+                Arrays.stream(files)
+                        .flatMap(file -> getApplicationClasses(file).stream())
+                        .forEach(clazz -> m_applicationClasses.put(clazz.getName(), clazz));
             }
+
+            m_applicationClasses.keySet().forEach(clazz -> LOGGER.info("Registered Application %s", clazz));
         } else {
             LOGGER.warn("Can't load applications from %s, no such directory", getConfig().getApplicationPath());
         }
@@ -93,39 +104,6 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         m_applicationClasses.clear();
 
         return false;
-    }
-
-    /**
-     * Load any external dependencies (jar packages) required by the application
-     *
-     * @param p_application
-     *         Application to load external dependencies for
-     */
-    public void loadExternalDependencies(final AbstractApplication p_application) {
-        for (String dep : p_application.getExternalDependencies()) {
-            try {
-                URLClassLoader loader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-                URL url = new File(dep).toURI().toURL();
-
-                // Disallow if already loaded
-                for (java.net.URL it : java.util.Arrays.asList(loader.getURLs())) {
-                    if (it.equals(url)) {
-                        return;
-                    }
-                }
-
-                Method method = URLClassLoader.class.getDeclaredMethod("addURL", URL.class);
-                method.setAccessible(true);
-                method.invoke(loader, url);
-
-                LOGGER.info("[%s] Loaded external dependency %s", p_application.getApplicationName(), dep);
-            } catch (final NoSuchMethodException | IllegalAccessException | MalformedURLException |
-                    InvocationTargetException e) {
-                LOGGER.error("Could not load dependency %s for application %s", dep,
-                        p_application.getApplicationName(), e);
-
-            }
-        }
     }
 
     /**
@@ -214,8 +192,6 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
         if (jarEntry == null) {
             return null;
         }
-
-        LOGGER.info("Next jar entry is %s", jarEntry.getName());
 
         if (jarEntry.getName().endsWith(".class")) {
             String classname = jarEntry.getName().replaceAll("/", "\\.");

@@ -20,61 +20,48 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.migration.data.ChunkRange;
+import de.hhu.bsinfo.dxram.migration.data.MigrationPayload;
 import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 
 public class MigrationPush extends Message {
 
     private MigrationIdentifier m_identifier;
 
-    private ChunkRange m_data;
+    private MigrationPayload m_payload;
 
     public MigrationPush() {
-
         super();
-
         m_identifier = new MigrationIdentifier();
-
-        m_data = new ChunkRange();
+        m_payload = new MigrationPayload();
     }
 
-    public MigrationPush(MigrationIdentifier p_identifier, ChunkRange p_data) {
-
+    public MigrationPush(MigrationIdentifier p_identifier, MigrationPayload p_payload) {
         super(p_identifier.getTarget(), DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_PUSH);
-
         m_identifier = p_identifier;
-
-        m_data = p_data;
+        m_payload = p_payload;
     }
 
     @Override
     protected int getPayloadLength() {
-
-        return m_identifier.sizeofObject() + m_data.sizeofObject();
+        return m_identifier.sizeofObject() + m_payload.sizeofObject();
     }
     @Override
     protected void readPayload(AbstractMessageImporter p_importer) {
-
         p_importer.importObject(m_identifier);
-
-        p_importer.importObject(m_data);
+        p_importer.importObject(m_payload);
     }
 
     @Override
     protected void writePayload(AbstractMessageExporter p_exporter) {
-
         p_exporter.exportObject(m_identifier);
-
-        p_exporter.exportObject(m_data);
+        p_exporter.exportObject(m_payload);
     }
 
     public MigrationIdentifier getIdentifier() {
-
         return m_identifier;
     }
 
-    public ChunkRange getChunkRange() {
-
-        return m_data;
+    public MigrationPayload getPayload() {
+        return m_payload;
     }
 }
