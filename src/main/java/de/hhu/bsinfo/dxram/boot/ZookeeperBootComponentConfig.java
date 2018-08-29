@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.dxram.boot;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
@@ -22,6 +26,9 @@ import static de.hhu.bsinfo.dxram.util.NodeCapabilities.toMask;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = ZookeeperBootComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class ZookeeperBootComponentConfig extends DXRAMComponentConfig {
     @Expose
@@ -57,66 +64,6 @@ public class ZookeeperBootComponentConfig extends DXRAMComponentConfig {
 
     @Expose
     private boolean m_isClient = false;
-
-    /**
-     * Path for zookeeper entry
-     */
-    public String getPath() {
-        return m_path;
-    }
-
-    /**
-     * The rack this node is in. Must be set if node was not in initial nodes file.
-     */
-    public short getRack() {
-        return m_rack;
-    }
-
-    /**
-     * The switch this node is connected to. Must be set if node was not in initial nodes file.
-     */
-    public short getSwitch() {
-        return m_switch;
-    }
-
-    /**
-     * Address and port of zookeeper
-     */
-    public IPV4Unit getConnection() {
-        return m_connection;
-    }
-
-    /**
-     * Zookeeper timeout
-     */
-    public TimeUnit getTimeout() {
-        return m_timeout;
-    }
-
-    /**
-     * Bloom filter size. Bloom filter is used to increase node ID creation performance.
-     */
-    public StorageUnit getBitfieldSize() {
-        return m_bitfieldSize;
-    }
-
-    /**
-     * Indicates if this node is a client.
-     *
-     * @return Ture, if this node is a client; false else.
-     */
-    public boolean isClient() {
-        return m_isClient;
-    }
-
-    /**
-     * Nodes configuration
-     * We can't use the NodesConfiguration class with the configuration because the nodes in that class
-     * are already mapped to their node ids
-     */
-    public ArrayList<NodesConfiguration.NodeEntry> getNodesConfig() {
-        return m_nodesConfig;
-    }
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
