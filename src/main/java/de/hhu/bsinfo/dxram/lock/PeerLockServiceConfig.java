@@ -10,7 +10,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMServiceConfig.Settings(service = PeerLockService.class, supportsSuperpeer = false, supportsPeer = true)
 public class PeerLockServiceConfig extends DXRAMServiceConfig {
     @Expose
     private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);

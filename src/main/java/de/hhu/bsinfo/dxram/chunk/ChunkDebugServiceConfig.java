@@ -7,7 +7,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMServiceConfig.Settings(service = ChunkDebugService.class, supportsSuperpeer = false, supportsPeer = true)
 public class ChunkDebugServiceConfig extends DXRAMServiceConfig {
 
 }

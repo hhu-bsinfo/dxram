@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = LookupComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class LookupComponentConfig extends DXRAMComponentConfig {
     @Expose
     private boolean m_cachesEnabled = true;

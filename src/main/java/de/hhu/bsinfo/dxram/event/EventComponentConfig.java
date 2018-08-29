@@ -10,7 +10,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = EventComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class EventComponentConfig extends DXRAMComponentConfig {
     private static final int THREAD_COUNT_MAX = 10;
 

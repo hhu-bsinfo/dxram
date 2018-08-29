@@ -5,7 +5,7 @@ package de.hhu.bsinfo.dxram.engine;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+@DXRAMServiceConfig.Settings(service = NullService.class, supportsSuperpeer = true, supportsPeer = true)
 public class NullServiceConfig extends DXRAMServiceConfig {
 
 }

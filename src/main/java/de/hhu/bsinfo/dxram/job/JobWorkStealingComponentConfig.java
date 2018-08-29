@@ -10,7 +10,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = JobWorkStealingComponent.class, supportsSuperpeer = false,
+        supportsPeer = true)
 public class JobWorkStealingComponentConfig extends DXRAMComponentConfig {
     private static final int NUM_WORKERS_MAX = 64;
 

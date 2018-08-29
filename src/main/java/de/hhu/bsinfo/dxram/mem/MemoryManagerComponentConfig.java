@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = MemoryManagerComponent.class, supportsSuperpeer = false, supportsPeer = true)
 public class MemoryManagerComponentConfig extends DXRAMComponentConfig {
     private static final StorageUnit KEY_VALUE_STORE_SIZE_MIN = new StorageUnit(32L, StorageUnit.MB);
     private static final StorageUnit KEY_VALUE_STORE_SIZE_MAX = new StorageUnit(128, StorageUnit.GB);

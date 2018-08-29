@@ -4,8 +4,8 @@ import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
@@ -13,7 +13,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMServiceConfig.Settings(service = MasterSlaveComputeService.class, supportsSuperpeer = false, supportsPeer = true)
 public class MasterSlaveComputeServiceConfig extends DXRAMServiceConfig {
     private static final TimeUnit PING_INTERVAL_MIN = new TimeUnit(100, TimeUnit.MS);
     private static final TimeUnit PING_INTERVAL_MAX = new TimeUnit(10, TimeUnit.SEC);

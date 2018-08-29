@@ -71,9 +71,8 @@ final class DXRAMGsonContext {
         @Override
         public DXRAMComponentConfig deserialize(final JsonElement p_jsonElement, final Type p_type,
                 final JsonDeserializationContext p_jsonDeserializationContext) {
-
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
-            String className = jsonObj.get("m_class").getAsString();
+            String className = jsonObj.get("m_classConfig").getAsString();
 
             Class<?> clazz;
             try {
@@ -122,7 +121,7 @@ final class DXRAMGsonContext {
                 final JsonDeserializationContext p_jsonDeserializationContext) {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
-            String className = jsonObj.get("m_class").getAsString();
+            String className = jsonObj.get("m_classConfig").getAsString();
 
             Class<?> clazz;
             try {

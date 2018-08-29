@@ -7,7 +7,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = FailureComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class FailureComponentConfig extends DXRAMComponentConfig {
 
 }

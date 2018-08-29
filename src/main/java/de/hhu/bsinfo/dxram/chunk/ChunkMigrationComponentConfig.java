@@ -7,7 +7,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = ChunkMigrationComponent.class, supportsSuperpeer = false,
+        supportsPeer = true)
 public class ChunkMigrationComponentConfig extends DXRAMComponentConfig {
 
 }

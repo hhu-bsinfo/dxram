@@ -59,7 +59,7 @@ class DXRAMComponentManager {
         try {
             return clazz.getConstructor().newInstance();
         } catch (final Exception e) {
-            throw new RuntimeException("Cannot create component instance of " + clazz.getSimpleName(), e);
+            throw new RuntimeException("Cannot create component instance of " + p_className, e);
         }
     }
 

@@ -13,7 +13,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 28.07.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = NetworkComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class NetworkComponentConfig extends DXRAMComponentConfig {
     @Expose
     private CoreConfig m_core = new CoreConfig();

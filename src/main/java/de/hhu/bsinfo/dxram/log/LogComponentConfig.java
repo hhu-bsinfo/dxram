@@ -13,7 +13,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = LogComponent.class, supportsSuperpeer = false, supportsPeer = true)
 public class LogComponentConfig extends DXRAMComponentConfig {
 
     private static final int COLD_DATA_THRESHOLD = 9000;

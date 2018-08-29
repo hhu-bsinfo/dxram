@@ -31,7 +31,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Burak Akguel, burak.akguel@hhu.de 14.07.2018
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = MonitoringComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class MonitoringComponentConfig extends DXRAMComponentConfig {
     @Expose
     private boolean m_monitoringActive = false;

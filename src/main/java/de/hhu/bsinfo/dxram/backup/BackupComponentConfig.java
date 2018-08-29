@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = BackupComponent.class, supportsSuperpeer = false, supportsPeer = true)
 public class BackupComponentConfig extends DXRAMComponentConfig {
     @Expose
     private boolean m_backupActive = false;

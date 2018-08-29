@@ -4,6 +4,11 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Inherited;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+import com.google.gson.annotations.Expose;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,6 +22,12 @@ import org.apache.logging.log4j.Logger;
 @Accessors(prefix = "m_")
 public class DXRAMComponentConfig {
     protected final Logger LOGGER;
+
+    /**
+     * Fully qualified class name of config to allow object creation with gson
+     */
+    @Expose
+    private String m_classConfig;
 
     /**
      * Get the class name of the component of this configuration
@@ -39,16 +50,16 @@ public class DXRAMComponentConfig {
     /**
      * Constructor
      */
-    protected DXRAMComponentConfig() {
+    public DXRAMComponentConfig() {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
-        m_componentClassName = getClass().getSimpleName();
+        m_classConfig = getClass().getName();
 
         Annotation[] annotations = getClass().getAnnotations();
 
         for (Annotation annotation : annotations) {
             if (annotation instanceof Settings) {
                 Settings ann = (Settings) annotation;
-
+                m_componentClassName = ann.component().getSimpleName();
                 m_supportsSuperpeer = ann.supportsPeer();
                 m_supportsPeer = ann.supportsPeer();
             }
@@ -69,7 +80,14 @@ public class DXRAMComponentConfig {
     /**
      * Settings for component config
      */
+    @Retention(RetentionPolicy.RUNTIME)
+    @Inherited
     public @interface Settings {
+        /**
+         * The component class for this configuration
+         */
+        Class<? extends AbstractDXRAMComponent> component();
+
         /**
          * True if component supports the superpeer node role, false otherwise
          */

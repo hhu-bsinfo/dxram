@@ -23,7 +23,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+@DXRAMServiceConfig.Settings(service = BootService.class, supportsSuperpeer = true, supportsPeer = true)
 public class BootServiceConfig extends DXRAMServiceConfig {
 
 }

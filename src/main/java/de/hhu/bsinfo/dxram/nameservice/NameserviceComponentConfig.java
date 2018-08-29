@@ -9,7 +9,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = NameserviceComponent.class, supportsSuperpeer = false, supportsPeer = true)
 public class NameserviceComponentConfig extends DXRAMComponentConfig {
     @Expose
     private String m_type = "NAME";

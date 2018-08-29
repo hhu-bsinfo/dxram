@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMServiceConfig.Settings(service = TemporaryStorageService.class, supportsSuperpeer = false, supportsPeer = true)
 public class TemporaryStorageServiceConfig extends DXRAMServiceConfig {
     private static final int STORAGE_MAX_NUM_ENTRIES_MAX = 100000;
     private static final StorageUnit STORAGE_MAX_SIZE_MAX = new StorageUnit(1, StorageUnit.GB);

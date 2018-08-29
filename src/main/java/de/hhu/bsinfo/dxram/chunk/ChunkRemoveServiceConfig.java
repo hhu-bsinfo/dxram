@@ -2,15 +2,15 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
  * Config for the ChunkRemoveService
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@DXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+@DXRAMServiceConfig.Settings(service = ChunkRemoveService.class, supportsSuperpeer = false, supportsPeer = true)
 public class ChunkRemoveServiceConfig extends DXRAMServiceConfig {
     @Expose
     private int m_removerQueueSize = 100000;

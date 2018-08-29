@@ -25,7 +25,7 @@ import de.hhu.bsinfo.dxutils.OSValidator;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
-@DXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+@DXRAMServiceConfig.Settings(service = MonitoringService.class, supportsSuperpeer = true, supportsPeer = true)
 public class MonitoringServiceConfig extends DXRAMServiceConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
