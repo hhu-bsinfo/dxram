@@ -54,6 +54,10 @@ public class LogComponentConfig extends DXRAMComponentConfig {
     @Expose
     private int m_coldDataThresholdInSec = COLD_DATA_THRESHOLD;
 
+    public LogComponentConfig() {
+
+    }
+
     public LogComponentConfig(final String p_harddriveAccess, final String p_rawDevicePath,
             final boolean p_useChecksums, final boolean p_useTimestamps, final int p_flashPageSize,
             final int p_logSegmentSize, final int p_primaryLogSize, final int p_writeBufferSize,
