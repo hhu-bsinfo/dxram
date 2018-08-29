@@ -3,7 +3,7 @@ package de.hhu.bsinfo.dxram.log;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponentConfig;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
@@ -13,8 +13,8 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
-public class LogComponentConfig extends AbstractDXRAMComponentConfig {
+@DXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+public class LogComponentConfig extends DXRAMComponentConfig {
 
     private static final int COLD_DATA_THRESHOLD = 9000;
 

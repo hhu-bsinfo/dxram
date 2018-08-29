@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
 @Accessors(prefix = "m_")
-public abstract class AbstractDXRAMComponentConfig {
+public class DXRAMComponentConfig {
     protected final Logger LOGGER;
 
     /**
@@ -44,7 +44,7 @@ public abstract class AbstractDXRAMComponentConfig {
     /**
      * Constructor
      */
-    protected AbstractDXRAMComponentConfig() {
+    protected DXRAMComponentConfig() {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
         m_componentClassName = getClass().getSimpleName();
 
@@ -70,9 +70,11 @@ public abstract class AbstractDXRAMComponentConfig {
      *
      * @param p_config
      *         Full configuration to access other config values on dependencies
-     * @return True if verifcation successful, false on error
+     * @return True if verification successful, false on error
      */
-    protected abstract boolean verify(final DXRAMContext.Config p_config);
+    protected boolean verify(final DXRAMContext.Config p_config) {
+        return true;
+    }
 
     /**
      * Settings for component config

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
@@ -22,8 +22,8 @@ import static de.hhu.bsinfo.dxram.util.NodeCapabilities.toMask;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
-public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
+@DXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+public class ZookeeperBootComponentConfig extends DXRAMComponentConfig {
     @Expose
     private String m_path = "/dxram";
 

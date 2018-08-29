@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.job;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
@@ -10,8 +10,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
-public class JobWorkStealingComponentConfig extends AbstractDXRAMComponentConfig {
+@DXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+public class JobWorkStealingComponentConfig extends DXRAMComponentConfig {
     private static final int NUM_WORKERS_MAX = 64;
 
     @Expose
@@ -27,14 +27,12 @@ public class JobWorkStealingComponentConfig extends AbstractDXRAMComponentConfig
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_numWorkers < 1) {
-
             LOGGER.error("Invalid value (%d) for m_numWorkers", m_numWorkers);
 
             return false;
         }
 
         if (m_numWorkers > NUM_WORKERS_MAX) {
-
             LOGGER.error("Max limit m_numWorkers: %d", NUM_WORKERS_MAX);
 
             return false;

@@ -19,14 +19,14 @@ package de.hhu.bsinfo.dxram.lock;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 
 /**
  * Interface for a lock component providing locking of chunks.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public abstract class AbstractLockComponent<T extends AbstractDXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
+public abstract class AbstractLockComponent<T extends DXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
     static final int MS_TIMEOUT_UNLIMITED = -1;
 
     /**

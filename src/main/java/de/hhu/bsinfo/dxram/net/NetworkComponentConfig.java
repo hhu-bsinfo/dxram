@@ -5,7 +5,7 @@ import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxnet.core.CoreConfig;
 import de.hhu.bsinfo.dxnet.ib.IBConfig;
 import de.hhu.bsinfo.dxnet.nio.NIOConfig;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
@@ -13,8 +13,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 28.07.2017
  */
-@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
-public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
+@DXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+public class NetworkComponentConfig extends DXRAMComponentConfig {
     @Expose
     private CoreConfig m_core = new CoreConfig();
 
@@ -47,7 +47,6 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-
         if ("Ethernet".equals(m_core.getDevice())) {
             if (m_nio.getFlowControlWindow().getBytes() > m_nio.getOugoingRingBufferSize().getBytes()) {
                 LOGGER.error("NIO: OS buffer size must be at least twice the size of flow control window size!");

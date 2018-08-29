@@ -21,7 +21,7 @@ import java.io.File;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxutils.OSValidator;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
@@ -31,8 +31,8 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Burak Akguel, burak.akguel@hhu.de 14.07.2018
  */
-@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
-public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
+@DXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+public class MonitoringComponentConfig extends DXRAMComponentConfig {
     @Expose
     private boolean m_monitoringActive = false;
 

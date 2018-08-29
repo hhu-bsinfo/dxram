@@ -91,7 +91,7 @@ public class DXRAMContext {
      * @return True if verification successful, false on failure
      */
     boolean verifyConfigurationValuesComponents() {
-        for (AbstractDXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
+        for (DXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
             LOGGER.debug("Verifying component configuration values of %s...", config.getComponentClassName());
 
             if (!config.verify(m_config)) {
@@ -134,7 +134,7 @@ public class DXRAMContext {
     void createComponentsFromConfig(final DXRAMComponentManager p_manager, final NodeRole p_nodeRole) {
         m_components.clear();
 
-        for (AbstractDXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
+        for (DXRAMComponentConfig config : m_config.m_componentConfigs.values()) {
             if (p_nodeRole == NodeRole.SUPERPEER && config.isSupportsSuperpeer() ||
                     p_nodeRole == NodeRole.PEER && config.isSupportsPeer()) {
                 AbstractDXRAMComponent comp = p_manager.createInstance(config.getComponentClassName());
@@ -228,7 +228,7 @@ public class DXRAMContext {
          * Component configurations
          */
         @Expose
-        private Map<String, AbstractDXRAMComponentConfig> m_componentConfigs = new HashMap<>();
+        private Map<String, DXRAMComponentConfig> m_componentConfigs = new HashMap<>();
 
         /**
          * Service configurations
@@ -250,8 +250,8 @@ public class DXRAMContext {
          *         Class of the component configuration to get
          * @return Component configuration class
          */
-        public <T extends AbstractDXRAMComponentConfig> T getComponentConfig(final Class<T> p_class) {
-            AbstractDXRAMComponentConfig conf = m_componentConfigs.get(p_class.getSimpleName());
+        public <T extends DXRAMComponentConfig> T getComponentConfig(final Class<T> p_class) {
+            DXRAMComponentConfig conf = m_componentConfigs.get(p_class.getSimpleName());
 
             return p_class.cast(conf);
         }

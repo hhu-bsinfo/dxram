@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.backup;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
@@ -11,8 +11,8 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
-public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
+@DXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+public class BackupComponentConfig extends DXRAMComponentConfig {
     @Expose
     private boolean m_backupActive = false;
 
@@ -111,9 +111,7 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-
         if (m_replicationFactor < 1 || m_replicationFactor > 4) {
-
             LOGGER.error("Replication factor must be in [1, 4]!");
 
             return false;
