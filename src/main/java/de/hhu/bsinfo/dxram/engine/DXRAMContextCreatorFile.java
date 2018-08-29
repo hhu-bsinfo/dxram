@@ -44,7 +44,8 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
         if (config.isEmpty() || !new File(config).exists()) {
             createDefaultConfiguration(config, p_componentManager, p_serviceManager);
 
-            LOGGER.info("Default configuration created (%s), please restart DXRAM", config);
+            LOGGER.info("Default configuration created (%s), please restart DXRAM",
+                    config.isEmpty() ? DXRAM_CONFIG_FILE_PATH : config);
             return null;
         }
 
@@ -59,9 +60,6 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
      */
     private static void createDefaultConfiguration(final String p_configFilePath,
             final DXRAMComponentManager p_componentManager, final DXRAMServiceManager p_serviceManager) {
-        LOGGER.info("No valid configuration found or specified via vm argument -Ddxram.config, creating default " +
-                " configuration '%s'...", p_configFilePath);
-
         String configFilePath;
 
         if (p_configFilePath.isEmpty()) {
@@ -70,7 +68,11 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
             configFilePath = p_configFilePath;
         }
 
+        LOGGER.info("No valid configuration found or specified via vm argument -Ddxram.config, creating default " +
+                "configuration in '%s'...", configFilePath);
+
         File file = new File(configFilePath);
+
         if (file.exists()) {
             if (!file.delete()) {
                 LOGGER.error("Deleting existing config file %s failed", file);

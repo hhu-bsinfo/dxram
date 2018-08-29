@@ -217,7 +217,6 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         m_context = m_contextCreator.create(m_componentManager, m_serviceManager);
 
         if (m_context == null) {
-            LOGGER.error("Creating context with creator '%s' failed", p_creator.getClass().getSimpleName());
             return false;
         }
 
