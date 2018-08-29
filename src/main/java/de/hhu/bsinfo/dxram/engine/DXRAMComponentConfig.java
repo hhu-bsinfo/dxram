@@ -58,11 +58,6 @@ public class DXRAMComponentConfig {
                 m_supportsPeer = ann.supportsPeer();
             }
         }
-
-        if (!m_supportsSuperpeer && !m_supportsPeer) {
-            throw new IllegalStateException("Component " + m_componentClassName +
-                    " has to support at least one node role");
-        }
     }
 
     /**
