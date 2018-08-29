@@ -35,17 +35,16 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
         String config = System.getProperty("dxram.config");
 
         if (config == null) {
-            config = "";
-        } else {
-            LOGGER.info("Loading configuration file: %s", config);
+            config = DXRAM_CONFIG_FILE_PATH;
         }
 
+        LOGGER.info("Loading configuration file: %s", config);
+
         // check if a config needs to be created
-        if (config.isEmpty() || !new File(config).exists()) {
+        if (!new File(config).exists()) {
             createDefaultConfiguration(config, p_componentManager, p_serviceManager);
 
-            LOGGER.info("Default configuration created (%s), please restart DXRAM",
-                    config.isEmpty() ? DXRAM_CONFIG_FILE_PATH : config);
+            LOGGER.info("Default configuration created (%s), please restart DXRAM", config);
             return null;
         }
 
