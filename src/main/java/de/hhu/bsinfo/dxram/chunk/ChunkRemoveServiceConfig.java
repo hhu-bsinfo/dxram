@@ -10,16 +10,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class ChunkRemoveServiceConfig extends AbstractDXRAMServiceConfig {
     @Expose
     private int m_removerQueueSize = 100000;
-
-    /**
-     * Constructor
-     */
-    public ChunkRemoveServiceConfig() {
-        super(ChunkRemoveService.class, false, true);
-    }
 
     /**
      * Size of the queue that stores the remove requests to be processed asynchronously

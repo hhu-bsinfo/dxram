@@ -10,16 +10,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
 public class StatisticsServiceConfig extends AbstractDXRAMServiceConfig {
     @Expose
     private int m_printStatsPeriodMs = 0;
-
-    /**
-     * Constructor
-     */
-    public StatisticsServiceConfig() {
-        super(StatisticsService.class, true, true);
-    }
 
     /**
      * If non zero, enables a dedicated thread that prints the statistics periodically.

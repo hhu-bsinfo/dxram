@@ -11,19 +11,13 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class PeerLockServiceConfig extends AbstractDXRAMServiceConfig {
     @Expose
     private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
 
     @Expose
     private TimeUnit m_remoteLockTryTimeout = new TimeUnit(100, TimeUnit.MS);
-
-    /**
-     * Constructor
-     */
-    public PeerLockServiceConfig() {
-        super(PeerLockService.class, false, true);
-    }
 
     /**
      * Message frequency for acquiring a remote lock

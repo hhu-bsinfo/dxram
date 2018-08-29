@@ -1,5 +1,10 @@
 package de.hhu.bsinfo.dxram.engine;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
+import java.lang.annotation.Annotation;
+
 import com.google.gson.annotations.Expose;
 
 import org.apache.logging.log4j.LogManager;
@@ -10,66 +15,53 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Accessors(prefix = "m_")
 public abstract class AbstractDXRAMServiceConfig {
     protected final Logger LOGGER;
 
+    /**
+     * Get the class name of the service of this configuration
+     */
     @Expose
-    private String m_class;
+    @Getter
+    private String m_serviceClassName;
 
+    /**
+     * True if service supports the superpeer node role, false otherwise
+     */
     @Expose
-    private String m_serviceClass;
+    @Getter
+    private boolean m_supportsSuperpeer = false;
 
+    /**
+     * True if service supports the peer node role, false otherwise
+     */
     @Expose
-    private boolean m_enabledForSuperpeer;
-
-    @Expose
-    private boolean m_enabledForPeer;
+    @Getter
+    private boolean m_supportsPeer = false;
 
     /**
      * Constructor
-     *
-     * @param p_class
-     *         Class extending the abstract service class of this configuration
-     * @param p_enabledForSuperpeer
-     *         True to enable the service if the node is a superpeer, false to disable
-     * @param p_enabledForPeer
-     *         True to enable the service if the node is a peer, false to disable
      */
-    protected AbstractDXRAMServiceConfig(final Class<? extends AbstractDXRAMService> p_class,
-            final boolean p_enabledForSuperpeer, final boolean p_enabledForPeer) {
+    protected AbstractDXRAMServiceConfig() {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
-        m_class = getClass().getName();
-        m_serviceClass = p_class.getSimpleName();
-        m_enabledForSuperpeer = p_enabledForSuperpeer;
-        m_enabledForPeer = p_enabledForPeer;
-    }
+        m_serviceClassName = getClass().getSimpleName();
 
-    /**
-     * Get the fully qualified class name of the config class
-     */
-    public String getClassName() {
-        return m_class;
-    }
+        Annotation[] annotations = getClass().getAnnotations();
 
-    /**
-     * Get the fully qualified class name of the service of this configuration
-     */
-    public String getServiceClass() {
-        return m_serviceClass;
-    }
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof Settings) {
+                Settings ann = (Settings) annotation;
 
-    /**
-     * True to enable the service if the node is a superpeer, false to disable
-     */
-    public boolean isEnabledForSuperpeer() {
-        return m_enabledForSuperpeer;
-    }
+                m_supportsSuperpeer = ann.supportsPeer();
+                m_supportsPeer = ann.supportsPeer();
+            }
+        }
 
-    /**
-     * True to enable the service if the node is a peer, false to disable
-     */
-    public boolean isEnabledForPeer() {
-        return m_enabledForPeer;
+        if (!m_supportsSuperpeer && !m_supportsPeer) {
+            throw new IllegalStateException("Service " + m_serviceClassName +
+                    " has to support at least one node role");
+        }
     }
 
     /**
@@ -80,4 +72,19 @@ public abstract class AbstractDXRAMServiceConfig {
      * @return True if verifcation successful, false on error
      */
     protected abstract boolean verify(final DXRAMContext.Config p_config);
+
+    /**
+     * Settings for service config
+     */
+    public @interface Settings {
+        /**
+         * True if service supports the superpeer node role, false otherwise
+         */
+        boolean supportsSuperpeer();
+
+        /**
+         * True if service supports the peer node role, false otherwise
+         */
+        boolean supportsPeer();
+    }
 }

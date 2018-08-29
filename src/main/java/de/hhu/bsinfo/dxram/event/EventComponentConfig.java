@@ -10,18 +10,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
 public class EventComponentConfig extends AbstractDXRAMComponentConfig {
     private static final int THREAD_COUNT_MAX = 10;
 
     @Expose
     private int m_threadCount = 1;
-
-    /**
-     * Constructor
-     */
-    public EventComponentConfig() {
-        super(EventComponent.class, true, true);
-    }
 
     /**
      * Thread count for executor thread pool

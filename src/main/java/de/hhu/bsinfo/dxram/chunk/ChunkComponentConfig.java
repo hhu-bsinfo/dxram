@@ -8,14 +8,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class ChunkComponentConfig extends AbstractDXRAMComponentConfig {
-    /**
-     * Constructor
-     */
-    public ChunkComponentConfig() {
-        super(ChunkComponent.class, false, true);
-    }
-
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         return true;

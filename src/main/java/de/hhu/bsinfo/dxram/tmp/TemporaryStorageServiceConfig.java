@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class TemporaryStorageServiceConfig extends AbstractDXRAMServiceConfig {
     private static final int STORAGE_MAX_NUM_ENTRIES_MAX = 100000;
     private static final StorageUnit STORAGE_MAX_SIZE_MAX = new StorageUnit(1, StorageUnit.GB);
@@ -20,13 +21,6 @@ public class TemporaryStorageServiceConfig extends AbstractDXRAMServiceConfig {
 
     @Expose
     private StorageUnit m_storageMaxSize = new StorageUnit(32, StorageUnit.MB);
-
-    /**
-     * Constructor
-     */
-    public TemporaryStorageServiceConfig() {
-        super(TemporaryStorageService.class, false, true);
-    }
 
     /**
      * Maximum number of entries allowed on the superpeer/temporary storage

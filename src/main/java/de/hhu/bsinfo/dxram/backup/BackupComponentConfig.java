@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private boolean m_backupActive = false;
@@ -38,13 +39,6 @@ public class BackupComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Expose
     private boolean m_switchAware = false;
-
-    /**
-     * Constructor
-     */
-    public BackupComponentConfig() {
-        super(BackupComponent.class, false, true);
-    }
 
     /**
      * Activate/Disable the backup. This parameter should be either active for all nodes or inactive for all nodes

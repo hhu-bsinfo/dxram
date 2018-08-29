@@ -24,14 +24,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class LogServiceConfig extends AbstractDXRAMServiceConfig {
-    /**
-     * Constructor
-     */
-    public LogServiceConfig() {
-        super(LogService.class, false, true);
-    }
-
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         return true;

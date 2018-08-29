@@ -22,6 +22,7 @@ import static de.hhu.bsinfo.dxram.util.NodeCapabilities.toMask;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
 public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private String m_path = "/dxram";
@@ -56,13 +57,6 @@ public class ZookeeperBootComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Expose
     private boolean m_isClient = false;
-
-    /**
-     * Constructor
-     */
-    public ZookeeperBootComponentConfig() {
-        super(ZookeeperBootComponent.class, true, true);
-    }
 
     /**
      * Path for zookeeper entry

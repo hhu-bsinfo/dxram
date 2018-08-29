@@ -11,6 +11,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
 public class LookupComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private boolean m_cachesEnabled = true;
@@ -23,13 +24,6 @@ public class LookupComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Expose
     private TimeUnit m_stabilizationBreakTime = new TimeUnit(1, TimeUnit.SEC);
-
-    /**
-     * Constructor
-     */
-    public LookupComponentConfig() {
-        super(LookupComponent.class, true, true);
-    }
 
     /**
      * Set to enable client-side lookup caching.

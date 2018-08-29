@@ -10,18 +10,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class JobWorkStealingComponentConfig extends AbstractDXRAMComponentConfig {
     private static final int NUM_WORKERS_MAX = 64;
 
     @Expose
     private int m_numWorkers = 1;
-
-    /**
-     * Constructor
-     */
-    public JobWorkStealingComponentConfig() {
-        super(JobWorkStealingComponent.class, false, true);
-    }
 
     /**
      * Number of worker threads to dispatch jobs to

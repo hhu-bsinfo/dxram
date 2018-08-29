@@ -8,14 +8,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class ChunkAsyncServiceConfig extends AbstractDXRAMServiceConfig {
-    /**
-     * Constructor
-     */
-    public ChunkAsyncServiceConfig() {
-        super(ChunkAsyncService.class, false, true);
-    }
-
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         return true;

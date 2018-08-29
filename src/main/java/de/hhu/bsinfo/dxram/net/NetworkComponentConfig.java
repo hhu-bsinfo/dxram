@@ -13,6 +13,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 28.07.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
 public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private CoreConfig m_core = new CoreConfig();
@@ -22,13 +23,6 @@ public class NetworkComponentConfig extends AbstractDXRAMComponentConfig {
 
     @Expose
     private IBConfig m_ib = new IBConfig();
-
-    /**
-     * Constructor
-     */
-    public NetworkComponentConfig() {
-        super(NetworkComponent.class, true, true);
-    }
 
     /**
      * Get the core configuration values

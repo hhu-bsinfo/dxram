@@ -13,6 +13,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class LogComponentConfig extends AbstractDXRAMComponentConfig {
 
     private static final int COLD_DATA_THRESHOLD = 9000;
@@ -53,20 +54,11 @@ public class LogComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private int m_coldDataThresholdInSec = COLD_DATA_THRESHOLD;
 
-    /**
-     * Constructor
-     */
-    public LogComponentConfig() {
-        super(LogComponent.class, false, true);
-    }
-
     public LogComponentConfig(final String p_harddriveAccess, final String p_rawDevicePath,
             final boolean p_useChecksums, final boolean p_useTimestamps, final int p_flashPageSize,
             final int p_logSegmentSize, final int p_primaryLogSize, final int p_writeBufferSize,
             final int p_secondaryLogBufferSize, final int p_utilizationActivateReorganization,
             final int p_utilizationPromptReorganization, final int p_coldDataThresholdSec) {
-        super(LogComponent.class, false, true);
-
         m_harddriveAccess = p_harddriveAccess;
         m_rawDevicePath = p_rawDevicePath;
         m_useChecksums = p_useChecksums;

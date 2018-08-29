@@ -1,5 +1,10 @@
 package de.hhu.bsinfo.dxram.engine;
 
+import lombok.Getter;
+import lombok.experimental.Accessors;
+
+import java.lang.annotation.Annotation;
+
 import com.google.gson.annotations.Expose;
 
 import org.apache.logging.log4j.LogManager;
@@ -11,66 +16,53 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Accessors(prefix = "m_")
 public abstract class AbstractDXRAMComponentConfig {
     protected final Logger LOGGER;
 
+    /**
+     * Get the class name of the component of this configuration
+     */
     @Expose
-    private String m_class;
+    @Getter
+    private String m_componentClassName;
 
+    /**
+     * True if component supports the superpeer node role, false otherwise
+     */
     @Expose
-    private String m_componentClass;
+    @Getter
+    private boolean m_supportsSuperpeer = false;
 
+    /**
+     * True if component supports the peer node role, false otherwise
+     */
     @Expose
-    private boolean m_enabledForSuperpeer;
-
-    @Expose
-    private boolean m_enabledForPeer;
+    @Getter
+    private boolean m_supportsPeer = false;
 
     /**
      * Constructor
-     *
-     * @param p_class
-     *         Class extending the abstract component class of this configuration
-     * @param p_enabledForSuperpeer
-     *         True to enable the component if the node is a superpeer, false to disable
-     * @param p_enabledForPeer
-     *         True to enable the component if the node is a peer, false to disable
      */
-    protected AbstractDXRAMComponentConfig(final Class<? extends AbstractDXRAMComponent> p_class,
-            final boolean p_enabledForSuperpeer, final boolean p_enabledForPeer) {
+    protected AbstractDXRAMComponentConfig() {
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
-        m_class = getClass().getName();
-        m_componentClass = p_class.getSimpleName();
-        m_enabledForSuperpeer = p_enabledForSuperpeer;
-        m_enabledForPeer = p_enabledForPeer;
-    }
+        m_componentClassName = getClass().getSimpleName();
 
-    /**
-     * Get the fully qualified class name of the config class
-     */
-    public String getClassName() {
-        return m_class;
-    }
+        Annotation[] annotations = getClass().getAnnotations();
 
-    /**
-     * Get the fully qualified class name of the component of this configuration
-     */
-    public String getComponentClass() {
-        return m_componentClass;
-    }
+        for (Annotation annotation : annotations) {
+            if (annotation instanceof Settings) {
+                Settings ann = (Settings) annotation;
 
-    /**
-     * True to enable the component if the node is a superpeer, false to disable
-     */
-    public boolean isEnabledForSuperpeer() {
-        return m_enabledForSuperpeer;
-    }
+                m_supportsSuperpeer = ann.supportsPeer();
+                m_supportsPeer = ann.supportsPeer();
+            }
+        }
 
-    /**
-     * True to enable the component if the node is a peer, false to disable
-     */
-    public boolean isEnabledForPeer() {
-        return m_enabledForPeer;
+        if (!m_supportsSuperpeer && !m_supportsPeer) {
+            throw new IllegalStateException("Component " + m_componentClassName +
+                    " has to support at least one node role");
+        }
     }
 
     /**
@@ -81,4 +73,19 @@ public abstract class AbstractDXRAMComponentConfig {
      * @return True if verifcation successful, false on error
      */
     protected abstract boolean verify(final DXRAMContext.Config p_config);
+
+    /**
+     * Settings for component config
+     */
+    public @interface Settings {
+        /**
+         * True if component supports the superpeer node role, false otherwise
+         */
+        boolean supportsSuperpeer();
+
+        /**
+         * True if component supports the peer node role, false otherwise
+         */
+        boolean supportsPeer();
+    }
 }

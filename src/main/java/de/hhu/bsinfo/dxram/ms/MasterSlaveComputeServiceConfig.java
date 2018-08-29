@@ -13,6 +13,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class MasterSlaveComputeServiceConfig extends AbstractDXRAMServiceConfig {
     private static final TimeUnit PING_INTERVAL_MIN = new TimeUnit(100, TimeUnit.MS);
     private static final TimeUnit PING_INTERVAL_MAX = new TimeUnit(10, TimeUnit.SEC);
@@ -25,13 +26,6 @@ public class MasterSlaveComputeServiceConfig extends AbstractDXRAMServiceConfig 
 
     @Expose
     private TimeUnit m_pingInterval = new TimeUnit(1, TimeUnit.SEC);
-
-    /**
-     * Constructor
-     */
-    public MasterSlaveComputeServiceConfig() {
-        super(MasterSlaveComputeService.class, false, true);
-    }
 
     /**
      * Compute role to assign to the current instance (master, slave or none)

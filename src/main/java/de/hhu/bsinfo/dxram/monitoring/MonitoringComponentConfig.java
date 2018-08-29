@@ -31,6 +31,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Burak Akguel, burak.akguel@hhu.de 14.07.2018
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
 public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private boolean m_monitoringActive = false;
@@ -52,10 +53,6 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
 
     private TimeUnit m_csvTimeWindow;
 
-    public MonitoringComponentConfig() {
-        super(MonitoringComponent.class, true, true);
-    }
-
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (!OSValidator.isUnix()) {
@@ -76,12 +73,13 @@ public class MonitoringComponentConfig extends AbstractDXRAMComponentConfig {
         if (m_monitoringFolder.isEmpty()) {
             m_monitoringFolder = System.getProperty("user.dir") + "/mon";
         }
-        
+
         File file = new File(m_monitoringFolder);
 
         if (!file.exists()) {
             if (!file.mkdirs()) {
-                LOGGER.error("Monitoring folder [%s] seems to be invalid - didn't exist and couldn't be created!", m_monitoringFolder);
+                LOGGER.error("Monitoring folder [%s] seems to be invalid - didn't exist and couldn't be created!",
+                        m_monitoringFolder);
                 return false;
             }
         }

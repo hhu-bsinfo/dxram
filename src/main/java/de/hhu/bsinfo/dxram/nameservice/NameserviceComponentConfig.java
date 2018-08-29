@@ -10,19 +10,13 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class NameserviceComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private String m_type = "NAME";
 
     @Expose
     private int m_nameserviceCacheEntries = 1000000;
-
-    /**
-     * Constructor
-     */
-    public NameserviceComponentConfig() {
-        super(NameserviceComponent.class, false, true);
-    }
 
     /**
      * Type of name service string converter to use to convert name service keys (available: NAME and INT)

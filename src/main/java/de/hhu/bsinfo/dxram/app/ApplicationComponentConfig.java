@@ -10,16 +10,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@AbstractDXRAMComponentConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
 public class ApplicationComponentConfig extends AbstractDXRAMComponentConfig {
     @Expose
     private String m_applicationPath = "dxapp";
-
-    /**
-     * Constructor
-     */
-    public ApplicationComponentConfig() {
-        super(ApplicationComponent.class, false, true);
-    }
 
     /**
      * Path for application jar packages
