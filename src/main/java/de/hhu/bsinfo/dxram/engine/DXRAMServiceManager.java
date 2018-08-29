@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 21.10.2016
  */
-class DXRAMServiceManager {
+public class DXRAMServiceManager {
 
     private Map<String, Class<? extends AbstractDXRAMService>> m_registeredServices = new HashMap<>();
 

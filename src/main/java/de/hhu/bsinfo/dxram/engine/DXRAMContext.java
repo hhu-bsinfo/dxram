@@ -16,6 +16,9 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
+import lombok.Data;
+import lombok.experimental.Accessors;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -54,7 +57,7 @@ public class DXRAMContext {
     /**
      * Constructor
      */
-    DXRAMContext() {
+    public DXRAMContext() {
 
     }
 
@@ -63,7 +66,7 @@ public class DXRAMContext {
      *
      * @return Configuration
      */
-    Config getConfig() {
+    public Config getConfig() {
         return m_config;
     }
 
@@ -72,7 +75,7 @@ public class DXRAMContext {
      *
      * @return Component instances
      */
-    Map<String, AbstractDXRAMComponent> getComponents() {
+    public Map<String, AbstractDXRAMComponent> getComponents() {
         return m_components;
     }
 
@@ -81,7 +84,7 @@ public class DXRAMContext {
      *
      * @return Service instances
      */
-    Map<String, AbstractDXRAMService> getServices() {
+    public Map<String, AbstractDXRAMService> getServices() {
         return m_services;
     }
 
@@ -188,7 +191,7 @@ public class DXRAMContext {
      * @param p_manager
      *         Manager to use
      */
-    void createDefaultComponents(final DXRAMComponentManager p_manager) {
+    public void createDefaultComponents(final DXRAMComponentManager p_manager) {
         m_components.clear();
         m_config.m_componentConfigs.clear();
 
@@ -204,7 +207,7 @@ public class DXRAMContext {
      * @param p_manager
      *         Manager to use
      */
-    void createDefaultServices(final DXRAMServiceManager p_manager) {
+    public void createDefaultServices(final DXRAMServiceManager p_manager) {
         m_services.clear();
         m_config.m_serviceConfigs.clear();
 
@@ -273,6 +276,8 @@ public class DXRAMContext {
     /**
      * Config for the engine
      */
+    @Data
+    @Accessors(prefix = "m_")
     public static class EngineConfig {
         /**
          * Address and port of this instance
@@ -293,37 +298,12 @@ public class DXRAMContext {
         private String m_jniPath = "jni";
 
         /**
-         * Constructor
-         */
-        EngineConfig() {
-
-        }
-
-        /**
-         * Get the address assigned to the DXRAM instance
-         *
-         * @return Address
-         */
-        public IPV4Unit getAddress() {
-            return m_address;
-        }
-
-        /**
          * Role assigned for this DXRAM instance
          *
          * @return Role
          */
         public NodeRole getRole() {
             return NodeRole.toNodeRole(m_role);
-        }
-
-        /**
-         * Get the path to the folder with the JNI compiled libraries
-         *
-         * @return Path to JNI libraries
-         */
-        String getJNIPath() {
-            return m_jniPath;
         }
     }
 }

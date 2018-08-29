@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 21.10.2016
  */
-class DXRAMComponentManager {
+public class DXRAMComponentManager {
     private Map<String, Class<? extends AbstractDXRAMComponent>> m_registeredComponents = new HashMap<>();
 
     /**

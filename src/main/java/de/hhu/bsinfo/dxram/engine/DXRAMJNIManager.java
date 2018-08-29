@@ -77,7 +77,7 @@ public final class DXRAMJNIManager {
      *         EngineConfig data for setup.
      */
     public static void setup(final DXRAMContext.EngineConfig p_engineConfig) {
-        ms_jniPath = p_engineConfig.getJNIPath();
+        ms_jniPath = p_engineConfig.getJniPath();
     }
 
 }
