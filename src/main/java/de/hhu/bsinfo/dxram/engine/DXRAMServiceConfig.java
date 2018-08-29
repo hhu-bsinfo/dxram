@@ -5,8 +5,6 @@ import lombok.experimental.Accessors;
 
 import java.lang.annotation.Annotation;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,21 +20,18 @@ public class DXRAMServiceConfig {
     /**
      * Get the class name of the service of this configuration
      */
-    @Expose
     @Getter
     private String m_serviceClassName;
 
     /**
      * True if service supports the superpeer node role, false otherwise
      */
-    @Expose
     @Getter
     private boolean m_supportsSuperpeer = false;
 
     /**
      * True if service supports the peer node role, false otherwise
      */
-    @Expose
     @Getter
     private boolean m_supportsPeer = false;
 

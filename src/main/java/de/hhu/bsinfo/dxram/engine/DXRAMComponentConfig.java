@@ -5,8 +5,6 @@ import lombok.experimental.Accessors;
 
 import java.lang.annotation.Annotation;
 
-import com.google.gson.annotations.Expose;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,21 +21,18 @@ public class DXRAMComponentConfig {
     /**
      * Get the class name of the component of this configuration
      */
-    @Expose
     @Getter
     private String m_componentClassName;
 
     /**
      * True if component supports the superpeer node role, false otherwise
      */
-    @Expose
     @Getter
     private boolean m_supportsSuperpeer = false;
 
     /**
      * True if component supports the peer node role, false otherwise
      */
-    @Expose
     @Getter
     private boolean m_supportsPeer = false;
 
