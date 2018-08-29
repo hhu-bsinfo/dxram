@@ -2,16 +2,15 @@ package de.hhu.bsinfo.dxram.stats;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
  * Config for the StatisticsService
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
-public class StatisticsServiceConfig extends AbstractDXRAMServiceConfig {
+@DXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+public class StatisticsServiceConfig extends DXRAMServiceConfig {
     @Expose
     private int m_printStatsPeriodMs = 0;
 
@@ -22,10 +21,5 @@ public class StatisticsServiceConfig extends AbstractDXRAMServiceConfig {
      */
     public int getPrintStatsPeriodMs() {
         return m_printStatsPeriodMs;
-    }
-
-    @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
-        return true;
     }
 }

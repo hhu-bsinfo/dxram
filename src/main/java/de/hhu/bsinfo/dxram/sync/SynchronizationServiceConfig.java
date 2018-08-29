@@ -2,7 +2,7 @@ package de.hhu.bsinfo.dxram.sync;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 
 /**
@@ -10,8 +10,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
-public class SynchronizationServiceConfig extends AbstractDXRAMServiceConfig {
+@DXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+public class SynchronizationServiceConfig extends DXRAMServiceConfig {
     private static final int MAX_BARRIERS_PER_SUPERPEER_MAX = 100000;
 
     @Expose

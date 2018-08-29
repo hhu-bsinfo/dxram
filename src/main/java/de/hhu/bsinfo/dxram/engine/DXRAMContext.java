@@ -110,7 +110,7 @@ public class DXRAMContext {
      * @return True if verification successful, false on failure
      */
     boolean verifyConfigurationValuesServices() {
-        for (AbstractDXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
+        for (DXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
             LOGGER.debug("Verifying service configuration values of %s...", config.getServiceClassName());
 
             if (!config.verify(m_config)) {
@@ -164,7 +164,7 @@ public class DXRAMContext {
     void createServicesFromConfig(final DXRAMServiceManager p_manager, final NodeRole p_nodeRole) {
         m_services.clear();
 
-        for (AbstractDXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
+        for (DXRAMServiceConfig config : m_config.m_serviceConfigs.values()) {
             if (p_nodeRole == NodeRole.SUPERPEER && config.isSupportsSuperpeer() ||
                     p_nodeRole == NodeRole.PEER && config.isSupportsPeer()) {
                 AbstractDXRAMService serv = p_manager.createInstance(config.getServiceClassName());
@@ -234,7 +234,7 @@ public class DXRAMContext {
          * Service configurations
          */
         @Expose
-        private Map<String, AbstractDXRAMServiceConfig> m_serviceConfigs = new HashMap<>();
+        private Map<String, DXRAMServiceConfig> m_serviceConfigs = new HashMap<>();
 
         /**
          * Get the engine configuration
@@ -263,8 +263,8 @@ public class DXRAMContext {
          *         Class of the service configuration to get
          * @return Service configuration class
          */
-        public <T extends AbstractDXRAMServiceConfig> T getServiceConfig(final Class<T> p_class) {
-            AbstractDXRAMServiceConfig conf = m_serviceConfigs.get(p_class.getSimpleName());
+        public <T extends DXRAMServiceConfig> T getServiceConfig(final Class<T> p_class) {
+            DXRAMServiceConfig conf = m_serviceConfigs.get(p_class.getSimpleName());
 
             return p_class.cast(conf);
         }

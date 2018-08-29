@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.monitoring;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.dxutils.OSValidator;
 
 /**
@@ -25,8 +25,8 @@ import de.hhu.bsinfo.dxutils.OSValidator;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
-@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
-public class MonitoringServiceConfig extends AbstractDXRAMServiceConfig {
+@DXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+public class MonitoringServiceConfig extends DXRAMServiceConfig {
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (!OSValidator.isUnix()) {
@@ -36,5 +36,4 @@ public class MonitoringServiceConfig extends AbstractDXRAMServiceConfig {
 
         return true;
     }
-
 }

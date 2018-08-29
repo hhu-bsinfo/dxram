@@ -16,18 +16,14 @@
 
 package de.hhu.bsinfo.dxram.log;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
  * Config for the LogService
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
-public class LogServiceConfig extends AbstractDXRAMServiceConfig {
-    @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
-        return true;
-    }
+@DXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+public class LogServiceConfig extends DXRAMServiceConfig {
+
 }

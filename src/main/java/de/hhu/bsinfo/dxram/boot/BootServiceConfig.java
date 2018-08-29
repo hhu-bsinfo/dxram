@@ -16,18 +16,14 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
  * Config for BootService
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
-public class BootServiceConfig extends AbstractDXRAMServiceConfig {
-    @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
-        return true;
-    }
+@DXRAMServiceConfig.Settings(supportsSuperpeer = true, supportsPeer = true)
+public class BootServiceConfig extends DXRAMServiceConfig {
+
 }

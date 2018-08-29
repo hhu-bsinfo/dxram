@@ -2,8 +2,7 @@ package de.hhu.bsinfo.dxram.lock;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMServiceConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
@@ -11,8 +10,8 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@AbstractDXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
-public class PeerLockServiceConfig extends AbstractDXRAMServiceConfig {
+@DXRAMServiceConfig.Settings(supportsSuperpeer = false, supportsPeer = true)
+public class PeerLockServiceConfig extends DXRAMServiceConfig {
     @Expose
     private TimeUnit m_remoteLockSendInterval = new TimeUnit(10, TimeUnit.MS);
 
@@ -31,10 +30,5 @@ public class PeerLockServiceConfig extends AbstractDXRAMServiceConfig {
      */
     public TimeUnit getRemoteLockTryTimeout() {
         return m_remoteLockTryTimeout;
-    }
-
-    @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
-        return true;
     }
 }
