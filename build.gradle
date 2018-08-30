@@ -97,6 +97,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     testImplementation 'org.assertj:assertj-core:3.9.0'
 
+    dxramTestImplementation 'org.projectlombok:lombok:1.18.2'
     dxramTestImplementation 'com.google.guava:guava:26.0-jre'
     dxramTestImplementation 'org.apache.zookeeper:zookeeper:3.4.13'
     dxramTestImplementation('org.apache.curator:curator-x-discovery:4.0.1') {
