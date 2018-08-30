@@ -13,10 +13,9 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 @DXRAMRunnerConfiguration(runTestOnNodeIdx = 1,
         nodes = {
                 @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
-                @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.PEER),
                 @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.PEER)
         })
-public class StartPeer2Test {
+public class StartSuperpeer1Peer1Test {
     @ClientInstance
     private DXRAM m_instance;
 
