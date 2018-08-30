@@ -79,6 +79,7 @@ public final class DXRAM {
     private static final String STARTUP_DONE_STR = "!---ooo---!";
 
     private DXRAMEngine m_engine;
+    private ShutdownThread m_shutdownHook;
 
     /**
      * Constructor
@@ -147,7 +148,8 @@ public final class DXRAM {
         }
 
         if (p_autoShutdown) {
-            Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
+            m_shutdownHook = new ShutdownThread(this);
+            Runtime.getRuntime().addShutdownHook(m_shutdownHook);
         }
 
         printNodeInfo();
@@ -185,6 +187,11 @@ public final class DXRAM {
      * Shut down DXRAM. Call this if you have not enabled auto shutdown on init.
      */
     public void shutdown() {
+        if (m_shutdownHook != null) {
+            Runtime.getRuntime().removeShutdownHook(m_shutdownHook);
+            m_shutdownHook = null;
+        }
+
         m_engine.shutdown();
     }
 
