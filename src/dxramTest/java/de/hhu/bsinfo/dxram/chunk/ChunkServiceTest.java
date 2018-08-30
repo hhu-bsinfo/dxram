@@ -27,11 +27,11 @@ import de.hhu.bsinfo.dxram.DXRAMRunnerConfiguration;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
-@DXRAMRunnerConfiguration(runTestOnNodeRole = NodeRole.PEER, runTestOnNodeIdx = 0,
-        zookeeperPath = "/home/nothaas/zookeeper", nodes = {
-        @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.SUPERPEER, zookeeperIP = "127.0.0.1", zookeeperPort = 2181),
-        @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.PEER, zookeeperIP = "127.0.0.1", zookeeperPort = 2181)
-})
+@DXRAMRunnerConfiguration(runTestOnNodeIdx = 1,
+        nodes = {
+                @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
+                @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.PEER)
+        })
 public class ChunkServiceTest {
     @ClientInstance
     private DXRAM m_instance;

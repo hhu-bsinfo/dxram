@@ -26,11 +26,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface DXRAMRunnerConfiguration {
-    NodeRole runTestOnNodeRole();
-
     int runTestOnNodeIdx();
-
-    String zookeeperPath();
 
     Node[] nodes();
 
@@ -38,9 +34,5 @@ public @interface DXRAMRunnerConfiguration {
     @Target(ElementType.TYPE)
     @interface Node {
         NodeRole nodeRole();
-
-        String zookeeperIP();
-
-        int zookeeperPort();
     }
 }

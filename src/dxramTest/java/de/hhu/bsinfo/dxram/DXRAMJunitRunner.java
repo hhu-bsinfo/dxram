@@ -17,27 +17,30 @@
 package de.hhu.bsinfo.dxram;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
 import org.junit.runner.notification.RunNotifier;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMContextCreatorDefault;
-import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
+// TODO at the end of the test run, delete zookeeper.out and zookeeper data folder
 public class DXRAMJunitRunner extends Runner {
-    private static String ZOOKEEPER_SERVER = "bin/zkServer.sh";
-
-    private Process m_zookeeperServerProcess;
+    private ZookeeperServer m_zookeeper;
     private DXRAM[] m_instances;
 
     private Class m_testClass;
@@ -50,12 +53,12 @@ public class DXRAMJunitRunner extends Runner {
     @Override
     public Description getDescription() {
         return Description
-                .createTestDescription(m_testClass, "My runner description");
+                .createTestDescription(m_testClass, "DXRAM instance test runner");
     }
 
     @Override
     public void run(final RunNotifier p_notifier) {
-        Configurator.setRootLevel(Level.DEBUG);
+        configureLogger();
 
         DXRAMRunnerConfiguration config = (DXRAMRunnerConfiguration) m_testClass.getAnnotation(
                 DXRAMRunnerConfiguration.class);
@@ -65,14 +68,22 @@ public class DXRAMJunitRunner extends Runner {
                     String.format("DXRAMRunnerConfiguration annotation not found (%s)", m_testClass.getSimpleName()));
         }
 
-        startZookeeper(config.zookeeperPath());
+        Properties props = getConfigProperties();
+
+        m_zookeeper = new ZookeeperServer(props.getProperty("zookeeper_path"));
+
+        System.out.println("Starting zookeeper");
+        m_zookeeper.start();
+
+        IPV4Unit zookeeperConnection = new IPV4Unit(props.getProperty("zookeeper_ip"),
+                Integer.parseInt(props.getProperty("zookeeper_port")));
 
         m_instances = new DXRAM[config.nodes().length];
 
         System.out.println("Creating " + m_instances.length + " DXRAM instances");
 
         for (int i = 0; i < m_instances.length; i++) {
-            m_instances[i] = createNodeInstance(config.nodes()[i]);
+            m_instances[i] = createNodeInstance(zookeeperConnection, config, i, 22221 + i);
         }
 
         DXRAM testInstance = getInstanceForTest(m_instances, config);
@@ -80,20 +91,26 @@ public class DXRAMJunitRunner extends Runner {
         runTestOnInstance(testInstance, p_notifier);
 
         cleanupNodeInstances(m_instances);
-        shutdownZookeeper();
+        m_zookeeper.shutdown();
     }
 
-    private DXRAM createNodeInstance(final DXRAMRunnerConfiguration.Node p_config) {
-        // TODO requires refactoring of configuration stuff in engine -> builder library?
-        // TODO set configuration values for zookeeper
-        // TODO set configuration values for engine etc
+    private void configureLogger() {
+        LoggerContext lc = (LoggerContext) LogManager.getContext(false);
+        Appender appender = LogAppenderAsssert.createAppender("unitTest", PatternLayout.createDefaultLayout(), null);
+        appender.start();
+        lc.getConfiguration().addAppender(appender);
+        lc.getRootLogger().addAppender(lc.getConfiguration().getAppender(appender.getName()));
+        lc.updateLoggers();
 
-        System.setProperty("dxram.config", "/home/krakowski/dxram/config/dxram.json");
-        System.setProperty("dxram.m_config.m_engineConfig.m_address.m_port", "22223");
+        Configurator.setRootLevel(Level.DEBUG);
+    }
 
+    private DXRAM createNodeInstance(final IPV4Unit p_zookeeperConnection, final DXRAMRunnerConfiguration p_config,
+            final int p_nodeIdx, final int p_nodePort) {
         DXRAM instance = new DXRAM();
 
-        if (!instance.initialize(new DXRAMContextCreatorDefault(), true)) {
+        if (!instance.initialize(new DXRAMTestContextCreator(p_zookeeperConnection, p_config, p_nodeIdx, p_nodePort),
+                true)) {
             System.out.println("Creating instance failed");
             System.exit(-1);
         }
@@ -110,27 +127,7 @@ public class DXRAMJunitRunner extends Runner {
     }
 
     private static DXRAM getInstanceForTest(final DXRAM[] p_instances, final DXRAMRunnerConfiguration p_config) {
-        // sort by node type
-        ArrayList<DXRAM> superpeers = new ArrayList<>();
-        ArrayList<DXRAM> peers = new ArrayList<>();
-
-        for (int i = 0; i < p_config.nodes().length; i++) {
-            if (p_config.nodes()[i].nodeRole() == NodeRole.SUPERPEER) {
-                superpeers.add(p_instances[i]);
-            } else if (p_config.nodes()[i].nodeRole() == NodeRole.PEER) {
-                peers.add(p_instances[i]);
-            } else {
-                throw new IllegalStateException();
-            }
-        }
-
-        if (p_config.runTestOnNodeRole() == NodeRole.SUPERPEER) {
-            return superpeers.get(p_config.runTestOnNodeIdx());
-        } else if (p_config.runTestOnNodeRole() == NodeRole.PEER) {
-            return peers.get(p_config.runTestOnNodeIdx());
-        } else {
-            throw new IllegalStateException();
-        }
+        return p_instances[p_config.runTestOnNodeIdx()];
     }
 
     private void runTestOnInstance(final DXRAM p_instance, final RunNotifier p_notifier) {
@@ -190,21 +187,22 @@ public class DXRAMJunitRunner extends Runner {
         return set;
     }
 
-    private void startZookeeper(final String p_path) {
-        System.out.println("Starting zookeeper");
+    private Properties getConfigProperties() {
+        Properties prop = new Properties();
+
+        InputStream inputStream = getClass().getResourceAsStream("config.properties");
+
+        if (inputStream == null) {
+            throw new RuntimeException("Could not find property file in resources");
+        }
 
         try {
-            m_zookeeperServerProcess = new ProcessBuilder().inheritIO().command(
-                    p_path + '/' + ZOOKEEPER_SERVER, "start").start();
+            prop.load(inputStream);
+            inputStream.close();
         } catch (final IOException e) {
-            System.out.println("Failed to start zookeeper server: ");
-            e.printStackTrace();
-            System.exit(-1);
+            throw new RuntimeException("Loading property file failed: " + e.getMessage());
         }
-    }
 
-    private void shutdownZookeeper() {
-        System.out.println("Shutting down zookeeper");
-        m_zookeeperServerProcess.destroy();
+        return prop;
     }
 }
