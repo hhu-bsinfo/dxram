@@ -213,9 +213,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         long chunkID;
 
-
         LOGGER.trace("ENTER createIndex p_size %d", p_size);
-
 
         try {
             if (m_cidTable.get(0) != 0) {
@@ -247,9 +245,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT createIndex p_size %d", p_size);
-
 
         return chunkID;
     }
@@ -269,9 +265,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         long chunkID;
 
-
         LOGGER.trace("ENTER create p_chunkId 0x%X, p_size %d", p_chunkId, p_size);
-
 
         try {
             // #ifdef STATISTICS
@@ -309,9 +303,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT create p_chunkId 0x%X, p_size %d", p_chunkId, p_size);
-
 
         return chunkID;
     }
@@ -340,9 +332,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long[] addresses;
         long[] lids;
 
-
         LOGGER.trace("ENTER createMultiSizes p_consecutive %b, p_sizes %d", p_consecutive, p_sizes.length);
-
 
         try {
             // #ifdef STATISTICS
@@ -397,9 +387,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT createMultiSizes p_consecutive %b, p_sizes %d", p_consecutive, p_sizes.length);
-
 
         return lids;
     }
@@ -433,6 +421,12 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         for (int i = 0; i < ids.length; i++) {
             p_dataStructures[i].setID(ids[i]);
+
+            if (ids[i] != ChunkID.INVALID_ID) {
+                p_dataStructures[i].setState(ChunkState.OK);
+            } else {
+                p_dataStructures[i].setState(ChunkState.UNDEFINED);
+            }
         }
     }
 
@@ -464,9 +458,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long[] addresses;
         long[] lids;
 
-
         LOGGER.trace("ENTER createMultiSizes p_size %d, p_count %d, p_consecutive %b", p_size, p_count, p_consecutive);
-
 
         try {
             // #ifdef STATISTICS
@@ -522,9 +514,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT createMultiSizes p_size %d, p_count %d, p_consecutive %b", p_size, p_count, p_consecutive);
-
 
         return lids;
     }
@@ -544,9 +534,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long chunkID;
         long lid;
 
-
         LOGGER.trace("ENTER create p_size %d", p_size);
-
 
         try {
             // #ifdef STATISTICS
@@ -592,9 +580,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT create p_size %d", p_size);
-
 
         return chunkID;
     }
@@ -611,9 +597,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         boolean ret = true;
 
-
         LOGGER.trace("ENTER get p_dataStructure 0x%X", p_dataStructure.getID());
-
 
         try {
             if (p_dataStructure.getID() == ChunkID.INVALID_ID) {
@@ -647,9 +631,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT get p_dataStructure 0x%X", p_dataStructure.getID());
-
 
         return ret;
     }
@@ -667,9 +649,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         byte[] ret;
         long address;
 
-
         LOGGER.trace("ENTER get p_chunkID 0x%X", p_chunkID);
-
 
         try {
             if (p_chunkID == ChunkID.INVALID_ID) {
@@ -704,9 +684,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT get p_chunkID 0x%X", p_chunkID);
-
 
         return ret;
     }
@@ -776,9 +754,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         boolean ret = true;
 
-
         LOGGER.trace("ENTER put p_dataStructure 0x%X", p_dataStructure.getID());
-
 
         try {
             if (p_dataStructure.getID() == ChunkID.INVALID_ID) {
@@ -812,9 +788,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT put p_dataStructure 0x%X", p_dataStructure.getID());
-
 
         return ret;
     }
@@ -855,9 +829,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         long address;
         boolean ret = true;
 
-
         LOGGER.trace("ENTER put p_chunkID 0x%X, p_offset %d, p_length %d", p_chunkID, p_offset, p_length);
-
 
         try {
             if (p_chunkID == ChunkID.INVALID_ID) {
@@ -885,9 +857,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT put p_chunkID 0x%X, p_offset %d, p_length %d", p_chunkID, p_offset, p_length);
-
 
         return ret;
     }
@@ -908,9 +878,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
         int ret = -1;
         long addressDeletedChunk;
 
-
         LOGGER.trace("ENTER remove p_chunkID 0x%X, p_wasMigrated %d", p_chunkID, p_wasMigrated);
-
 
         try {
             if (p_chunkID == ChunkID.INVALID_ID) {
@@ -957,9 +925,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             throw e;
         }
 
-
         LOGGER.trace("EXIT remove p_chunkID 0x%X, p_wasMigrated %d", p_chunkID, p_wasMigrated);
-
 
         return ret;
     }
@@ -983,9 +949,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             final int[] p_lengths, final int p_usedEntries) {
         long[] addresses;
 
-
         LOGGER.trace("ENTER createAndPutRecovered, count %d", p_chunkIDs.length);
-
 
         try {
             // #ifdef STATISTICS
@@ -1022,7 +986,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             handleMemDumpOnError(e, false);
             throw e;
         }
-
 
         LOGGER.trace("EXIT createAndPutRecovered, count %d", p_chunkIDs.length);
 
@@ -1103,7 +1066,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
     public void reset() {
 
         LOGGER.warn("Resetting FULL memory");
-
 
         shutdownMemory();
         initMemory();
@@ -1473,7 +1435,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
 
         LOGGER.fatal("Encountered memory error (most likely corruption)", p_e);
 
-
         if (!getConfig().getMemDumpFolderOnError().isEmpty()) {
             String folder = getConfig().getMemDumpFolderOnError();
 
@@ -1485,9 +1446,7 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
             String fileName = folder + "memdump-" + Thread.currentThread().getId() + '-' + System.currentTimeMillis() +
                     ".soh";
 
-
             LOGGER.fatal("Full memory dump to file: %s...", fileName);
-
 
             // ugly: we entered this with a access lock, acquire the managed lock to ensure full blocking of the memory
             // before dumping
@@ -1495,7 +1454,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 unlockAccess();
                 lockManage();
             }
-
 
             LOGGER.fatal("Dumping...");
 
@@ -1505,7 +1463,6 @@ public final class MemoryManagerComponent extends AbstractDXRAMComponent<MemoryM
                 unlockManage();
                 lockAccess();
             }
-
 
             LOGGER.fatal("Memory dump to file finished: %s", fileName);
 

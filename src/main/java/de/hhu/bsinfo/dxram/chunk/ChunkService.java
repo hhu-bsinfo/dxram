@@ -316,6 +316,12 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> imple
             }
 
             p_dataStructures[0].setID(chunkID);
+
+            if (chunkID != ChunkID.INVALID_ID) {
+                p_dataStructures[0].setState(ChunkState.OK);
+            } else {
+                p_dataStructures[0].setState(ChunkState.UNDEFINED);
+            }
         } else {
             try {
                 m_memoryManager.lockManage();
