@@ -21,3 +21,4 @@ out/*
 /util/statistics.pdf
 /stats/
 dxram/out
+zookeeper.out
