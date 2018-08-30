@@ -58,7 +58,7 @@ public class DXRAMServiceConfig {
             if (annotation instanceof Settings) {
                 Settings ann = (Settings) annotation;
                 m_serviceClassName = ann.service().getSimpleName();
-                m_supportsSuperpeer = ann.supportsPeer();
+                m_supportsSuperpeer = ann.supportsSuperpeer();
                 m_supportsPeer = ann.supportsPeer();
             }
         }
