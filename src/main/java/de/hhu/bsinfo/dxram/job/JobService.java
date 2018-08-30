@@ -16,6 +16,7 @@
 
 package de.hhu.bsinfo.dxram.job;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ import de.hhu.bsinfo.dxram.job.messages.PushJobQueueMessage;
 import de.hhu.bsinfo.dxram.job.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.job.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
@@ -66,15 +68,19 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
     private AbstractJobComponent m_job;
     private NetworkComponent m_network;
 
-    private AtomicLong m_jobIDCounter = new AtomicLong(0);
+    private final JobMap m_jobMap;
 
-    private Map<Long, JobEventEntry> m_remoteJobCallbackMap = new HashMap<>();
+    private final AtomicLong m_jobIDCounter = new AtomicLong(0);
+
+    private final Map<Long, JobEventEntry> m_remoteJobCallbackMap = new HashMap<>();
 
     /**
      * Constructor
      */
     public JobService() {
         super("job", JobServiceConfig.class);
+
+        m_jobMap = new JobMap();
     }
 
     /**
@@ -87,10 +93,9 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
      *         Class to register for the specified ID.
      */
     public void registerJobType(final short p_typeID, final Class<? extends AbstractJob> p_clazz) {
-
         LOGGER.debug("Registering job type %s for class %s", p_typeID, p_clazz);
 
-        AbstractJob.registerType(p_typeID, p_clazz);
+        m_jobMap.registerType(p_typeID, p_clazz);
     }
 
     /**
@@ -328,7 +333,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
         registerNetworkMessages();
         registerNetworkMessageListener();
 
-        AbstractJob.registerType(JobNull.MS_TYPE_ID, JobNull.class);
+        registerJobType(JobNull.MS_TYPE_ID, JobNull.class);
 
         return true;
     }
@@ -377,7 +382,13 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
     private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
         SOP_INCOMING_SUBMIT.start();
 
-        AbstractJob job = p_request.getJob();
+        AbstractJob job = m_jobMap.createInstance(p_request.getJobType());
+        ByteBuffer buffer = ByteBuffer.wrap(p_request.getJobBlob());
+        ByteBufferImExporter importer = new ByteBufferImExporter(buffer);
+
+        // de-serialize job data
+        importer.importObject(job);
+
         job.setServiceAccessor(getServiceAccessor());
 
         // register ourselves as listener to event callbacks

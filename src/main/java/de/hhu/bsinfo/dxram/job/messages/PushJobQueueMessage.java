@@ -31,6 +31,11 @@ public class PushJobQueueMessage extends Message {
     private AbstractJob m_job;
     private byte m_callbackJobEventBitMask;
 
+    // for receiving job data
+    private byte m_jobType;
+    private int m_jobBlobSize;
+    private byte[] m_jobBlob;
+
     /**
      * Creates an instance of PushJobQueueRequest.
      * This constructor is used when receiving this message.
@@ -59,15 +64,6 @@ public class PushJobQueueMessage extends Message {
     }
 
     /**
-     * Get the job of this request.
-     *
-     * @return Job.
-     */
-    public AbstractJob getJob() {
-        return m_job;
-    }
-
-    /**
      * Get the bitmask to be used when initiating callbacks to the remote
      * side sending this message.
      *
@@ -77,25 +73,47 @@ public class PushJobQueueMessage extends Message {
         return m_callbackJobEventBitMask;
     }
 
+    /**
+     * Get the job type
+     *
+     * @return Job type id
+     */
+    public byte getJobType() {
+        return m_jobType;
+    }
+
+    /**
+     * Get the job blob/data
+     *
+     * @return Job data as byte array
+     */
+    public byte[] getJobBlob() {
+        return m_jobBlob;
+    }
+
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeByte(m_callbackJobEventBitMask);
         p_exporter.writeShort(m_job.getTypeID());
+        p_exporter.writeInt(m_job.sizeofObject());
         p_exporter.exportObject(m_job);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_callbackJobEventBitMask = p_importer.readByte(m_callbackJobEventBitMask);
-        short type = p_importer.readByte((byte) 0);
-        if (m_job == null) {
-            m_job = AbstractJob.createInstance(type);
+        m_jobType = p_importer.readByte(m_jobType);
+        m_jobBlobSize = p_importer.readInt(m_jobBlobSize);
+
+        if (m_jobBlob == null) {
+            m_jobBlob = new byte[m_jobBlobSize];
         }
-        p_importer.importObject(m_job);
+
+        p_importer.readBytes(m_jobBlob);
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Byte.BYTES + Short.BYTES + m_job.sizeofObject();
+        return Byte.BYTES + Short.BYTES + Integer.BYTES + m_job.sizeofObject();
     }
 }
