@@ -20,23 +20,24 @@ import java.util.Arrays;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkIDRanges;
+import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
-import de.hhu.bsinfo.dxram.data.DSByteArray;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationMessages;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationRemoteMessage;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationRequest;
@@ -55,9 +56,9 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
     // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
-    private ChunkMigrationComponent m_chunk;
+    private ChunkComponent m_chunk;
+    private ChunkMigrationComponent m_chunkMigration;
     private LookupComponent m_lookup;
-    private MemoryManagerComponent m_memoryManager;
     private NetworkComponent m_network;
 
     private Lock m_migrationLock;
@@ -80,18 +81,11 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      */
     public boolean migrate(final long p_chunkID, final short p_target) {
         short[] backupPeers;
-        DataStructure chunk;
         boolean ret;
 
         m_migrationLock.lock();
-        if (p_target != m_boot.getNodeId() && m_memoryManager.exists(p_chunkID)) {
-            int size;
-
-            m_memoryManager.lockAccess();
-            byte[] data = m_memoryManager.get(p_chunkID);
-            m_memoryManager.unlockAccess();
-
-            chunk = new DSByteArray(p_chunkID, data);
+        if (p_target != m_boot.getNodeId() && m_chunk.getMemory().exists().exists(p_chunkID)) {
+            ChunkByteArray chunk = m_chunk.getMemory().get().get(p_chunkID, ChunkLockOperation.NONE, -1);
 
             LOGGER.trace("Sending migration request to %s", p_target);
 
@@ -120,8 +114,9 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
             // m_lock.unlockAll(p_chunkID);
 
             // Update local memory management
-            m_memoryManager.remove(p_chunkID, true);
+            m_chunk.getMemory().remove().remove(p_chunkID, true);
             m_backup.deregisterChunk(p_chunkID, chunk.sizeofObject());
+
             if (m_backup.isActive()) {
                 // Update logging
                 backupPeers = m_backup.getArrayOfBackupPeersForLocalChunks(p_chunkID);
@@ -185,8 +180,8 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
         int chunkSize;
         long iter;
         long size;
-        DataStructure chunk;
-        DataStructure[] chunks;
+        AbstractChunk chunk;
+        AbstractChunk[] chunks;
         boolean ret;
 
         // TODO: Handle range properly
@@ -198,34 +193,30 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
                 iter = p_startChunkID;
                 while (true) {
                     // Send chunks to p_target
-                    chunks = new DataStructure[(int) (p_endChunkID - iter + 1)];
+                    chunks = new AbstractChunk[(int) (p_endChunkID - iter + 1)];
                     counter = 0;
                     size = 0;
-                    m_memoryManager.lockAccess();
+
                     while (iter <= p_endChunkID) {
-                        if (m_memoryManager.exists(iter)) {
-                            chunk = new DSByteArray(iter, m_memoryManager.get(iter));
+                        if (m_chunk.getMemory().exists().exists(iter)) {
+                            chunk = m_chunk.getMemory().get().get(iter);
 
                             chunks[counter] = chunk;
                             chunkIDs[counter++] = chunk.getID();
                             size += chunk.sizeofObject();
                         } else {
-
                             LOGGER.error("Chunk with ChunkID 0x%X could not be migrated", iter);
-
                         }
+
                         iter++;
                     }
-                    m_memoryManager.unlockAccess();
 
                     LOGGER.info("Sending %d Chunks (%d Bytes) to 0x%X", counter, size, p_target);
 
                     try {
                         m_network.sendSync(new MigrationRequest(p_target, Arrays.copyOf(chunks, counter)));
                     } catch (final NetworkException e) {
-
                         LOGGER.error("Could not migrate chunks");
-
                     }
 
                     if (iter > p_endChunkID) {
@@ -259,7 +250,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
                     // m_lock.unlockAll(iter);
 
                     // Update local memory management
-                    chunkSize = m_memoryManager.remove(iter, true);
+                    chunkSize = m_chunk.getMemory().remove().remove(iter, true);
                     m_backup.deregisterChunk(iter, chunkSize);
                     iter++;
                 }
@@ -297,21 +288,25 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
         ChunkIDRanges allMigratedChunks;
 
         // Migrate all chunks created on this node
-        ChunkIDRanges ownChunkRanges = m_memoryManager.getCIDRangesOfAllLocalChunks();
+        ChunkIDRanges ownChunkRanges = m_chunk.getMemory().cidStatus().getCIDRangesOfLocalChunks();
         assert ownChunkRanges != null;
+
         for (int i = 0; i < ownChunkRanges.size(); i++) {
             firstID = ownChunkRanges.getRangeStart(i);
             lastID = ownChunkRanges.getRangeEnd(i);
+
             for (localID = firstID; localID < lastID; i++) {
                 chunkID = ((long) m_boot.getNodeId() << 48) + localID;
-                if (m_memoryManager.exists(chunkID)) {
+
+                if (m_chunk.getMemory().exists().exists(chunkID)) {
                     migrate(chunkID, p_target);
                 }
             }
         }
 
         // Migrate all chunks migrated to this node
-        allMigratedChunks = m_memoryManager.getCIDRangesOfAllLocalChunks();
+        allMigratedChunks = m_chunk.getMemory().cidStatus().getCIDRangesOfLocalChunks();
+
         for (int i = 0; i < allMigratedChunks.size(); i++) {
             long rangeStart = allMigratedChunks.getRangeStart(i);
             long rangeEnd = allMigratedChunks.getRangeEnd(i);
@@ -361,9 +356,9 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkMigrationComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
+        m_chunkMigration = p_componentAccessor.getComponent(ChunkMigrationComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
@@ -386,7 +381,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
     private void incomingMigrationRequest(final MigrationRequest p_request) {
 
         MigrationResponse response;
-        if (!m_chunk.putMigratedChunks(p_request.getChunkIDs(), p_request.getChunkData())) {
+        if (!m_chunkMigration.putMigratedChunks(p_request.getChunkIDs(), p_request.getChunkData())) {
             response = new MigrationResponse(p_request, (byte) -1);
         } else {
             response = new MigrationResponse(p_request, (byte) 0);
@@ -412,10 +407,8 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
             boolean success = migrate(p_message.getChunkID(), p_message.getTargetNode());
 
             if (!success) {
-
                 LOGGER.trace("Failure! Could not migrate chunk 0x%X to node 0x%X", p_message.getChunkID(),
                         p_message.getTargetNode());
-
             }
         };
         new Thread(task).start();

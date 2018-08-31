@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.migration.messages;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -33,7 +33,7 @@ public class MigrationRequest extends Request {
 
     // data structure is used when request is sent
     // chunks are created if data is received
-    private DataStructure[] m_dataStructures;
+    private AbstractChunk[] m_chunks;
 
     // used when receiving the request
     private long[] m_chunkIDs;
@@ -53,12 +53,12 @@ public class MigrationRequest extends Request {
      *
      * @param p_destination
      *         the destination
-     * @param p_dataStructures
+     * @param p_chunks
      *         The data structures to migrate.
      */
-    public MigrationRequest(final short p_destination, final DataStructure... p_dataStructures) {
+    public MigrationRequest(final short p_destination, final AbstractChunk... p_chunks) {
         super(p_destination, DXRAMMessageTypes.MIGRATION_MESSAGES_TYPE, MigrationMessages.SUBTYPE_MIGRATION_REQUEST);
-        m_dataStructures = p_dataStructures;
+        m_chunks = p_chunks;
     }
 
     /**
@@ -83,13 +83,13 @@ public class MigrationRequest extends Request {
     protected final int getPayloadLength() {
         int size = 0;
 
-        if (m_dataStructures != null) {
-            size += ObjectSizeUtil.sizeofCompactedNumber(m_dataStructures.length);
-            size += m_dataStructures.length * Long.BYTES;
+        if (m_chunks != null) {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunks.length);
+            size += m_chunks.length * Long.BYTES;
 
-            for (DataStructure dataStructure : m_dataStructures) {
-                size += ObjectSizeUtil.sizeofCompactedNumber(dataStructure.sizeofObject());
-                size += dataStructure.sizeofObject();
+            for (AbstractChunk chunk : m_chunks) {
+                size += ObjectSizeUtil.sizeofCompactedNumber(chunk.sizeofObject());
+                size += chunk.sizeofObject();
             }
         } else {
             size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length);
@@ -106,11 +106,11 @@ public class MigrationRequest extends Request {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeCompactNumber(m_dataStructures.length);
-        for (DataStructure dataStructure : m_dataStructures) {
-            p_exporter.writeLong(dataStructure.getID());
-            p_exporter.writeCompactNumber(dataStructure.sizeofObject());
-            p_exporter.exportObject(dataStructure);
+        p_exporter.writeCompactNumber(m_chunks.length);
+        for (AbstractChunk chunk : m_chunks) {
+            p_exporter.writeLong(chunk.getID());
+            p_exporter.writeCompactNumber(chunk.sizeofObject());
+            p_exporter.exportObject(chunk);
         }
     }
 
