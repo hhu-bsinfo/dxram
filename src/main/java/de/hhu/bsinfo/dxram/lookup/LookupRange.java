@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.lookup;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;

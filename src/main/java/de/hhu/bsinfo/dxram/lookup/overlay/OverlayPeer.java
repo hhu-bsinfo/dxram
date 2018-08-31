@@ -25,15 +25,15 @@ import de.hhu.bsinfo.dxram.boot.NodesConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxmem.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
@@ -994,19 +994,19 @@ public class OverlayPeer implements MessageReceiver {
     /**
      * Put data into an allocated block in the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with data to put.
      * @return True if successful, false otherwise.
      */
-    public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
-        if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
+    public boolean superpeerStoragePut(final AbstractChunk p_chunk) {
+        if (p_chunk.getID() > 0x7FFFFFFF && p_chunk.getID() < 0) {
 
-            LOGGER.error("Cannot put data structure into superpeer storage, invalid id 0x%X", p_dataStructure.getID());
+            LOGGER.error("Cannot put data structure into superpeer storage, invalid id 0x%X", p_chunk.getID());
 
             return false;
         }
 
-        int storageId = (int) (p_dataStructure.getID() & 0x7FFFFFFF);
+        int storageId = (int) (p_chunk.getID() & 0x7FFFFFFF);
 
         boolean check = false;
         short responsibleSuperpeer;
@@ -1021,7 +1021,7 @@ public class OverlayPeer implements MessageReceiver {
         while (true) {
             if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 SuperpeerStoragePutRequest request = new SuperpeerStoragePutRequest(responsibleSuperpeer,
-                        p_dataStructure, false);
+                        p_chunk, false);
                 try {
                     m_network.sendSync(request);
                 } catch (final NetworkException e) {
@@ -1110,19 +1110,19 @@ public class OverlayPeer implements MessageReceiver {
     /**
      * Get data from an allocated block in the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with set storage id to read the data from the storage into.
      * @return True if successful, false otherwise.
      */
-    public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
-        if (p_dataStructure.getID() > 0x7FFFFFFF && p_dataStructure.getID() < 0) {
+    public boolean superpeerStorageGet(final AbstractChunk p_chunk) {
+        if (p_chunk.getID() > 0x7FFFFFFF && p_chunk.getID() < 0) {
 
-            LOGGER.error("Cannot get data structure from superpeer storage, invalid id 0x%X", p_dataStructure.getID());
+            LOGGER.error("Cannot get data structure from superpeer storage, invalid id 0x%X", p_chunk.getID());
 
             return false;
         }
 
-        int storageId = (int) (p_dataStructure.getID() & 0x7FFFFFFF);
+        int storageId = (int) (p_chunk.getID() & 0x7FFFFFFF);
 
         boolean check = false;
         short responsibleSuperpeer;
@@ -1137,7 +1137,7 @@ public class OverlayPeer implements MessageReceiver {
         while (true) {
             if (responsibleSuperpeer != NodeID.INVALID_ID) {
                 SuperpeerStorageGetRequest request = new SuperpeerStorageGetRequest(responsibleSuperpeer,
-                        p_dataStructure);
+                        p_chunk);
                 try {
                     m_network.sendSync(request);
                 } catch (final NetworkException e) {

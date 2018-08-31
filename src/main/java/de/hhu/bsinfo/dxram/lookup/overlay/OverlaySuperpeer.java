@@ -30,6 +30,9 @@ import de.hhu.bsinfo.dxram.boot.NodesConfiguration;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxmem.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkState;
+import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
@@ -37,10 +40,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.ChunkState;
-import de.hhu.bsinfo.dxram.data.DSByteArray;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.failure.messages.FailureRequest;
 import de.hhu.bsinfo.dxram.failure.messages.FailureResponse;
@@ -2367,13 +2367,13 @@ public class OverlaySuperpeer implements MessageReceiver {
     private void incomingSuperpeerStorageGetRequest(final SuperpeerStorageGetRequest p_request) {
         byte[] data = m_metadata.getStorage(p_request.getStorageID());
 
-        DSByteArray chunk;
+        ChunkByteArray chunk;
         if (data == null) {
             // create invalid entry
-            chunk = new DSByteArray(p_request.getStorageID(), new byte[0]);
+            chunk = new ChunkByteArray(p_request.getStorageID(), new byte[0]);
             chunk.setState(ChunkState.DOES_NOT_EXIST);
         } else {
-            chunk = new DSByteArray(p_request.getStorageID(), data);
+            chunk = new ChunkByteArray(p_request.getStorageID(), data);
             chunk.setState(ChunkState.OK);
         }
 
@@ -2425,7 +2425,7 @@ public class OverlaySuperpeer implements MessageReceiver {
      *         the SuperpeerStoragePutRequest
      */
     private void incomingSuperpeerStoragePutRequest(final SuperpeerStoragePutRequest p_request) {
-        DSByteArray chunk = p_request.getChunk();
+        ChunkByteArray chunk = p_request.getChunk();
 
         int res = m_metadata.putStorage((int) chunk.getID(), chunk.getData());
         if (!p_request.isReplicate()) {
@@ -2479,7 +2479,7 @@ public class OverlaySuperpeer implements MessageReceiver {
      *         the SuperpeerStoragePutAnonRequest
      */
     private void incomingSuperpeerStoragePutAnonRequest(final SuperpeerStoragePutAnonRequest p_request) {
-        DSByteArray chunk = p_request.getChunk();
+        ChunkByteArray chunk = p_request.getChunk();
 
         int res = m_metadata.putStorage((int) chunk.getID(), chunk.getData());
         if (!p_request.isReplicate()) {

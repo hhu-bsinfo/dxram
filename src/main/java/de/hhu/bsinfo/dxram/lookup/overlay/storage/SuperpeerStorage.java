@@ -27,7 +27,7 @@ import java.util.Map.Entry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.dxutils.CRC16;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;

@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkID;
 
 /**
  * Message to notify peers about an update in the nameservice to update their local caches

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxutils.NodeID;
@@ -281,6 +281,7 @@ public final class CacheTree {
         } else {
             ret.append("├── ");
         }
+
         ret.append('[');
         ret.append(p_node.getNumberOfEntries());
         ret.append(", ");

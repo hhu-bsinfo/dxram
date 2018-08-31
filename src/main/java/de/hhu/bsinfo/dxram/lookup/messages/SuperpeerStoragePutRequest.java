@@ -16,12 +16,12 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.DSByteArray;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 
 /**
  * Request to put data into the superpeer storage.
@@ -33,10 +33,10 @@ public class SuperpeerStoragePutRequest extends Request {
     // These are also used by the response to directly write the
     // receiving data to the structures
     // Chunks are created and used when receiving a put request
-    private DataStructure m_dataStructure;
+    private AbstractChunk m_chunk;
 
     // used when receiving message
-    private DSByteArray m_chunk;
+    private ChunkByteArray m_chunkRecv;
 
     private boolean m_isReplicate;
 
@@ -55,17 +55,17 @@ public class SuperpeerStoragePutRequest extends Request {
      *
      * @param p_destination
      *         the destination
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with the data to put.
      * @param p_replicate
      *         True if this message is a replication to other superpeer message, false if normal message
      */
-    public SuperpeerStoragePutRequest(final short p_destination, final DataStructure p_dataStructure,
+    public SuperpeerStoragePutRequest(final short p_destination, final AbstractChunk p_chunk,
             final boolean p_replicate) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
                 LookupMessages.SUBTYPE_SUPERPEER_STORAGE_PUT_REQUEST);
 
-        m_dataStructure = p_dataStructure;
+        m_chunk = p_chunk;
         m_isReplicate = p_replicate;
     }
 
@@ -74,8 +74,8 @@ public class SuperpeerStoragePutRequest extends Request {
      *
      * @return the Chunks to put
      */
-    public final DSByteArray getChunk() {
-        return m_chunk;
+    public final ChunkByteArray getChunk() {
+        return m_chunkRecv;
     }
 
     /**
@@ -91,10 +91,10 @@ public class SuperpeerStoragePutRequest extends Request {
     protected final int getPayloadLength() {
         int size = 0;
 
-        if (m_dataStructure != null) {
-            size += Long.BYTES + Integer.BYTES + m_dataStructure.sizeofObject() + Byte.BYTES;
-        } else {
+        if (m_chunk != null) {
             size += Long.BYTES + Integer.BYTES + m_chunk.sizeofObject() + Byte.BYTES;
+        } else {
+            size += Long.BYTES + Integer.BYTES + m_chunkRecv.sizeofObject() + Byte.BYTES;
         }
 
         return size;
@@ -103,11 +103,11 @@ public class SuperpeerStoragePutRequest extends Request {
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        int size = m_dataStructure.sizeofObject();
+        int size = m_chunk.sizeofObject();
 
-        p_exporter.writeLong(m_dataStructure.getID());
+        p_exporter.writeLong(m_chunk.getID());
         p_exporter.writeInt(size);
-        p_exporter.exportObject(m_dataStructure);
+        p_exporter.exportObject(m_chunk);
         p_exporter.writeBoolean(m_isReplicate);
     }
 
@@ -115,9 +115,11 @@ public class SuperpeerStoragePutRequest extends Request {
     protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_chunkID = p_importer.readLong(m_chunkID);
         int size = p_importer.readInt(0);
-        if (m_chunk == null) {
-            m_chunk = new DSByteArray(m_chunkID, size);
+
+        if (m_chunkRecv == null) {
+            m_chunkRecv = new ChunkByteArray(m_chunkID, size);
         }
+
         p_importer.importObject(m_chunk);
         m_isReplicate = p_importer.readBoolean(m_isReplicate);
     }

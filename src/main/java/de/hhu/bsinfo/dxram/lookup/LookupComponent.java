@@ -16,18 +16,18 @@
 
 package de.hhu.bsinfo.dxram.lookup;
 
-import java.net.InetSocketAddress;
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -43,12 +43,10 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponentConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
-import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.Cache;
@@ -65,11 +63,11 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     private static final short ORDER = 10;
 
     // component dependencies
-    private BackupComponent m_backup;
     private AbstractBootComponent m_boot;
+    private BackupComponent m_backup;
+    private ChunkComponent m_chunk;
     private EventComponent m_event;
     private NetworkComponent m_network;
-    private MemoryManagerComponent m_memory;
 
     private OverlaySuperpeer m_superpeer;
     private OverlayPeer m_peer;
@@ -501,42 +499,40 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     /**
      * Create a block of memory in the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with the storage id assigned to allocate memory for.
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
-    public boolean superpeerStorageCreate(final DataStructure p_dataStructure) {
+    public boolean superpeerStorageCreate(final AbstractChunk p_chunk) {
         NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
-        if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
-
+        if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
             LOGGER.error("Invalid id 0x%X for data struct to allocate memory in superpeer storage",
-                    p_dataStructure.getID());
-
+                    p_chunk.getID());
             return false;
         }
 
-        return superpeerStorageCreate((int) p_dataStructure.getID(), p_dataStructure.sizeofObject());
+        return superpeerStorageCreate((int) p_chunk.getID(), p_chunk.sizeofObject());
     }
 
     /**
      * Put data into an allocated block of memory in the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure to put with the storage id assigned.
      * @return True if successful, false otherwise.
      */
-    public boolean superpeerStoragePut(final DataStructure p_dataStructure) {
+    public boolean superpeerStoragePut(final AbstractChunk p_chunk) {
         NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
-        if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
+        if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
 
-            LOGGER.error("Invalid id 0x%X for data struct to put data into superpeer storage", p_dataStructure.getID());
+            LOGGER.error("Invalid id 0x%X for data struct to put data into superpeer storage", p_chunk.getID());
 
             return false;
         }
 
-        return m_peer.superpeerStoragePut(p_dataStructure);
+        return m_peer.superpeerStoragePut(p_chunk);
     }
 
     /**
@@ -562,21 +558,21 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     /**
      * Get data from the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with the storage id assigned to read the data into.
      * @return True on success, false on failure.
      */
-    public boolean superpeerStorageGet(final DataStructure p_dataStructure) {
+    public boolean superpeerStorageGet(final AbstractChunk p_chunk) {
         NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
-        if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
+        if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
 
-            LOGGER.error("Invalid id 0x%X for data struct to get data from superpeer storage", p_dataStructure.getID());
+            LOGGER.error("Invalid id 0x%X for data struct to get data from superpeer storage", p_chunk.getID());
 
             return false;
         }
 
-        return m_peer.superpeerStorageGet(p_dataStructure);
+        return m_peer.superpeerStorageGet(p_chunk);
     }
 
     /**
@@ -616,22 +612,22 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     /**
      * Remove an allocated block from the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with the storage id assigned to remove.
      * @return True if successful, false otherwise.
      */
-    public boolean superpeerStorageRemove(final DataStructure p_dataStructure) {
+    public boolean superpeerStorageRemove(final AbstractChunk p_chunk) {
         NodeRole.assertNodeRole(NodeRole.PEER, m_boot.getNodeRole());
 
-        if (p_dataStructure.getID() > 0x7FFFFFFF || p_dataStructure.getID() < 0) {
+        if (p_chunk.getID() > 0x7FFFFFFF || p_chunk.getID() < 0) {
 
             LOGGER.error("Invalid id 0x%X for data struct to remove data from superpeer storage",
-                    p_dataStructure.getID());
+                    p_chunk.getID());
 
             return false;
         }
 
-        m_peer.superpeerStorageRemove((int) p_dataStructure.getID());
+        m_peer.superpeerStorageRemove((int) p_chunk.getID());
         return true;
     }
 
@@ -711,9 +707,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_memory = p_componentAccessor.getComponent(MemoryManagerComponent.class);
     }
 
     @Override

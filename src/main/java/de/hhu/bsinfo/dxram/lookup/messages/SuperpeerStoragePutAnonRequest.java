@@ -16,12 +16,12 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.DSByteArray;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 
 /**
  * Request to put data into the superpeer storage.
@@ -33,7 +33,7 @@ public class SuperpeerStoragePutAnonRequest extends Request {
     private ChunkAnon m_chunk;
 
     // used when receiving message
-    private DSByteArray m_data;
+    private ChunkByteArray m_data;
 
     private boolean m_isReplicate;
 
@@ -71,7 +71,7 @@ public class SuperpeerStoragePutAnonRequest extends Request {
      *
      * @return the Chunks to put
      */
-    public final DSByteArray getChunk() {
+    public final ChunkByteArray getChunk() {
         return m_data;
     }
 
@@ -110,7 +110,7 @@ public class SuperpeerStoragePutAnonRequest extends Request {
         m_chunkID = p_importer.readLong(m_chunkID);
         int size = p_importer.readCompactNumber(0);
         if (m_data == null) {
-            m_data = new DSByteArray(m_chunkID, size);
+            m_data = new ChunkByteArray(m_chunkID, size);
         }
         p_importer.importObject(m_data);
         m_isReplicate = p_importer.readBoolean(m_isReplicate);

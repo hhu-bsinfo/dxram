@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 
 /**
  * Response to the get request.
@@ -30,7 +30,7 @@ public class SuperpeerStorageGetResponse extends Response {
     // The chunk objects here are used when sending the response only
     // when the response is received, the data structures from the request are
     // used to directly write the data to them and avoiding further copying
-    private DataStructure m_dataStructure;
+    private AbstractChunk m_chunk;
     private byte m_status;
 
     /**
@@ -49,13 +49,13 @@ public class SuperpeerStorageGetResponse extends Response {
      *
      * @param p_request
      *         the corresponding GetRequest
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure filled with the read data from memory
      */
-    public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request, final DataStructure p_dataStructure,
+    public SuperpeerStorageGetResponse(final SuperpeerStorageGetRequest p_request, final AbstractChunk p_chunk,
             final byte p_status) {
         super(p_request, LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_RESPONSE);
-        m_dataStructure = p_dataStructure;
+        m_chunk = p_chunk;
         m_status = p_status;
     }
 
@@ -70,13 +70,13 @@ public class SuperpeerStorageGetResponse extends Response {
 
     @Override
     protected final int getPayloadLength() {
-        return m_dataStructure.sizeofObject() + Byte.BYTES;
+        return m_chunk.sizeofObject() + Byte.BYTES;
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         // read the data to be sent to the remote from the chunk set for this message
-        p_exporter.exportObject(m_dataStructure);
+        p_exporter.exportObject(m_chunk);
         p_exporter.writeByte(m_status);
     }
 
@@ -86,8 +86,8 @@ public class SuperpeerStorageGetResponse extends Response {
         // the data structure provided by the request to avoid further copying of data
         SuperpeerStorageGetRequest request = (SuperpeerStorageGetRequest) getCorrespondingRequest();
 
-        m_dataStructure = request.getDataStructure();
-        p_importer.importObject(m_dataStructure);
+        m_chunk = request.getDataStructure();
+        p_importer.importObject(m_chunk);
         m_status = p_importer.readByte(m_status);
     }
 }

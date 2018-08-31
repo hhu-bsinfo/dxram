@@ -16,11 +16,11 @@
 
 package de.hhu.bsinfo.dxram.lookup.messages;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 
 /**
  * Request to get data from the superpeer storage.
@@ -31,7 +31,7 @@ public class SuperpeerStorageGetRequest extends Request {
     // the data structure is stored for the sender of the request
     // to write the incoming data of the response to it
     // the requesting IDs are taken from the structures
-    private DataStructure m_dataStructure;
+    private AbstractChunk m_chunk;
     // this is only used when receiving the request
     private int m_storageID;
 
@@ -49,14 +49,14 @@ public class SuperpeerStorageGetRequest extends Request {
      *
      * @param p_destination
      *         the destination node id.
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with the ID of the chunk to get.
      */
-    public SuperpeerStorageGetRequest(final short p_destination, final DataStructure p_dataStructure) {
+    public SuperpeerStorageGetRequest(final short p_destination, final AbstractChunk p_chunk) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
                 LookupMessages.SUBTYPE_SUPERPEER_STORAGE_GET_REQUEST);
 
-        m_dataStructure = p_dataStructure;
+        m_chunk = p_chunk;
     }
 
     /**
@@ -75,8 +75,8 @@ public class SuperpeerStorageGetRequest extends Request {
      *
      * @return Data structures to store data to when the response arrived.
      */
-    public DataStructure getDataStructure() {
-        return m_dataStructure;
+    public AbstractChunk getDataStructure() {
+        return m_chunk;
     }
 
     @Override
@@ -86,7 +86,7 @@ public class SuperpeerStorageGetRequest extends Request {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeInt((int) m_dataStructure.getID());
+        p_exporter.writeInt((int) m_chunk.getID());
     }
 
     @Override
