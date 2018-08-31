@@ -18,7 +18,7 @@ package de.hhu.bsinfo.dxram.nameservice;
 
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -51,7 +51,7 @@ public class NameserviceService extends AbstractDXRAMService<NameserviceServiceC
     }
 
     /**
-     * Remove the name of a registered DataStructure from lookup.
+     * Remove the name of a registered AbstractChunk from lookup.
      *
      * @return the number of entries in name service
      */
@@ -74,22 +74,22 @@ public class NameserviceService extends AbstractDXRAMService<NameserviceServiceC
      * @param p_chunkId
      *         Chunk id to register.
      * @param p_name
-     *         Name to associate with the ID of the DataStructure.
+     *         Name to associate with the ID of the AbstractChunk.
      */
     public void register(final long p_chunkId, final String p_name) {
         m_nameservice.register(p_chunkId, p_name);
     }
 
     /**
-     * Register a DataStructure for a specific name.
+     * Register a AbstractChunk for a specific name.
      *
-     * @param p_dataStructure
-     *         DataStructure to register.
+     * @param p_chunk
+     *         AbstractChunk to register.
      * @param p_name
-     *         Name to associate with the ID of the DataStructure.
+     *         Name to associate with the ID of the AbstractChunk.
      */
-    public void register(final DataStructure p_dataStructure, final String p_name) {
-        register(p_dataStructure.getID(), p_name);
+    public void register(final AbstractChunk p_chunk, final String p_name) {
+        register(p_chunk.getID(), p_name);
     }
 
     /**
