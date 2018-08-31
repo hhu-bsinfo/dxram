@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.tmp;
 
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -86,23 +86,23 @@ public class TemporaryStorageService extends AbstractDXRAMService<TemporaryStora
     /**
      * Create a block of memory in the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with the storage id assigned to allocate memory for.
      * @return True if successful, false on failure (no space, element count exceeded or id used).
      */
-    public boolean create(final DataStructure p_dataStructure) {
-        return m_lookup.superpeerStorageCreate(p_dataStructure);
+    public boolean create(final AbstractChunk p_chunk) {
+        return m_lookup.superpeerStorageCreate(p_chunk);
     }
 
     /**
      * Put data into an allocated block of memory in the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure to put with the storage id assigned.
      * @return True if successful, false otherwise.
      */
-    public boolean put(final DataStructure p_dataStructure) {
-        return m_lookup.superpeerStoragePut(p_dataStructure);
+    public boolean put(final AbstractChunk p_chunk) {
+        return m_lookup.superpeerStoragePut(p_chunk);
     }
 
     /**
@@ -119,12 +119,12 @@ public class TemporaryStorageService extends AbstractDXRAMService<TemporaryStora
     /**
      * Get data from the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with the storage id assigned to read the data into.
      * @return True on success, false on failure.
      */
-    public boolean get(final DataStructure p_dataStructure) {
-        return m_lookup.superpeerStorageGet(p_dataStructure);
+    public boolean get(final AbstractChunk p_chunk) {
+        return m_lookup.superpeerStorageGet(p_chunk);
     }
 
     /**
@@ -152,12 +152,12 @@ public class TemporaryStorageService extends AbstractDXRAMService<TemporaryStora
     /**
      * Remove an allocated block from the superpeer storage.
      *
-     * @param p_dataStructure
+     * @param p_chunk
      *         Data structure with the storage id assigned to remove.
      * @return True if successful, false otherwise.
      */
-    public boolean remove(final DataStructure p_dataStructure) {
-        return m_lookup.superpeerStorageRemove(p_dataStructure);
+    public boolean remove(final AbstractChunk p_chunk) {
+        return m_lookup.superpeerStorageRemove(p_chunk);
     }
 
     @Override
