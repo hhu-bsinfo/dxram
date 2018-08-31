@@ -5,14 +5,14 @@ import org.junit.runner.RunWith;
 
 import de.hhu.bsinfo.dxram.ClientInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
+import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
-import de.hhu.bsinfo.dxram.DXRAMRunnerConfiguration;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
-@DXRAMRunnerConfiguration(runTestOnNodeIdx = 0,
+@DXRAMTestConfiguration(runTestOnNodeIdx = 0,
         nodes = {
-                @DXRAMRunnerConfiguration.Node(nodeRole = NodeRole.SUPERPEER)
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER)
         })
 public class StartSuperpeer1Test {
     @ClientInstance
