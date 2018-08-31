@@ -31,20 +31,34 @@ import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
+import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
-// TODO at the end of the test run, delete zookeeper.out and zookeeper data folder
+/**
+ * JUnit runner to run local DXRAM instances (in the same JVM!!!) and connect them over localhost ethernet. This allows
+ * quick testing and verification of essential features. This requires zookeeper to be installed on your local machine
+ * as well as setting the correct configuration values in the config.properties file (e.g. zookeeper path)
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
+ */
 public class DXRAMJunitRunner extends Runner {
     private ZookeeperServer m_zookeeper;
     private DXRAM[] m_instances;
 
     private Class m_testClass;
 
+    /**
+     * Constructor
+     *
+     * @param p_testClass
+     *         Test class to run
+     */
     public DXRAMJunitRunner(final Class p_testClass) {
         super();
         m_testClass = p_testClass;
@@ -60,12 +74,12 @@ public class DXRAMJunitRunner extends Runner {
     public void run(final RunNotifier p_notifier) {
         configureLogger();
 
-        DXRAMRunnerConfiguration config = (DXRAMRunnerConfiguration) m_testClass.getAnnotation(
-                DXRAMRunnerConfiguration.class);
+        DXRAMTestConfiguration config = (DXRAMTestConfiguration) m_testClass.getAnnotation(
+                DXRAMTestConfiguration.class);
 
         if (config == null) {
             throw new RuntimeException(
-                    String.format("DXRAMRunnerConfiguration annotation not found (%s)", m_testClass.getSimpleName()));
+                    String.format("DXRAMTestConfiguration annotation not found (%s)", m_testClass.getSimpleName()));
         }
 
         Properties props = getConfigProperties();
@@ -73,7 +87,10 @@ public class DXRAMJunitRunner extends Runner {
         m_zookeeper = new ZookeeperServer(props.getProperty("zookeeper_path"));
 
         System.out.println("Starting zookeeper");
-        m_zookeeper.start();
+
+        if (!m_zookeeper.start()) {
+            throw new RuntimeException("Starting zookeeper failed");
+        }
 
         IPV4Unit zookeeperConnection = new IPV4Unit(props.getProperty("zookeeper_ip"),
                 Integer.parseInt(props.getProperty("zookeeper_port")));
@@ -94,6 +111,9 @@ public class DXRAMJunitRunner extends Runner {
         m_zookeeper.shutdown();
     }
 
+    /**
+     * Configure the logger (log4j) for the test to run
+     */
     private void configureLogger() {
         LoggerContext lc = (LoggerContext) LogManager.getContext(false);
         Appender appender = LogAppenderAsssert.createAppender("unitTest", PatternLayout.createDefaultLayout(), null);
@@ -105,7 +125,20 @@ public class DXRAMJunitRunner extends Runner {
         Configurator.setRootLevel(Level.DEBUG);
     }
 
-    private DXRAM createNodeInstance(final IPV4Unit p_zookeeperConnection, final DXRAMRunnerConfiguration p_config,
+    /**
+     * Create a DXRAM instance
+     *
+     * @param p_zookeeperConnection
+     *         Address to zookeeper server
+     * @param p_config
+     *         Test configuration to use
+     * @param p_nodeIdx
+     *         Index of node to start
+     * @param p_nodePort
+     *         Port to assign to node
+     * @return
+     */
+    private DXRAM createNodeInstance(final IPV4Unit p_zookeeperConnection, final DXRAMTestConfiguration p_config,
             final int p_nodeIdx, final int p_nodePort) {
         DXRAM instance = new DXRAM();
 
@@ -118,6 +151,12 @@ public class DXRAMJunitRunner extends Runner {
         return instance;
     }
 
+    /**
+     * Cleanup all instances
+     *
+     * @param p_instances
+     *         Instances to cleanup
+     */
     private void cleanupNodeInstances(final DXRAM[] p_instances) {
         System.out.println("Cleanup DXRAM instances");
 
@@ -126,10 +165,27 @@ public class DXRAMJunitRunner extends Runner {
         }
     }
 
-    private static DXRAM getInstanceForTest(final DXRAM[] p_instances, final DXRAMRunnerConfiguration p_config) {
+    /**
+     * Get the instance to be used for the test to run
+     *
+     * @param p_instances
+     *         List of instances running
+     * @param p_config
+     *         Config of test
+     * @return Instance to assign to the test
+     */
+    private static DXRAM getInstanceForTest(final DXRAM[] p_instances, final DXRAMTestConfiguration p_config) {
         return p_instances[p_config.runTestOnNodeIdx()];
     }
 
+    /**
+     * Run the test on an instance
+     *
+     * @param p_instance
+     *         Instance to run test on
+     * @param p_notifier
+     *         Notifier
+     */
     private void runTestOnInstance(final DXRAM p_instance, final RunNotifier p_notifier) {
         Set<Field> annotatedFields = findFields(m_testClass, ClientInstance.class);
 
@@ -149,15 +205,27 @@ public class DXRAMJunitRunner extends Runner {
                 e.printStackTrace();
             }
 
+            for (Method method : m_testClass.getMethods()) {
+                if (method.isAnnotationPresent(BeforeClass.class)) {
+                    method.invoke(testObject);
+                }
+            }
+
             System.out.println("Running tests");
 
             for (Method method : m_testClass.getMethods()) {
                 if (method.isAnnotationPresent(Test.class)) {
-                    p_notifier.fireTestStarted(Description
-                            .createTestDescription(m_testClass, method.getName()));
-                    method.invoke(testObject);
-                    p_notifier.fireTestFinished(Description
-                            .createTestDescription(m_testClass, method.getName()));
+                    Description testDescription = Description.createTestDescription(m_testClass, method.getName());
+
+                    p_notifier.fireTestStarted(testDescription);
+
+                    try {
+                        method.invoke(testObject);
+                    } catch (final Throwable e) {
+                        p_notifier.fireTestFailure(new Failure(testDescription, e));
+                    }
+
+                    p_notifier.fireTestFinished(testDescription);
                 }
             }
         } catch (Exception e) {
@@ -187,6 +255,11 @@ public class DXRAMJunitRunner extends Runner {
         return set;
     }
 
+    /**
+     * Get the configuration values for the runner of the config.properties file
+     *
+     * @return Properties object with config values
+     */
     private Properties getConfigProperties() {
         Properties prop = new Properties();
 

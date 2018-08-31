@@ -21,13 +21,38 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import de.hhu.bsinfo.dxram.util.NodeRole;
+
 /**
- * Annotation to inject a client instance into the test class
+ * Configuration for DXRAM uinit test class
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface ClientInstance {
+@Target(ElementType.TYPE)
+public @interface DXRAMTestConfiguration {
+    /**
+     * Node index (in order they are declared in nodes list) of node to run the test on
+     *
+     * @return Node index
+     */
+    int runTestOnNodeIdx();
 
+    /**
+     * List of nodes to spawn for the test (spawned in order!)
+     *
+     * @return List of nodes to spawn
+     */
+    Node[] nodes();
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    @interface Node {
+        /**
+         * Role of the node to spawn
+         *
+         * @return Node role
+         */
+        NodeRole nodeRole();
+    }
 }

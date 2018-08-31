@@ -13,6 +13,12 @@ import org.apache.logging.log4j.core.config.plugins.PluginElement;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.junit.Assert;
 
+/**
+ * Special log appender for DXRAM unit tests. The DXRAM runner adds the appender to log4j. The appender
+ * checks all incoming log entries for the levels "error" and "fatal" and aborts the test if encountered.
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
+ */
 @Plugin(name = "LogAppenderAssert", category = "Core", elementType = "appender", printObject = true)
 public class LogAppenderAsssert extends AbstractAppender {
     protected LogAppenderAsssert(final String p_name, final Filter p_filter,

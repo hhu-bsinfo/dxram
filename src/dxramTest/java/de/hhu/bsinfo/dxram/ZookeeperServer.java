@@ -13,7 +13,12 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 
 import de.hhu.bsinfo.dxutils.FileSystemUtils;
 
-public class ZookeeperServer {
+/**
+ * Wrapper class to start a zookeeper server before running DXRAM (for tests)
+ *
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
+ */
+class ZookeeperServer {
     private static final String ZOOKEEPER_SERVER = "bin/zkServer.sh";
 
     private final String m_path;
@@ -23,7 +28,13 @@ public class ZookeeperServer {
 
     private Process m_process;
 
-    public ZookeeperServer(final String p_path) {
+    /**
+     * Constructor
+     *
+     * @param p_path
+     *         Path to root dir of zookeeper installation (includes folders like bin, conf)
+     */
+    ZookeeperServer(final String p_path) {
         m_path = p_path;
 
         if (!new File(m_path).exists()) {
@@ -36,6 +47,11 @@ public class ZookeeperServer {
         m_port = Integer.parseInt(prop.getProperty("clientPort"));
     }
 
+    /**
+     * Start the zookeeper server
+     *
+     * @return True if successful, false otherwise
+     */
     public boolean start() {
         deleteZookeeperDataDir();
 
@@ -51,12 +67,19 @@ public class ZookeeperServer {
         return true;
     }
 
+    /**
+     * Shutdown the running zookeeper server and cleanup resources created by it
+     */
     public void shutdown() {
         m_process.destroy();
 
         deleteZookeeperDataDir();
+        new File("zookeeper.out").delete();
     }
 
+    /**
+     * Delete the zookeeper data directory (contains zookeeper log)
+     */
     private void deleteZookeeperDataDir() {
         File file = new File(m_dataDir);
 
@@ -70,6 +93,9 @@ public class ZookeeperServer {
         }
     }
 
+    /**
+     * Cleanup all dxram entries (folder /dxram) in a running zookeeper instance
+     */
     private void cleanupEntries() {
         String zooKeeperAddress = String.format("127.0.0.1:%d", m_port);
 
@@ -86,6 +112,11 @@ public class ZookeeperServer {
         curatorClient.close();
     }
 
+    /**
+     * Get the config parameters from the zookeeper configuration file
+     *
+     * @return Properties object with zookeeper config parameters
+     */
     private Properties getConfigParameter() {
         Properties prop = new Properties();
 
