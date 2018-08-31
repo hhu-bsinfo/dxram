@@ -17,8 +17,8 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
 import de.hhu.bsinfo.dxnet.DXNet;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.stats.AbstractOperation;
 import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
@@ -76,7 +76,7 @@ public class PeerDXRAMMonitoringHandler extends Thread {
         while (!m_shouldShutdown) {
             collectStatsFromClass(ChunkService.class);
             collectStatsFromClass(DXNet.class);
-            collectStatsFromClass(MemoryManagerComponent.class);
+            collectStatsFromClass(ChunkComponent.class);
 
             try {
                 sleep((long) (m_secondDelay * 1000) / m_numCollects);

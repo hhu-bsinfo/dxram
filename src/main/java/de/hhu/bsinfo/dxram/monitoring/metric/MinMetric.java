@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * This helper class provides methods to calculate a single DataStructure from multiple ones using the minimum.
+ * This helper class provides methods to calculate a single AbstractChunk from multiple ones using the minimum.
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */

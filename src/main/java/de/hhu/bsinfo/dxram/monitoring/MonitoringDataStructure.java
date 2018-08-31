@@ -16,8 +16,8 @@
 
 package de.hhu.bsinfo.dxram.monitoring;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmonitor.monitor.*;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
@@ -30,7 +30,7 @@ import java.util.Arrays;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
-public class MonitoringDataStructure extends DataStructure {
+public class MonitoringDataStructure extends AbstractChunk {
     private long m_timestamp;
 
     private short m_nid;

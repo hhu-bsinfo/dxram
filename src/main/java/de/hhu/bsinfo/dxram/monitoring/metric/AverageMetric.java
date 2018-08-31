@@ -21,7 +21,7 @@ import de.hhu.bsinfo.dxram.monitoring.MonitoringDataStructure;
 import java.util.ArrayList;
 
 /**
- * This helper class provides methods to calculate a single DataStructure from multiple ones using the average.
+ * This helper class provides methods to calculate a single AbstractChunk from multiple ones using the average.
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
