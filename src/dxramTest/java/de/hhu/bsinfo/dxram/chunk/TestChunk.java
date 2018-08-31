@@ -4,12 +4,12 @@ import java.util.Arrays;
 
 import org.junit.Assert;
 
-import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
-public class TestChunk extends DataStructure {
+public class TestChunk extends AbstractChunk {
     private static final byte DATA_V1 = 0x12;
     private static final short DATA_V2 = (short) 0xABCD;
     private static final char DATA_V3 = 'X';
