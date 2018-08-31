@@ -28,6 +28,12 @@ public class MigrationProgressTracker {
         return CompletableFuture.supplyAsync(progress, m_completableExecutor);
     }
 
+    /**
+     * Removes the specified chunk ranges from progress tracking under the specified identifier.
+     *
+     * @param p_identifier The identifier.
+     * @param p_ranges The chunk ranges.
+     */
     public void setFinished(final MigrationIdentifier p_identifier, final Collection<LongRange> p_ranges) {
         MigrationProgress progress = m_progressMap.get(p_identifier);
         progress.setFinished(p_ranges);
@@ -37,7 +43,23 @@ public class MigrationProgressTracker {
         }
     }
 
-    public boolean isRegistered(final MigrationIdentifier p_identifier) {
+    /**
+     * Indicates if the specified migration is still being performed.
+     *
+     * @param p_identifier The identifier.
+     * @return True, if the migration is still running; false else
+     */
+    public boolean isRunning(final MigrationIdentifier p_identifier) {
         return m_progressMap.containsKey(p_identifier);
+    }
+
+    /**
+     * Returns the progress associated with the specified identifier.
+     *
+     * @param p_identifier The identifier.
+     * @return The progress associated with the specified identifier.
+     */
+    public MigrationProgress get(final MigrationIdentifier p_identifier) {
+        return m_progressMap.get(p_identifier);
     }
 }

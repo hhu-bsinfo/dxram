@@ -168,7 +168,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      * @param p_endChunkID The last chunk id
      * @param p_target The target node
      */
-    public CompletableFuture<MigrationStatus> migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
+    public MigrationTicket<MigrationStatus> migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
         return m_migrationManager.migrateRange(p_target, new LongRange(p_startChunkID, p_endChunkID));
     }
 

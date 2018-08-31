@@ -24,10 +24,8 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
-import de.hhu.bsinfo.dxram.chunk.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.data.ChunkID;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.migration.data.MigrationPayload;
 import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
@@ -37,9 +35,9 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationPush;
 import de.hhu.bsinfo.dxram.migration.progress.MigrationProgress;
 import de.hhu.bsinfo.dxram.migration.progress.MigrationProgressTracker;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.NodeID;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +47,6 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
@@ -86,18 +83,18 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
      *
      * @param p_target The target node.
      * @param p_range The chunk range.
-     * @return A Future providing the result.
+     * @return A ticket containing information associated with the created migration.
      */
-    public CompletableFuture<MigrationStatus> migrateRange(final short p_target, final LongRange p_range) {
+    public MigrationTicket<MigrationStatus> migrateRange(final short p_target, final LongRange p_range) {
         MigrationIdentifier identifier = new MigrationIdentifier(m_boot.getNodeId(), p_target);
         List<MigrationTask> tasks = createMigrationTasks(identifier, p_range);
 
-        CompletableFuture future = m_progressTracker.register(identifier, tasks.stream()
+        CompletableFuture<MigrationStatus> future = m_progressTracker.register(identifier, tasks.stream()
                 .flatMap(task -> task.getRanges().stream()).collect(Collectors.toList()));
 
         tasks.forEach(m_executor::execute);
 
-        return future;
+        return new MigrationTicket<>(future, identifier);
     }
 
 //    public CompletableFuture<Void> migrateRanges(final short p_target, final List<LongRange> p_ranges) {
@@ -308,7 +305,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
         MigrationIdentifier identifier = p_migrationFinish.getIdentifier();
 
-        log.debug("ProgressMap[{}] = {}", identifier, m_progressTracker.isRegistered(identifier));
+        log.debug("ProgressMap[{}] = {}", identifier, m_progressTracker.isRunning(identifier));
 
         Collection<LongRange> ranges = p_migrationFinish.getLongRanges();
 
@@ -348,6 +345,17 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
 
         m_progressTracker.setFinished(identifier, ranges);
+    }
+
+    /**
+     * Returns the progress associated with the specified identifier or null if the identifier is not registered.
+     *
+     * @param p_identifier The identifier.
+     * @return The progress associated with the specified identifier.
+     */
+    @Nullable
+    public MigrationProgress getProgress(final MigrationIdentifier p_identifier) {
+        return m_progressTracker.get(p_identifier);
     }
 
     /**

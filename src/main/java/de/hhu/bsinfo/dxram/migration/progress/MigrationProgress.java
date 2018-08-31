@@ -42,6 +42,13 @@ public class MigrationProgress implements Supplier<MigrationStatus> {
     }
 
     /**
+     * Returns a set containing all pending chunk ranges.
+     */
+    public Set<LongRange> getPendingRanges() {
+        return m_pendingRanges;
+    }
+
+    /**
      * Sets the corresponding ranges' status to finished.
      *
      * @param p_ranges The ranges to finish.

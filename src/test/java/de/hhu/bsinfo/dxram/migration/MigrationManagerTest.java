@@ -35,74 +35,25 @@ public class MigrationManagerTest {
 
     private static final long CHUNK_END_ID =   0x4458000000500000L;
 
-    private static final long TOTAL_CHUNKS = CHUNK_END_ID - CHUNK_START_ID + 1;
-
-    private static final int WORKER_COUNT = 16;
-
-    private static final MigrationIdentifier IDENTIFIER =
-            new MigrationIdentifier((short) 0x00, (short) 0x42);
-
-    private MigrationManager manager = null;
-
-    @Mock
-    private DXRAMComponentAccessor componentAccessor;
-
-//    @Test
-//    public void createTasks() {
-//
-//        manager = new MigrationManager(WORKER_COUNT, componentAccessor);
-//
-//        MigrationTask[] tasks = manager.createMigrationTasks(, IDENTIFIER, );
-//
-//        assertEquals(WORKER_COUNT, tasks.length);
-//
-//        for (int i = 0; i < tasks.length; i++) {
-//
-//            assertNotNull(tasks[i]);
-//        }
-//
-//        int totalChunks = Arrays.stream(tasks)
-//                .map(MigrationTask::getChunkCount)
-//                .reduce(0, (a, b) -> a + b);
-//
-//        assertEquals(TOTAL_CHUNKS, totalChunks);
-//    }
-
-    @Test
-    public void partitionChunks() {
-
-        long[] chunkIds = LongStream.rangeClosed(CHUNK_START_ID, CHUNK_END_ID).toArray();
-
-        long[][] partitionedChunks = MigrationManager.partitionChunks(chunkIds, WORKER_COUNT);
-
-        assertEquals(WORKER_COUNT, partitionedChunks.length);
-
-        int totalChunks = Arrays.stream(partitionedChunks)
-                .map(a -> a.length)
-                .reduce(0, (a, b) -> a + b);
-
-        assertEquals(TOTAL_CHUNKS, totalChunks);
-    }
+    private static final long TOTAL_CHUNKS = CHUNK_END_ID - CHUNK_START_ID;
 
     @Test
     public void partition() {
-
-        long[] partitions = MigrationManager.partition(CHUNK_START_ID, CHUNK_END_ID, 16);
+        long[] partitions = MigrationManager.partition(50, 100, 6);
 
         assertEquals(16 * 2, partitions.length);
 
         int chunkCount = 0;
 
         for (int i = 0; i < partitions.length; i += 2) {
-
-            chunkCount += partitions[i + 1] - partitions[i] + 1;
+            chunkCount += partitions[i + 1] - partitions[i];
         }
 
         assertEquals(TOTAL_CHUNKS, chunkCount);
 
-        for (int i = 1; i < partitions.length - 2; i++) {
-
-            assertNotEquals(partitions[i], partitions[i + 1]);
+        // Verify that each range's end equals the next range's start
+        for (int i = 1; i < partitions.length - 2; i += 2) {
+            assertEquals(partitions[i], partitions[i + 1]);
         }
     }
 }
