@@ -77,7 +77,7 @@ public class DXRAMServiceManager {
             try {
                 instances[index++] = clazz.getConstructor().newInstance();
             } catch (final Exception e) {
-                throw new RuntimeException("Cannot create component instance of " + clazz.getSimpleName(), e);
+                throw new RuntimeException("Cannot create service instance of " + clazz.getSimpleName(), e);
             }
         }
 

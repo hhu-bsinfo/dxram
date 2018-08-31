@@ -33,4 +33,14 @@ public class InvalidNodeRoleException extends DXRAMRuntimeException {
     public InvalidNodeRoleException(final NodeRole p_role) {
         super("Invalid node role " + p_role);
     }
+
+    /**
+     * Constructor
+     *
+     * @param p_msg
+     *         Exception message
+     */
+    public InvalidNodeRoleException(final String p_msg) {
+        super(p_msg);
+    }
 }
