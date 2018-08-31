@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.log.storage;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 
 /**

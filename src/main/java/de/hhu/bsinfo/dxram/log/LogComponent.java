@@ -22,6 +22,8 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.MessageImporterDefault;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
@@ -31,8 +33,6 @@ import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -137,13 +137,13 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     /**
      * Returns the header size
      *
-     * @param p_dataStructure
-     *         the DataStructure
+     * @param p_chunk
+     *         the AbstractChunk
      * @return the header size
      */
-    public short getApproxHeaderSize(final DataStructure p_dataStructure) {
-        return getApproxHeaderSize(ChunkID.getCreatorID(p_dataStructure.getID()),
-                ChunkID.getLocalID(p_dataStructure.getID()), p_dataStructure.sizeofObject());
+    public short getApproxHeaderSize(final AbstractChunk p_chunk) {
+        return getApproxHeaderSize(ChunkID.getCreatorID(p_chunk.getID()),
+                ChunkID.getLocalID(p_chunk.getID()), p_chunk.sizeofObject());
     }
 
     /**
@@ -358,8 +358,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
      *         the path of the folder the file is in
      * @return the recovered Chunks
      */
-    public DataStructure[] recoverBackupRangeFromFile(final String p_fileName, final String p_path) {
-        DataStructure[] ret = null;
+    public AbstractChunk[] recoverBackupRangeFromFile(final String p_fileName, final String p_path) {
+        AbstractChunk[] ret = null;
 
         try {
             ret = SecondaryLog.recoverFromFile(p_fileName, p_path, getConfig().useChecksums(), m_secondaryLogSize,

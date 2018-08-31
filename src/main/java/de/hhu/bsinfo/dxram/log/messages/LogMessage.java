@@ -19,12 +19,12 @@ package de.hhu.bsinfo.dxram.log.messages;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.RangeID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxutils.ByteBufferHelper;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
@@ -38,7 +38,7 @@ public class LogMessage extends Message {
     // Attributes
     private short m_rangeID;
     // For exporting
-    private DataStructure[] m_dataStructures;
+    private AbstractChunk[] m_chunks;
     // For importing
     private int m_numberOfDSs;
     private ByteBuffer m_buffer;
@@ -52,7 +52,7 @@ public class LogMessage extends Message {
         super();
 
         m_rangeID = RangeID.INVALID_ID;
-        m_dataStructures = null;
+        m_chunks = null;
         m_numberOfDSs = 0;
         m_buffer = null;
     }
@@ -62,16 +62,16 @@ public class LogMessage extends Message {
      *
      * @param p_destination
      *         the destination
-     * @param p_dataStructures
+     * @param p_chunks
      *         the data structures to store
      * @param p_rangeID
      *         the RangeID
      */
-    public LogMessage(final short p_destination, final short p_rangeID, final DataStructure... p_dataStructures) {
+    public LogMessage(final short p_destination, final short p_rangeID, final AbstractChunk... p_chunks) {
         super(p_destination, DXRAMMessageTypes.LOG_MESSAGES_TYPE, LogMessages.SUBTYPE_LOG_MESSAGE, true);
 
         m_rangeID = p_rangeID;
-        m_dataStructures = p_dataStructures;
+        m_chunks = p_chunks;
     }
 
     // Getters
@@ -105,11 +105,11 @@ public class LogMessage extends Message {
 
     @Override
     protected final int getPayloadLength() {
-        if (m_dataStructures != null) {
+        if (m_chunks != null) {
             int ret = Short.BYTES + Integer.BYTES;
 
-            for (DataStructure dataStructure : m_dataStructures) {
-                int size = dataStructure.sizeofObject();
+            for (AbstractChunk chunk : m_chunks) {
+                int size = chunk.sizeofObject();
                 ret += Long.BYTES + ObjectSizeUtil.sizeofCompactedNumber(size) + size;
             }
 
@@ -123,14 +123,14 @@ public class LogMessage extends Message {
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
         p_exporter.writeShort(m_rangeID);
-        p_exporter.writeInt(m_dataStructures.length);
+        p_exporter.writeInt(m_chunks.length);
 
-        for (DataStructure dataStructure : m_dataStructures) {
-            final int size = dataStructure.sizeofObject();
+        for (AbstractChunk chunk : m_chunks) {
+            final int size = chunk.sizeofObject();
 
-            p_exporter.writeLong(dataStructure.getID());
+            p_exporter.writeLong(chunk.getID());
             p_exporter.writeCompactNumber(size);
-            p_exporter.exportObject(dataStructure);
+            p_exporter.exportObject(chunk);
         }
     }
 

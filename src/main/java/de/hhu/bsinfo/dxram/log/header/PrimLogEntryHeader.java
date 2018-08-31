@@ -19,7 +19,7 @@ package de.hhu.bsinfo.dxram.log.header;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.log.storage.Version;
 
 /**

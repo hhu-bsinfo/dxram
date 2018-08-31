@@ -5,7 +5,6 @@ import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponentConfig;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
 /**
@@ -207,15 +206,6 @@ public class LogComponentConfig extends DXRAMComponentConfig {
 
         if (!m_useTimestamps && m_coldDataThresholdInSec != COLD_DATA_THRESHOLD) {
             LOGGER.warn("Cold data threshold was modified, but timestamps are disabled!");
-        }
-
-        if (secondaryLogSize <
-                p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize()
-                        .getBytes() || m_writeBufferSize.getBytes() <
-                p_config.getComponentConfig(MemoryManagerComponentConfig.class).getKeyValueStoreMaxBlockSize()
-                        .getBytes()) {
-            LOGGER.error("Secondary log and write buffer size must be greater than the max size of a chunk");
-            return false;
         }
 
         return true;

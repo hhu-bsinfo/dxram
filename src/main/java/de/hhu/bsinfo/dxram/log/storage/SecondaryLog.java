@@ -28,11 +28,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkByteBuffer;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
-import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent.RecoveryWriterThread;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.DSByteBuffer;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
@@ -244,7 +243,7 @@ public class SecondaryLog extends AbstractLog {
      * @throws IOException
      *         if the secondary log could not be read
      */
-    public static DataStructure[] recoverFromFile(final String p_fileName, final String p_path,
+    public static AbstractChunk[] recoverFromFile(final String p_fileName, final String p_path,
             final boolean p_useChecksum, final long p_secondaryLogSize, final int p_logSegmentSize,
             final HarddriveAccessMode p_mode) throws IOException {
         short nodeID;
@@ -258,7 +257,7 @@ public class SecondaryLog extends AbstractLog {
         DirectByteBufferWrapper[] segments;
         ByteBuffer payload;
         ByteBuffer segment;
-        HashMap<Long, DataStructure> chunkMap;
+        HashMap<Long, AbstractChunk> chunkMap;
         AbstractSecLogEntryHeader logEntryHeader;
 
         // FIXME
@@ -273,7 +272,7 @@ public class SecondaryLog extends AbstractLog {
         nodeID = Short.parseShort(p_fileName.split("_")[0].substring(1));
         storesMigrations = p_fileName.contains("M");
 
-        chunkMap = new HashMap<Long, DataStructure>();
+        chunkMap = new HashMap<Long, AbstractChunk>();
 
         segments = readAllSegmentsFromFile(p_path + p_fileName, p_secondaryLogSize, p_logSegmentSize, p_mode);
 
@@ -308,7 +307,7 @@ public class SecondaryLog extends AbstractLog {
                             offset += logEntrySize;
                             continue;
                         }
-                        chunkMap.put(chunkID, new DSByteBuffer(chunkID, payload));
+                        chunkMap.put(chunkID, new ChunkByteBuffer(chunkID, payload));
                     }
                     offset += logEntrySize;
                 }
@@ -317,7 +316,7 @@ public class SecondaryLog extends AbstractLog {
             i++;
         }
 
-        return chunkMap.values().toArray(new DataStructure[chunkMap.size()]);
+        return chunkMap.values().toArray(new AbstractChunk[chunkMap.size()]);
     }
 
     /**
@@ -939,7 +938,7 @@ public class SecondaryLog extends AbstractLog {
         ReentrantLock indexLock = new ReentrantLock(false);
         ReentrantLock largeChunkLock = new ReentrantLock(false);
         final RecoveryMetadata recoveryMetadata = new RecoveryMetadata();
-        HashMap<Long, DSByteBuffer> largeChunks;
+        HashMap<Long, ChunkByteBuffer> largeChunks;
 
         // FIXME: Recovery fails if versions (partly only?) are stored in hashtable
 
@@ -972,7 +971,7 @@ public class SecondaryLog extends AbstractLog {
         long time = System.currentTimeMillis();
 
         // Write Chunks in parallel
-        RecoveryWriterThread writerThread = p_chunkComponent.initRecoveryThread();
+        ChunkBackupComponent.RecoveryWriterThread writerThread = p_chunkComponent.initRecoveryThread();
 
         // Determine ChunkID ranges in parallel
         RecoveryHelperThread[] helperThreads = new RecoveryHelperThread[p_numberOfRecoveryHelperThreads];
@@ -1031,7 +1030,7 @@ public class SecondaryLog extends AbstractLog {
         t = System.currentTimeMillis();
         if (!largeChunks.isEmpty()) {
             numberOfRecoveredLargeChunks = p_chunkComponent.putRecoveredChunks(recoveryMetadata,
-                    largeChunks.values().toArray(new DSByteBuffer[largeChunks.size()]));
+                    largeChunks.values().toArray(new ChunkByteBuffer[largeChunks.size()]));
         }
         timeToPut += System.currentTimeMillis() - t;
 
@@ -1206,7 +1205,7 @@ public class SecondaryLog extends AbstractLog {
      */
     private void recoverSegment(final int p_segmentIndex, final DirectByteBufferWrapper p_wrapper,
             final TemporaryVersionsStorage p_allVersions, final long p_lowestCID,
-            final RecoveryMetadata p_recoveryMetadata, final HashMap<Long, DSByteBuffer> p_largeChunks,
+            final RecoveryMetadata p_recoveryMetadata, final HashMap<Long, ChunkByteBuffer> p_largeChunks,
             final ReentrantLock p_largeChunkLock, final ChunkBackupComponent p_chunkComponent,
             final boolean p_doCRCCheck, final Statistics p_stat) {
         int headerSize;
@@ -1279,18 +1278,18 @@ public class SecondaryLog extends AbstractLog {
                             int maxLogEntrySize = AbstractLogEntryHeader.getMaxLogEntrySize();
 
                             p_largeChunkLock.lock();
-                            DSByteBuffer chunk = p_largeChunks.get(chunkID);
+                            ChunkByteBuffer chunk = p_largeChunks.get(chunkID);
                             if (chunk == null) {
                                 // This is the first segment for this ChunkID -> create an array large
                                 // enough for holding all data for this chunk
                                 if (chainID == chainSize - 1) {
                                     // This is the last chain link -> complete size is known
-                                    chunk = new DSByteBuffer(chunkID, (chainSize - 1) * maxLogEntrySize + payloadSize);
+                                    chunk = new ChunkByteBuffer(chunkID, (chainSize - 1) * maxLogEntrySize + payloadSize);
                                     p_largeChunks.put(chunkID, chunk);
                                 } else {
                                     // This is another chain link -> maximum size is known, only
                                     // -> must be truncated later
-                                    chunk = new DSByteBuffer(chunkID, chainSize * maxLogEntrySize);
+                                    chunk = new ChunkByteBuffer(chunkID, chainSize * maxLogEntrySize);
                                     p_largeChunks.put(chunkID, chunk);
                                 }
                             }
@@ -2129,7 +2128,7 @@ public class SecondaryLog extends AbstractLog {
         private RecoveryMetadata m_recoveryMetadata;
         private DirectByteBufferWrapper m_wrapper;
         private TemporaryVersionsStorage m_versionsForRecovery;
-        private HashMap<Long, DSByteBuffer> m_largeChunks;
+        private HashMap<Long, ChunkByteBuffer> m_largeChunks;
         private ReentrantLock m_largeChunkLock;
         private long m_lowestCID;
         private byte[] m_index;
@@ -2139,7 +2138,7 @@ public class SecondaryLog extends AbstractLog {
         private ChunkBackupComponent m_chunkComponent;
 
         RecoveryHelperThread(final RecoveryMetadata p_metadata, final DirectByteBufferWrapper p_wrapper,
-                final TemporaryVersionsStorage p_versionsForRecovery, final HashMap<Long, DSByteBuffer> p_largeChunks,
+                final TemporaryVersionsStorage p_versionsForRecovery, final HashMap<Long, ChunkByteBuffer> p_largeChunks,
                 final ReentrantLock p_largeChunkLock, final long p_lowestCID, final byte[] p_index,
                 final ReentrantLock p_indexLock, final boolean p_doCRCCheck,
                 final ChunkBackupComponent p_chunkComponent) {

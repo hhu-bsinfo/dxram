@@ -25,8 +25,8 @@ import java.util.Locale;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.data.DSByteArray;
-import de.hhu.bsinfo.dxram.data.DataStructure;
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
 import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
@@ -318,7 +318,7 @@ public final class LogThroughputTester {
             Arrays.fill(array, (byte) 5);
             ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
             for (int i = 0; i < ms_batchSize; i++) {
-                DataStructure ds = new DSByteArray(array);
+                AbstractChunk ds = new ChunkByteArray(array);
                 imExporter.writeLong(ds.getID());
                 imExporter.writeCompactNumber(ms_size);
                 imExporter.exportObject(ds);
@@ -399,7 +399,7 @@ public final class LogThroughputTester {
             Arrays.fill(array, (byte) 7);
             ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
             for (int i = 0; i < ms_batchSize; i++) {
-                DataStructure ds = new DSByteArray(array);
+                AbstractChunk ds = new ChunkByteArray(array);
                 imExporter.writeLong(ds.getID());
                 imExporter.writeCompactNumber(ms_size);
                 imExporter.exportObject(ds);
@@ -473,7 +473,7 @@ public final class LogThroughputTester {
             Arrays.fill(array, (byte) 7);
             ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
             for (int i = 0; i < ms_batchSize; i++) {
-                DataStructure ds = new DSByteArray(array);
+                AbstractChunk ds = new ChunkByteArray(array);
                 imExporter.writeLong(ds.getID());
                 imExporter.writeCompactNumber(ms_size);
                 imExporter.exportObject(ds);
@@ -617,7 +617,7 @@ public final class LogThroughputTester {
             Arrays.fill(array, (byte) 7);
             ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
             for (int i = 0; i < ms_batchSize; i++) {
-                DataStructure ds = new DSByteArray(array);
+                AbstractChunk ds = new ChunkByteArray(array);
                 imExporter.writeLong(ds.getID());
                 imExporter.writeCompactNumber(ms_size);
                 imExporter.exportObject(ds);
@@ -734,7 +734,7 @@ public final class LogThroughputTester {
             Arrays.fill(array, (byte) 7);
             ByteBufferImExporter imExporter = new ByteBufferImExporter(buffer);
             for (int i = 0; i < ms_batchSize; i++) {
-                DataStructure ds = new DSByteArray(array);
+                AbstractChunk ds = new ChunkByteArray(array);
                 imExporter.writeLong(ds.getID());
                 imExporter.writeCompactNumber(ms_size);
                 imExporter.exportObject(ds);
