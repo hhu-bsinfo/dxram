@@ -16,15 +16,10 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
-import de.hhu.bsinfo.dxram.backup.BackupPeer;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponentConfig;
-import de.hhu.bsinfo.dxram.util.NodeCapabilities;
-import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxutils.CRC16;
-import de.hhu.bsinfo.dxutils.NodeID;
+import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -33,9 +28,15 @@ import org.apache.curator.framework.recipes.atomic.DistributedAtomicInteger;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.jetbrains.annotations.Nullable;
 
-import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.stream.Collectors;
+import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
+import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
+import de.hhu.bsinfo.dxram.backup.BackupPeer;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
+import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.CRC16;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Implementation of the BootComponent interface with zookeeper.
@@ -85,7 +86,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     /**
      * Called when the component is initialized. Setup data structures, get dependent components, read settings etc.
      *
-     * @param p_config Configuration instance provided by the engine.
+     * @param p_config
+     *         Configuration instance provided by the engine.
      * @return True if initialing was successful, false otherwise.
      */
     @Override
@@ -97,7 +99,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         LOGGER.info("Initializing with address %s:%d and role %s", m_address, m_port, m_role);
 
-        String zooKeeperAddress = String.format("%s:%d", m_config.getConnection().getIP(), m_config.getConnection().getPort());
+        String zooKeeperAddress = String.format("%s:%d", m_config.getConnection().getIP(),
+                m_config.getConnection().getPort());
 
         LOGGER.info("Connecting to ZooKeeper at %s", zooKeeperAddress);
 
@@ -224,7 +227,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         // Wait until bootstrap node finishes initializing
         NodeRegistry.NodeDetails bootstrapDetails = getBootstrapDetails();
 
-        while(bootstrapDetails == null) {
+        while (bootstrapDetails == null) {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException p_e) {
@@ -284,7 +287,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         int seed = 1;
         short nodeId = 0;
 
-        for(int i = 0; i < m_counterValue; i++) {
+        for (int i = 0; i < m_counterValue; i++) {
             nodeId = CRC16.continuousHash(seed, nodeId);
             seed++;
         }
@@ -333,12 +336,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return NodeCapabilities.COMPUTE;
         }
 
-        MemoryManagerComponentConfig memoryConfig = m_contextConfig.getComponentConfig(MemoryManagerComponentConfig.class);
+        ChunkComponentConfig chunkConfig = m_contextConfig.getComponentConfig(ChunkComponentConfig.class);
         BackupComponentConfig backupConfig = m_contextConfig.getComponentConfig(BackupComponentConfig.class);
 
         int capabilities = 0;
 
-        if (memoryConfig.getKeyValueStoreSize().getBytes() > 0L) {
+        if (chunkConfig.getKeyValueStoreSize().getBytes() > 0L) {
             capabilities |= NodeCapabilities.STORAGE;
         }
 
