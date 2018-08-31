@@ -20,6 +20,10 @@ if (isDevelop && new File('../dxmon').exists()) {
     includeBuild '../dxmon'
 }
 
+if (isDevelop && new File('../dxmem').exists()) {
+    includeBuild('../dxmem')
+}
+
 if (isDevelop && new File('../dxnet').exists()) {
     includeBuild('../dxnet')
 }
