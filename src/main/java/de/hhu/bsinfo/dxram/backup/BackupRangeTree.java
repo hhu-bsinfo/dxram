@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.backup;
 
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxutils.ArrayListLong;
 
 /**
@@ -259,6 +259,7 @@ public final class BackupRangeTree {
         } else {
             ret.append("├── ");
         }
+
         ret.append('[');
         ret.append(p_node.getNumberOfEntries());
         ret.append(", ");

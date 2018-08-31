@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.AbstractPlacementStrategy;
@@ -27,8 +29,6 @@ import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.CopysetPlacement;
 import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.RandomPlacement;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -138,14 +138,14 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     /**
      * Registers a chunk in a backup range. Creates a new backup range if necessary.
      *
-     * @param p_dataStructure
-     *         the DataStructure
+     * @param p_chunk
+     *         the AbstractChunk
      * @return the corresponding backup range
      * @lock MemoryManager must be write locked
      */
-    public BackupRange registerChunk(final DataStructure p_dataStructure) {
-        if (getConfig().isBackupActive() && p_dataStructure != null && p_dataStructure.getID() != ChunkID.INVALID_ID) {
-            return registerValidChunk(p_dataStructure);
+    public BackupRange registerChunk(final AbstractChunk p_chunk) {
+        if (getConfig().isBackupActive() && p_chunk != null && p_chunk.getID() != ChunkID.INVALID_ID) {
+            return registerValidChunk(p_chunk);
         } else {
             return null;
         }
@@ -154,15 +154,54 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     /**
      * Registers chunks in a backup range. Creates new backup ranges if necessary.
      *
-     * @param p_dataStructures
+     * @param p_chunks
+     *         the data structures
+     * @param p_offset
+     *         Start offset in ds array
+     * @param p_count
+     *         Number of elements of ds array to register
+     * @lock MemoryManager must be write locked
+     */
+    public void registerChunks(final int p_offset, final int p_count, final AbstractChunk... p_chunks) {
+        if (getConfig().isBackupActive()) {
+            for (int i = p_offset; i < p_count; i++) {
+                if (p_chunks[i].getID() != ChunkID.INVALID_ID) {
+                    registerValidChunk(p_chunks[i].getID(), p_chunks[i].sizeofObject());
+                }
+            }
+        }
+    }
+
+    /**
+     * Registers chunks in a backup range. Creates new backup ranges if necessary.
+     *
+     * @param p_chunks
      *         the data structures
      * @lock MemoryManager must be write locked
      */
-    public void registerChunks(final DataStructure... p_dataStructures) {
+    public void registerChunks(final AbstractChunk... p_chunks) {
+        registerChunks(0, p_chunks.length, p_chunks);
+    }
+
+    /**
+     * Registers chunks in a backup range. Creates new backup ranges if necessary.
+     *
+     * @param p_chunkIDs
+     *         the ChunkIDs
+     * @param p_offset
+     *         Start offset in cid array
+     * @param p_count
+     *         Number of elements of cid array to register
+     * @param p_chunkSize
+     *         Size of a single chunk to register (same size for all chunks in array)
+     * @lock MemoryManager must be write locked
+     */
+    public void registerChunks(final long[] p_chunkIDs, final int p_offset, final int p_count, final int p_chunkSize) {
+        // TODO needs lock now that MemoryManager does not have the write lock anymore
         if (getConfig().isBackupActive()) {
-            for (DataStructure dataStructure : p_dataStructures) {
-                if (dataStructure.getID() != ChunkID.INVALID_ID) {
-                    registerValidChunk(dataStructure.getID(), dataStructure.sizeofObject());
+            for (int i = p_offset; i < p_count; i++) {
+                if (p_chunkIDs[i] != ChunkID.INVALID_ID) {
+                    registerValidChunk(p_chunkIDs[i], p_chunkSize);
                 }
             }
         }
@@ -178,10 +217,23 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      * @lock MemoryManager must be write locked
      */
     public void registerChunks(final long[] p_chunkIDs, final int p_size) {
+        registerChunks(p_chunkIDs, 0, p_chunkIDs.length, p_size);
+    }
+
+    /**
+     * Registers chunks in a backup range. Creates new backup ranges if necessary.
+     *
+     * @param p_chunkIDs
+     *         the ChunkIDs
+     * @param p_sizes
+     *         the chunk sizes
+     * @lock MemoryManager must be write locked
+     */
+    public void registerChunks(final long[] p_chunkIDs, final int p_offset, final int p_count, final int[] p_sizes) {
         if (getConfig().isBackupActive()) {
-            for (long chunkID : p_chunkIDs) {
-                if (chunkID != ChunkID.INVALID_ID) {
-                    registerValidChunk(chunkID, p_size);
+            for (int i = 0; i < p_count; i++) {
+                if (p_chunkIDs[p_offset + i] != ChunkID.INVALID_ID) {
+                    registerValidChunk(p_chunkIDs[p_offset + i], p_sizes[i]);
                 }
             }
         }
@@ -197,13 +249,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      * @lock MemoryManager must be write locked
      */
     public void registerChunks(final long[] p_chunkIDs, final int[] p_sizes) {
-        if (getConfig().isBackupActive()) {
-            for (int i = 0; i < p_chunkIDs.length; i++) {
-                if (p_chunkIDs[i] != ChunkID.INVALID_ID) {
-                    registerValidChunk(p_chunkIDs[i], p_sizes[i]);
-                }
-            }
-        }
+        registerChunks(p_chunkIDs, 0, 0, p_sizes);
     }
 
     /**
@@ -555,13 +601,13 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     /**
      * Checks if a new backup range must be created and initialized by adding given chunk
      *
-     * @param p_dataStructure
-     *         the DataStructure
+     * @param p_chunk
+     *         the AbstractChunk
      * @return the BackupRange the Chunk was put in
      * @lock MemoryManager must be write locked
      */
-    private BackupRange registerValidChunk(final DataStructure p_dataStructure) {
-        return registerValidChunk(p_dataStructure.getID(), p_dataStructure.sizeofObject());
+    private BackupRange registerValidChunk(final AbstractChunk p_chunk) {
+        return registerValidChunk(p_chunk.getID(), p_chunk.sizeofObject());
     }
 
     /**
