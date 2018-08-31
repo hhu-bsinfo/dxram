@@ -14,13 +14,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.data;
+package de.hhu.bsinfo.dxram.chunk.data;
 
 import java.security.InvalidParameterException;
 
-import de.hhu.bsinfo.dxutils.serialization.Exportable;
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
-import de.hhu.bsinfo.dxutils.serialization.Importable;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
@@ -29,10 +28,8 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
-public final class ChunkAnon implements Importable, Exportable {
-    private long m_id = ChunkID.INVALID_ID;
-    private ChunkState m_state = ChunkState.OK;
-    private byte[] m_data;
+public final class ChunkAnon extends AbstractChunk {
+    private byte[] m_data = new byte[0];
 
     /**
      * Constructor
@@ -42,8 +39,7 @@ public final class ChunkAnon implements Importable, Exportable {
      *         The ID of the chunk
      */
     public ChunkAnon(final long p_id) {
-        m_id = p_id;
-        m_data = null;
+        super(p_id);
     }
 
     /**
@@ -57,43 +53,13 @@ public final class ChunkAnon implements Importable, Exportable {
      *         with shared references.
      */
     public ChunkAnon(final long p_id, final byte[] p_buffer) {
-        m_id = p_id;
+        super(p_id);
 
         if (p_buffer == null) {
             throw new InvalidParameterException("p_buffer == null");
         }
 
         m_data = p_buffer;
-    }
-
-    /**
-     * Get the unique identifier of this chunk.
-     *
-     * @return The unique identifier (chunk id)
-     */
-    public long getID() {
-        return m_id;
-    }
-
-    /**
-     * Get the current state of the chunk. The state is set by DXRAM when execution DXRAM operations
-     * on the chunk
-     *
-     * @return State set by the last DXRAM operation involving this chunk
-     */
-    public ChunkState getState() {
-        return m_state;
-    }
-
-    /**
-     * Set the state of the chunk. This is used by DXRAM on operations to indicate errors on operations.
-     * Applications using DXRAM don't have to call this
-     *
-     * @param p_state
-     *         State to set.
-     */
-    public void setState(final ChunkState p_state) {
-        m_state = p_state;
     }
 
     /**
@@ -111,16 +77,12 @@ public final class ChunkAnon implements Importable, Exportable {
      * @return Payload size in bytes.
      */
     public final int getDataSize() {
-        if (m_data != null) {
-            return m_data.length;
-        } else {
-            return -1;
-        }
+        return m_data.length;
     }
 
     @Override
     public String toString() {
-        return "Chunk [" + ChunkID.toHexString(m_id) + ", " + m_state + ", " + getDataSize() + ']';
+        return super.toString() + "[size " + getDataSize() + ']';
     }
 
     @Override
