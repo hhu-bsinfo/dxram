@@ -20,6 +20,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
+import de.hhu.bsinfo.dxmem.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
@@ -28,8 +30,6 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -149,7 +149,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
             String fileName;
             File folderToScan;
             File[] listOfFiles;
-            DataStructure[] chunks;
+            AbstractChunk[] chunks;
 
             if (!m_backup.isActiveAndAvailableForBackup()) {
 
@@ -180,7 +180,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                             if (fileName.contains("M")) {
                                 // Inform superpeers about new location of migrated Chunks (non-migrated Chunks are
                                 // processed later)
-                                for (DataStructure chunk : chunks) {
+                                for (AbstractChunk chunk : chunks) {
                                     if (ChunkID.getCreatorID(chunk.getID()) != p_owner) {
                                         // TODO: This might crash because there is no tree for creator of this chunk
                                         m_lookup.migrate(chunk.getID(), m_boot.getNodeId());
@@ -197,7 +197,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
             String fileName;
             String files;
             String[] listOfFiles;
-            DataStructure[] chunks;
+            AbstractChunk[] chunks;
 
             if (!m_backup.isActiveAndAvailableForBackup()) {
 
@@ -228,7 +228,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
                         if (fileName.contains("M")) {
                             // Inform superpeers about new location of migrated Chunks (non-migrated Chunks are
                             // processed later)
-                            for (DataStructure chunk : chunks) {
+                            for (AbstractChunk chunk : chunks) {
                                 if (ChunkID.getCreatorID(chunk.getID()) != p_owner) {
                                     // TODO: This might crash because there is no tree for creator of this chunk
                                     m_lookup.migrate(chunk.getID(), m_boot.getNodeId());
