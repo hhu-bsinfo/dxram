@@ -19,7 +19,7 @@ package de.hhu.bsinfo.dxram.chunk.bench;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkServiceStatus;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
@@ -41,13 +41,13 @@ public class CheckChunkMemRequiredSizeTask implements Task {
     @Override
     public int execute(final TaskContext p_ctx) {
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
-        MemoryManagerComponent.Status status = chunkService.getStatus();
+        ChunkServiceStatus status = chunkService.status().getStatus();
 
-        if (status.getTotalMemory().getBytes() < m_minRequiredSize.getBytes()) {
+        if (status.getHeapStatus().getTotalSize().getBytes() < m_minRequiredSize.getBytes()) {
             return -1;
         }
 
-        if (status.getFreeMemory().getBytes() < m_minRequiredFree.getBytes()) {
+        if (status.getHeapStatus().getFreeSize().getBytes() < m_minRequiredFree.getBytes()) {
             return -2;
         }
 

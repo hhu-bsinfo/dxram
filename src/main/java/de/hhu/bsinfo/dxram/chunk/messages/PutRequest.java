@@ -16,12 +16,12 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -31,13 +31,14 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
 public class PutRequest extends Request {
+    // used on both, sending and receiving
+    private ChunkLockOperation m_lockOperation = ChunkLockOperation.NONE;
+    private int m_lockOperationTimeoutMs = -1;
 
-    // DataStructures used when sending the put request.
-    private DataStructure[] m_dataStructures;
+    // used when sending the request
+    private AbstractChunk[] m_chunks;
 
-    private byte m_lockCode;
-
-    // Variables used when receiving the request
+    // used when receiving the request
     private long[] m_chunkIDs;
     private byte[][] m_data;
 
@@ -53,30 +54,39 @@ public class PutRequest extends Request {
      * Creates an instance of PutRequest
      *
      * @param p_destination
-     *         the destination
-     * @param p_unlockOperation
-     *         if true a potential lock will be released
-     * @param p_dataStructures
-     *         Data structure with the data to put.
+     *         the destination node id.
+     * @param p_lockOperation
+     *         Lock operation to execute with put operation
+     * @param p_lockOperationTimeoutMs
+     *         Timeout for lock operation. -1 for infinite, 0 for one shot, > 0 timeout in ms
+     * @param p_chunks
+     *         Chunks with the ID of the chunk data to put.
      */
-    public PutRequest(final short p_destination, final ChunkLockOperation p_unlockOperation,
-            final DataStructure... p_dataStructures) {
+    public PutRequest(final short p_destination, final ChunkLockOperation p_lockOperation,
+            final int p_lockOperationTimeoutMs, final AbstractChunk... p_chunks) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST);
 
-        m_dataStructures = p_dataStructures;
-        switch (p_unlockOperation) {
-            case NO_LOCK_OPERATION:
-                m_lockCode = 0;
-                break;
-            case READ_LOCK:
-                m_lockCode = 1;
-                break;
-            case WRITE_LOCK:
-                m_lockCode = 2;
-                break;
-            default:
-                break;
-        }
+        m_lockOperation = p_lockOperation;
+        m_lockOperationTimeoutMs = p_lockOperationTimeoutMs;
+        m_chunks = p_chunks;
+    }
+
+    /**
+     * Get the lock operation to execute with the put operation
+     *
+     * @return Lock operation to execute with put
+     */
+    public ChunkLockOperation getLockOperation() {
+        return m_lockOperation;
+    }
+
+    /**
+     * Get the timeout value for the lock operation
+     *
+     * @return Timeout value for lock operation
+     */
+    public int getLockOperationTimeoutMs() {
+        return m_lockOperationTimeoutMs;
     }
 
     /**
@@ -97,41 +107,39 @@ public class PutRequest extends Request {
         return m_data;
     }
 
-    /**
-     * Get the unlock operation to execute after the put.
-     *
-     * @return Unlock operation.
-     */
-    public ChunkLockOperation getUnlockOperation() {
-        if (m_lockCode == 0) {
-            return ChunkLockOperation.NO_LOCK_OPERATION;
-        } else if (m_lockCode == 1) {
-            return ChunkLockOperation.READ_LOCK;
-        } else {
-            return ChunkLockOperation.WRITE_LOCK;
-        }
-    }
-
     @Override
     protected final int getPayloadLength() {
-        int size = Byte.BYTES;
+        int size = 0;
 
-        if (m_dataStructures != null) {
-            size += ObjectSizeUtil.sizeofCompactedNumber(m_dataStructures.length);
-            size += m_dataStructures.length * Long.BYTES;
+        size += Byte.BYTES;
 
-            for (DataStructure dataStructure : m_dataStructures) {
-                int tmp = dataStructure.sizeofObject();
+        // omit timeout field if lock operation is none
+        if (m_lockOperation != ChunkLockOperation.NONE) {
+            size += Integer.BYTES;
+        }
 
+        if (m_chunks != null) {
+            // sending request with chunk objects
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunks.length);
+            // chunk IDs
+            size += m_chunks.length * Long.BYTES;
+
+            for (AbstractChunk chunk : m_chunks) {
+                int tmp = chunk.sizeofObject();
+
+                // length field for for data
                 size += ObjectSizeUtil.sizeofCompactedNumber(tmp);
+                // data size
                 size += tmp;
             }
         } else {
+            // receiving request. chunk data as byte array only, no type information
+            // chunk IDs
             size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length);
             size += m_chunkIDs.length * Long.BYTES;
 
-            for (int i = 0; i < m_data.length; i++) {
-                size += ObjectSizeUtil.sizeofByteArray(m_data[i]);
+            for (byte[] data : m_data) {
+                size += ObjectSizeUtil.sizeofByteArray(data);
             }
         }
 
@@ -141,23 +149,33 @@ public class PutRequest extends Request {
     // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeByte(m_lockCode);
+        p_exporter.writeByte((byte) m_lockOperation.ordinal());
 
-        p_exporter.writeCompactNumber(m_dataStructures.length);
-        for (DataStructure dataStructure : m_dataStructures) {
-            int size = dataStructure.sizeofObject();
+        if (m_lockOperation != ChunkLockOperation.NONE) {
+            p_exporter.writeInt(m_lockOperationTimeoutMs);
+        }
 
-            p_exporter.writeLong(dataStructure.getID());
+        p_exporter.writeCompactNumber(m_chunks.length);
+
+        for (AbstractChunk chunk : m_chunks) {
+            int size = chunk.sizeofObject();
+
+            p_exporter.writeLong(chunk.getID());
             p_exporter.writeCompactNumber(size);
-            p_exporter.exportObject(dataStructure);
+            p_exporter.exportObject(chunk);
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_lockCode = p_importer.readByte(m_lockCode);
+        m_lockOperation = ChunkLockOperation.values()[p_importer.readByte((byte) m_lockOperation.ordinal())];
+
+        if (m_lockOperation != ChunkLockOperation.NONE) {
+            m_lockOperationTimeoutMs = p_importer.readInt(m_lockOperationTimeoutMs);
+        }
 
         int length = p_importer.readCompactNumber(0);
+
         if (m_chunkIDs == null) {
             // Do not overwrite existing arrays
             m_chunkIDs = new long[length];

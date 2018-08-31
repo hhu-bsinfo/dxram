@@ -28,6 +28,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 13.01.2016
  */
 public class CreateRequest extends Request {
+    private boolean m_consecutive;
     private int[] m_sizes;
 
     /**
@@ -47,9 +48,20 @@ public class CreateRequest extends Request {
      * @param p_sizes
      *         Sizes of the chunks to create.
      */
-    public CreateRequest(final short p_destination, final int... p_sizes) {
+    public CreateRequest(final short p_destination, final boolean p_consecutive, final int... p_sizes) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST);
+
+        m_consecutive = p_consecutive;
         m_sizes = p_sizes;
+    }
+
+    /**
+     * Create consecutive CIDs parameter
+     *
+     * @return Parameter value
+     */
+    public boolean isConsecutive() {
+        return m_consecutive;
     }
 
     /**
@@ -63,16 +75,18 @@ public class CreateRequest extends Request {
 
     @Override
     protected final int getPayloadLength() {
-        return ObjectSizeUtil.sizeofIntArray(m_sizes);
+        return ObjectSizeUtil.sizeofBoolean() + ObjectSizeUtil.sizeofIntArray(m_sizes);
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeBoolean(m_consecutive);
         p_exporter.writeIntArray(m_sizes);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_consecutive = p_importer.readBoolean(m_consecutive);
         m_sizes = p_importer.readIntArray(m_sizes);
     }
 }

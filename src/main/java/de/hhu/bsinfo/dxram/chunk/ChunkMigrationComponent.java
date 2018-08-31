@@ -18,28 +18,28 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import java.util.ArrayList;
 
+import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
+import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.data.DSByteArray;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 /**
- * Component for chunk handling.
+ * Component for migrating chunks
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrationComponentConfig> {
     // component dependencies
     private BackupComponent m_backup;
-    private MemoryManagerComponent m_memoryManager;
+    private ChunkComponent m_chunk;
     private NetworkComponent m_network;
 
     /**
@@ -66,11 +66,10 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
 
         backupRanges = new ArrayList<>();
         cutChunkIDs = new ArrayList<>();
-        m_memoryManager.lockManage();
-        for (int i = 0; i < p_chunkIDs.length; i++) {
 
-            m_memoryManager.create(p_chunkIDs[i], p_data[i].length);
-            m_memoryManager.put(p_chunkIDs[i], p_data[i]);
+        for (int i = 0; i < p_chunkIDs.length; i++) {
+            m_chunk.getMemory().createReserved().createReserved(p_chunkIDs[i], p_data[i].length);
+            m_chunk.getMemory().put().put(p_chunkIDs[i], p_data[i], ChunkLockOperation.NONE, -1);
 
             LOGGER.trace("Stored migrated chunk 0x%X locally", p_chunkIDs[i]);
 
@@ -84,7 +83,6 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
                 }
             }
         }
-        m_memoryManager.unlockManage();
 
         // Send backups after unlocking memory manager lock
         if (m_backup.isActive()) {
@@ -107,7 +105,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
@@ -163,7 +161,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
                 if (backupPeer != null) {
                     try {
                         m_network.sendMessage(new LogMessage(backupPeer.getNodeID(), rangeID,
-                                new DSByteArray(p_chunkIDs[i], p_data[i])));
+                                new ChunkByteArray(p_chunkIDs[i], p_data[i])));
                     } catch (final NetworkException ignore) {
 
                     }

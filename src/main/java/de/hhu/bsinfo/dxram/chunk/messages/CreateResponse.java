@@ -29,6 +29,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 public class CreateResponse extends Response {
 
     private long[] m_chunkIDs;
+    private int m_count;
 
     /**
      * Creates an instance of CreateResponse.
@@ -48,10 +49,14 @@ public class CreateResponse extends Response {
      *         the corresponding GetRequest
      * @param p_chunkIDs
      *         The chunk IDs requested
+     * @param p_count
+     *         Number of cids to actually send from provided array
      */
-    public CreateResponse(final CreateRequest p_request, final long... p_chunkIDs) {
+    public CreateResponse(final CreateRequest p_request, final long[] p_chunkIDs, final int p_count) {
         super(p_request, ChunkMessages.SUBTYPE_CREATE_RESPONSE);
+
         m_chunkIDs = p_chunkIDs;
+        m_count = p_count;
     }
 
     /**
@@ -65,16 +70,23 @@ public class CreateResponse extends Response {
 
     @Override
     protected final int getPayloadLength() {
-        return ObjectSizeUtil.sizeofLongArray(m_chunkIDs);
+        return ObjectSizeUtil.sizeofCompactedNumber(m_count) + Long.BYTES * m_count;
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeLongArray(m_chunkIDs);
+        p_exporter.writeCompactNumber(m_count);
+        p_exporter.writeLongs(m_chunkIDs, 0, m_count);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_chunkIDs = p_importer.readLongArray(m_chunkIDs);
+        m_count = p_importer.readCompactNumber(m_count);
+
+        if (m_chunkIDs == null) {
+            m_chunkIDs = new long[m_count];
+        }
+
+        p_importer.readLongs(m_chunkIDs);
     }
 }

@@ -21,10 +21,9 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.chunk.ChunkRemoveService;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
@@ -66,9 +65,8 @@ public class ChunkRemoveAllTask implements Task {
         }
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
-        ChunkRemoveService chunkRemoveService = p_ctx.getDXRAMServiceAccessor().getService(ChunkRemoveService.class);
 
-        long activeChunkCount = chunkService.getStatus().getNumberOfActiveChunks();
+        long activeChunkCount = chunkService.status().getStatus().getLIDStoreStatus().getCurrentLIDCounter();
         // don't remove the index chunk
         activeChunkCount -= 1;
 
@@ -139,7 +137,7 @@ public class ChunkRemoveAllTask implements Task {
                         }
 
                         time[threadIdx].start();
-                        int ret = chunkRemoveService.remove(chunkIds);
+                        int ret = chunkService.remove().remove(chunkIds);
                         time[threadIdx].stopAndAccumulate();
 
                         if (ret != chunkIds.length) {
@@ -202,7 +200,7 @@ public class ChunkRemoveAllTask implements Task {
         System.out.printf("Throughput: %f chunks/sec\n",
                 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / activeChunkCount));
 
-        allChunkRanges = chunkService.getAllLocalChunkIDRanges();
+        allChunkRanges = chunkService.cidStatus().getAllLocalChunkIDRanges();
 
         System.out.printf("Available chunk ranges after remove:\n%s\n", allChunkRanges);
 

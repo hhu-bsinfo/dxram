@@ -21,11 +21,11 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxmem.data.ChunkIDRanges;
+import de.hhu.bsinfo.dxmem.data.ChunkState;
 import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
-import de.hhu.bsinfo.dxram.data.ChunkState;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
@@ -35,6 +35,7 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
+ * s
  * Task to modify (get/put) chunks on a node using different patterns
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
@@ -77,7 +78,7 @@ public class ChunkDataModifySequentialTask implements Task {
         ChunkAnonService chunkAnonService = p_ctx.getDXRAMServiceAccessor().getService(ChunkAnonService.class);
 
         ChunkIDRanges allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
-        long totalChunkCount = allChunkRanges.getTotalChunkIDsOfRanges();
+        long totalChunkCount = allChunkRanges.getTotalCidsOfRanges();
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(totalChunkCount, m_numThreads);
         ChunkIDRanges[] chunkRangesPerThread =
                 ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread, allChunkRanges);
@@ -119,7 +120,7 @@ public class ChunkDataModifySequentialTask implements Task {
                             operations -= batchCnt;
 
                             for (int j = 0; j < batchCnt; j++) {
-                                if (chunkRanges.isInRanges(currentChunkID + currentOffset)) {
+                                if (chunkRanges.isInRange(currentChunkID + currentOffset)) {
                                     chunkIds[j] = currentChunkID + currentOffset;
                                     currentOffset++;
                                 } else {
@@ -131,7 +132,7 @@ public class ChunkDataModifySequentialTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            int ret = chunkAnonService.get(chunks, chunkIds);
+                            int ret = chunkAnonService.getAnon().get(chunks, chunkIds);
                             time[threadIdx].stopAndAccumulate();
 
                             if (ret != chunks.length) {
@@ -160,7 +161,7 @@ public class ChunkDataModifySequentialTask implements Task {
 
                             if (doPut) {
                                 time[threadIdx].start();
-                                ret = chunkAnonService.put(chunks);
+                                ret = chunkAnonService.putAnon().put(chunks);
                                 time[threadIdx].stopAndAccumulate();
 
                                 if (ret != chunks.length) {
@@ -173,7 +174,7 @@ public class ChunkDataModifySequentialTask implements Task {
 
                                 if (m_writeContentsAndVerify) {
                                     ChunkAnon[] chunksToVerify = new ChunkAnon[chunkIds.length];
-                                    ret = chunkAnonService.get(chunksToVerify, chunkIds);
+                                    ret = chunkAnonService.getAnon().get(chunksToVerify, chunkIds);
 
                                     if (ret != chunkIds.length) {
                                         for (int j = 0; j < chunksToVerify.length; j++) {

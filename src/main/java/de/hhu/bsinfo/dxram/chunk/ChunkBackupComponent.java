@@ -19,17 +19,18 @@ package de.hhu.bsinfo.dxram.chunk;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
+import de.hhu.bsinfo.dxmem.data.ChunkState;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.LogBufferMessage;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 
@@ -42,8 +43,8 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
     private static final int MAXIMUM_QUEUE_SIZE = 10;
 
     // component dependencies
-    private MemoryManagerComponent m_memoryManager;
     private AbstractBootComponent m_boot;
+    private ChunkComponent m_chunk;
     private NetworkComponent m_network;
 
     private ConcurrentLinkedQueue<Entry> m_recoveryChunkQueue;
@@ -73,9 +74,8 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
             if (ChunkID.getLocalID(p_chunkIDRanges[i + 1]) == 0xFFFFFFFFFFFFL) {
                 // This is the current backup range -> end of range is unknown at this moment
                 // -> current end is highest used LocalID
-                m_memoryManager.lockAccess();
-                p_chunkIDRanges[i + 1] = ((long) m_boot.getNodeId() << 48) + m_memoryManager.getHighestUsedLocalID();
-                m_memoryManager.unlockAccess();
+                p_chunkIDRanges[i + 1] =
+                        ((long) m_boot.getNodeId() << 48) + m_chunk.getMemory().cidStatus().getHighestUsedLocalID();
             }
             numberOfChunks += p_chunkIDRanges[i + 1] - p_chunkIDRanges[i] + 1;
         }
@@ -106,25 +106,27 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
 
         try {
             m_network.sendSync(request);
-        } catch (final NetworkException e) {
-
+        } catch (final NetworkException ignored) {
             LOGGER.error("Replicating backup range 0x%X to 0x%X failed. Could not initialize backup range", p_rangeID,
                     p_backupPeer);
-
             return 0;
         }
 
         // TODO: Replicates all created chunks including chunks that have not been put
 
         // Gather all chunks of backup range
+        // FIXME: this limits the size of a chunk to 32 MB if i am not mistaken. thus, replication won't work
+        // for larger chunks
         byte[] chunkArray = new byte[32 * 1024 * 1024];
         ByteBuffer chunkBuffer = ByteBuffer.wrap(chunkArray);
-        m_memoryManager.lockAccess();
+
         for (int i = 0; i < p_chunkIDRanges.length; i += 2) {
             for (long currentChunkID = p_chunkIDRanges[i]; currentChunkID <= p_chunkIDRanges[i + 1]; currentChunkID++) {
                 // Store payload behind ChunkID and size
-                int bytes = m_memoryManager.get(currentChunkID, chunkArray,
-                        chunkBuffer.position() + Long.BYTES + Integer.BYTES, chunkArray.length);
+                int bytes = m_chunk.getMemory().get().get(currentChunkID, chunkArray,
+                        chunkBuffer.position() + Long.BYTES + Integer.BYTES, chunkArray.length,
+                        ChunkLockOperation.NONE, -1);
+
                 if (bytes == 0) {
                     // Chunk does not fit in current buffer -> send buffer and repeat
                     chunkBuffer.flip();
@@ -134,18 +136,18 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
                     } catch (final NetworkException ignore) {
 
                     }
+
                     chunkBuffer.clear();
                     allCounter += counter;
                     counter = 0;
 
-                    bytes = m_memoryManager.get(currentChunkID, chunkArray,
-                            chunkBuffer.position() + Long.BYTES + Integer.BYTES, chunkArray.length);
+                    bytes = m_chunk.getMemory().get().get(currentChunkID, chunkArray,
+                            chunkBuffer.position() + Long.BYTES + Integer.BYTES, chunkArray.length,
+                            ChunkLockOperation.NONE, -1);
                 }
 
-                if (bytes == -1) {
-
-                    LOGGER.error("Could not replicate 0x%X", currentChunkID);
-
+                if (bytes < 0) {
+                    LOGGER.error("Could not replicate 0x%X: %s", currentChunkID, ChunkState.values()[-bytes]);
                     continue;
                 }
 
@@ -155,8 +157,8 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
                 counter++;
             }
         }
+
         allCounter += counter;
-        m_memoryManager.unlockAccess();
 
         return allCounter;
     }
@@ -215,27 +217,17 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
      *         Chunks to put.
      * @return the number of created and put Chunks
      */
-    public int putRecoveredChunks(final RecoveryMetadata p_metadata, final DataStructure[] p_chunks) {
+    public int putRecoveredChunks(final RecoveryMetadata p_metadata, final AbstractChunk[] p_chunks) {
         int ret;
-        int size;
+        long size;
 
-        m_memoryManager.lockManage();
-        size = m_memoryManager.createAndPutRecovered(p_chunks);
-        m_memoryManager.unlockManage();
-
+        size = m_chunk.getMemory().recovery().createAndPutRecovered(p_chunks);
         ret = p_chunks.length;
 
-        p_metadata.add(ret, size);
+        // FIXME won't work for large chunks > 2 GB
+        p_metadata.add(ret, (int) size);
 
         return ret;
-    }
-
-    public void startBlockRecovery() {
-        m_memoryManager.lockManage();
-    }
-
-    public void stopBlockRecovery() {
-        m_memoryManager.unlockManage();
     }
 
     @Override
@@ -250,8 +242,8 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
@@ -330,10 +322,8 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
                 }
 
                 time = System.currentTimeMillis();
-                m_memoryManager.lockManage();
-                m_memoryManager.createAndPutRecovered(entry.m_chunkIDs, entry.m_dataAddress, entry.m_offsets,
-                        entry.m_lengths, entry.m_usedEntries);
-                m_memoryManager.unlockManage();
+                m_chunk.getMemory().recovery().createAndPutRecovered(entry.m_chunkIDs, entry.m_dataAddress,
+                        entry.m_offsets, entry.m_lengths, entry.m_usedEntries);
                 m_timeToPut += System.currentTimeMillis() - time;
             }
         }

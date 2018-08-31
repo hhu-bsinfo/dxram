@@ -16,10 +16,10 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxmem.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
-import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 
 /**
  * Response to the request sending the chunk id ranges of all migrated locally stored chunks.

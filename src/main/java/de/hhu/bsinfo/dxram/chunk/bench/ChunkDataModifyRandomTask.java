@@ -21,11 +21,11 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxmem.data.ChunkIDRanges;
+import de.hhu.bsinfo.dxmem.data.ChunkState;
 import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
-import de.hhu.bsinfo.dxram.data.ChunkState;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
@@ -78,7 +78,7 @@ public class ChunkDataModifyRandomTask implements Task {
         ChunkAnonService chunkAnonService = p_ctx.getDXRAMServiceAccessor().getService(ChunkAnonService.class);
 
         ChunkIDRanges allChunkRanges = ChunkTaskUtils.getChunkRangesForTestPattern(m_pattern / 2, p_ctx, chunkService);
-        long totalChunkCount = allChunkRanges.getTotalChunkIDsOfRanges();
+        long totalChunkCount = allChunkRanges.getTotalCidsOfRanges();
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(totalChunkCount, m_numThreads);
         ChunkIDRanges[] chunkRangesPerThread = ChunkTaskUtils.distributeChunkRangesToThreads(chunkCountsPerThread,
                 allChunkRanges);
@@ -116,7 +116,7 @@ public class ChunkDataModifyRandomTask implements Task {
                         if (!m_continousChunksPerBatch) {
                             // all random chunk IDs for batch
                             while (operations > 0 && batchCnt < chunkIds.length) {
-                                chunkIds[batchCnt] = chunkRanges.getRandomChunkIdOfRanges();
+                                chunkIds[batchCnt] = chunkRanges.getRandomCidWithinRanges();
 
                                 operations--;
                                 batchCnt++;
@@ -129,8 +129,8 @@ public class ChunkDataModifyRandomTask implements Task {
 
                             // ensure continuous chunk IDs
                             while (true) {
-                                chunkIds[0] = chunkRanges.getRandomChunkIdOfRanges();
-                                if (chunkRanges.isInRanges(chunkIds[0] + batchCnt)) {
+                                chunkIds[0] = chunkRanges.getRandomCidWithinRanges();
+                                if (chunkRanges.isInRange(chunkIds[0] + batchCnt)) {
                                     for (int j = 0; j < batchCnt; j++) {
                                         chunkIds[j] = chunkIds[0] + j;
                                     }
@@ -142,7 +142,7 @@ public class ChunkDataModifyRandomTask implements Task {
 
                         ChunkAnon[] chunks = new ChunkAnon[chunkIds.length];
                         time[threadIdx].start();
-                        int ret = chunkAnonService.get(chunks, chunkIds);
+                        int ret = chunkAnonService.getAnon().get(chunks, chunkIds);
                         time[threadIdx].stopAndAccumulate();
 
                         if (ret != chunks.length) {
@@ -167,7 +167,7 @@ public class ChunkDataModifyRandomTask implements Task {
 
                         if (doPut) {
                             time[threadIdx].start();
-                            ret = chunkAnonService.put(chunks);
+                            ret = chunkAnonService.putAnon().put(chunks);
                             time[threadIdx].stopAndAccumulate();
 
                             if (ret != chunks.length) {
@@ -180,7 +180,7 @@ public class ChunkDataModifyRandomTask implements Task {
 
                             if (m_writeContentsAndVerify) {
                                 ChunkAnon[] chunksToVerify = new ChunkAnon[chunkIds.length];
-                                ret = chunkAnonService.get(chunksToVerify, chunkIds);
+                                ret = chunkAnonService.getAnon().get(chunksToVerify, chunkIds);
 
                                 if (ret != chunkIds.length) {
                                     for (int j = 0; j < chunksToVerify.length; j++) {

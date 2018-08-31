@@ -19,7 +19,7 @@ package de.hhu.bsinfo.dxram.chunk.messages;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkServiceStatus;
 
 /**
  * Response with status information about the key value store memory
@@ -27,8 +27,7 @@ import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 07.04.2016
  */
 public class StatusResponse extends Response {
-
-    private MemoryManagerComponent.Status m_status;
+    private ChunkServiceStatus m_status;
 
     /**
      * Creates an instance of StatusResponse.
@@ -47,7 +46,7 @@ public class StatusResponse extends Response {
      * @param p_status
      *         the requested Status
      */
-    public StatusResponse(final StatusRequest p_request, final MemoryManagerComponent.Status p_status) {
+    public StatusResponse(final StatusRequest p_request, final ChunkServiceStatus p_status) {
         super(p_request, ChunkMessages.SUBTYPE_STATUS_RESPONSE);
 
         m_status = p_status;
@@ -58,7 +57,7 @@ public class StatusResponse extends Response {
      *
      * @return Key value store memory status
      */
-    public final MemoryManagerComponent.Status getStatus() {
+    public final ChunkServiceStatus getStatus() {
         return m_status;
     }
 
@@ -75,8 +74,9 @@ public class StatusResponse extends Response {
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
         if (m_status == null) {
-            m_status = new MemoryManagerComponent.Status();
+            m_status = new ChunkServiceStatus();
         }
+
         p_importer.importObject(m_status);
     }
 }

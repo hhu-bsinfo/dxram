@@ -23,8 +23,9 @@ import com.google.gson.annotations.Expose;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxmem.data.ChunkIDRanges;
+import de.hhu.bsinfo.dxram.chunk.ChunkLocalService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.ms.Signal;
 import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
@@ -74,6 +75,7 @@ public class ChunkCreateTask implements Task {
         }
 
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
+        ChunkLocalService chunkLocalService = p_ctx.getDXRAMServiceAccessor().getService(ChunkLocalService.class);
 
         long[] chunkCountsPerThread = ChunkTaskUtils.distributeChunkCountsToThreads(m_chunkCount, m_numThreads);
         Thread[] threads = new Thread[m_numThreads];
@@ -101,7 +103,8 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            long[] chunkIDs = chunkService.createSizes(sizes);
+                            long[] chunkIDs = new long[sizes.length];
+                            chunkLocalService.createLocal().createSizes(chunkIDs, sizes);
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
@@ -116,7 +119,8 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            long[] chunkIDs = chunkService.createSizes(sizes);
+                            long[] chunkIDs = new long[sizes.length];
+                            chunkLocalService.createLocal().createSizes(chunkIDs, sizes);
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
@@ -137,7 +141,8 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = new long[sizes.length];
+                            chunkService.create().createSizes(destNodeId, chunkIDs, sizes);
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
@@ -153,7 +158,8 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = new long[sizes.length];
+                            chunkService.create().createSizes(destNodeId, chunkIDs, sizes);
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
@@ -177,7 +183,8 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = new long[sizes.length];
+                            chunkService.create().createSizes(destNodeId, chunkIDs, sizes);
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
@@ -196,7 +203,8 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = new long[sizes.length];
+                            chunkService.create().createSizes(destNodeId, chunkIDs, sizes);
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
@@ -220,7 +228,8 @@ public class ChunkCreateTask implements Task {
 
                             if (destNodeId == ownNodeId) {
                                 time[threadIdx].start();
-                                long[] chunkIDs = chunkService.createSizes(sizes);
+                                long[] chunkIDs = new long[sizes.length];
+                                chunkLocalService.createLocal().createSizes(chunkIDs, sizes);
                                 time[threadIdx].stopAndAccumulate();
 
                                 if (chunkIDs == null) {
@@ -228,7 +237,8 @@ public class ChunkCreateTask implements Task {
                                 }
                             } else {
                                 time[threadIdx].start();
-                                long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
+                                long[] chunkIDs = new long[sizes.length];
+                                chunkService.create().createSizes(destNodeId, chunkIDs, sizes);
                                 time[threadIdx].stopAndAccumulate();
 
                                 if (chunkIDs == null) {
@@ -248,7 +258,8 @@ public class ChunkCreateTask implements Task {
                             }
 
                             time[threadIdx].start();
-                            long[] chunkIDs = chunkService.createRemote(destNodeId, sizes);
+                            long[] chunkIDs = new long[sizes.length];
+                            chunkService.create().createSizes(destNodeId, chunkIDs, sizes);
                             time[threadIdx].stopAndAccumulate();
 
                             if (chunkIDs == null) {
@@ -304,7 +315,7 @@ public class ChunkCreateTask implements Task {
         System.out.printf("Throughput: %f chunks/sec\n",
                 1000.0 * 1000.0 * 1000.0 / ((double) totalTime / m_chunkCount));
 
-        ChunkIDRanges allChunkRanges = chunkService.getAllLocalChunkIDRanges();
+        ChunkIDRanges allChunkRanges = chunkService.cidStatus().getAllLocalChunkIDRanges();
 
         System.out.printf("Available chunk ranges after create:\n%s\n", allChunkRanges);
 

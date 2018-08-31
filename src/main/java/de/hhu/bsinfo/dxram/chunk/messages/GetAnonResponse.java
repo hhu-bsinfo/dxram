@@ -16,11 +16,12 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
+import de.hhu.bsinfo.dxmem.data.ChunkState;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.ChunkState;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -29,12 +30,12 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 30.03.2017
  */
 public class GetAnonResponse extends Response {
-
-    // The data of the chunk buffer objects here is used when sending the response only
+    // total field used for reading, only
+    private int m_total;
+    // The data of the chunk objects here is used when sending the response only
     // when the response is received, the chunk objects from the request are
-    // used to directly write the data to them and avoiding further copying
-    private byte[][] m_dataChunks;
-    private int m_totalSuccessful;
+    // used to directly write the data to them to avoid further copying
+    private ChunkByteArray[] m_dataChunks;
 
     /**
      * Creates an instance of GetAnonResponse.
@@ -51,44 +52,36 @@ public class GetAnonResponse extends Response {
      * not exist, set the byte[] at that index to null
      *
      * @param p_request
-     *         the corresponding GetAnonRequest
-     * @param p_dataChunks
-     *         Array of byte arrays with chunk data read from the memory. If a chunk does not exist, the byte[] is null
-     * @param p_totalSuccessful
-     *         Number of total successful get operations
+     *         the corresponding GetRequest
+     * @param p_chunks
+     *         Chunk data read from the memory.
      */
-    public GetAnonResponse(final GetAnonRequest p_request, final byte[][] p_dataChunks, final int p_totalSuccessful) {
+    public GetAnonResponse(final GetAnonRequest p_request, final ChunkByteArray[] p_chunks) {
         super(p_request, ChunkMessages.SUBTYPE_GET_ANON_RESPONSE);
-        m_totalSuccessful = p_totalSuccessful;
-        m_dataChunks = p_dataChunks;
-    }
 
-    /**
-     * Get the total number of successful chunk gets
-     *
-     * @return Total number of successful chunk gets
-     */
-    public int getTotalSuccessful() {
-        return m_totalSuccessful;
+        m_dataChunks = p_chunks;
     }
 
     @Override
     protected final int getPayloadLength() {
-        int size = ObjectSizeUtil.sizeofCompactedNumber(m_totalSuccessful);
+        // write total count once
+        int size = 0;
 
         // when writing payload
         if (m_dataChunks != null) {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_dataChunks.length);
             size += m_dataChunks.length * Byte.BYTES;
 
-            for (int i = 0; i < m_dataChunks.length; i++) {
-                if (m_dataChunks[i] != null) {
-                    size += ObjectSizeUtil.sizeofByteArray(m_dataChunks[i]);
-                }
+            for (ChunkByteArray dataChunk : m_dataChunks) {
+                size += ObjectSizeUtil.sizeofByteArray(dataChunk.getData());
             }
         } else {
             // after reading message payload to request data structures
             GetAnonRequest request = (GetAnonRequest) getCorrespondingRequest();
 
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_total);
+
+            // chunk states
             size += request.getChunks().length * Byte.BYTES;
 
             for (int i = 0; i < request.getChunks().length; i++) {
@@ -103,34 +96,35 @@ public class GetAnonResponse extends Response {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeCompactNumber(m_totalSuccessful);
+        // write total count once
+        p_exporter.writeCompactNumber(m_dataChunks.length);
+
         for (int i = 0; i < m_dataChunks.length; i++) {
-            if (m_dataChunks[i] == null) {
-                // indicate no data available
-                p_exporter.writeByte((byte) 0);
-            } else {
-                p_exporter.writeByte((byte) 1);
-                p_exporter.writeByteArray(m_dataChunks[i]);
+            p_exporter.writeByte((byte) m_dataChunks[i].getState().ordinal());
+
+            if (m_dataChunks[i].isStateOk()) {
+                // write byte array with length information
+                p_exporter.writeByteArray(m_dataChunks[i].getData());
             }
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_totalSuccessful = p_importer.readCompactNumber(m_totalSuccessful);
+        m_total = p_importer.readCompactNumber(m_total);
 
         // read the payload from the buffer and write it directly into
-        // the chunk buffer objects provided by the request to avoid further copying of data
+        // the chunk objects provided by the request to avoid further copying of data
         GetAnonRequest request = (GetAnonRequest) getCorrespondingRequest();
 
-        for (ChunkAnon chunk : request.getChunks()) {
-            if (p_importer.readByte((byte) (chunk.getState() == ChunkState.DOES_NOT_EXIST ? 0 : 1)) == 1) {
+        for (int i = 0; i < m_total; i++) {
+            ChunkAnon chunk = request.getChunks()[i];
+
+            chunk.setState(ChunkState.values()[p_importer.readByte((byte) chunk.getState().ordinal())]);
+
+            if (chunk.getState() == ChunkState.OK) {
                 p_importer.importObject(chunk);
-                chunk.setState(ChunkState.OK);
-            } else {
-                chunk.setState(ChunkState.DOES_NOT_EXIST);
             }
         }
     }
-
 }

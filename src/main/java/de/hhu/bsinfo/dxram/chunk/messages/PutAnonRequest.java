@@ -16,12 +16,13 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.data.ChunkLockOperation;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -30,14 +31,19 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 30.03.2017
  */
 public class PutAnonRequest extends Request {
-    // chunk used when sending the put request.
+    // used on both, sending and receiving
+    private ChunkLockOperation m_lockOperation = ChunkLockOperation.NONE;
+    private int m_lockOperationTimeoutMs = -1;
+
+    // used when sending the request
     private ChunkAnon[] m_chunks;
 
-    private byte m_lockCode;
-
-    // Variables used when receiving the request
+    // used when receiving the request
     private long[] m_chunkIDs;
     private byte[][] m_data;
+
+    // necessary to guarantee correct values on split messages/buffers
+    private int m_compactNumberTmpState;
 
     /**
      * Creates an instance of PutAnonRequest.
@@ -51,30 +57,39 @@ public class PutAnonRequest extends Request {
      * Creates an instance of PutAnonRequest
      *
      * @param p_destination
-     *         the destination
-     * @param p_unlockOperation
-     *         if true a potential lock will be released
+     *         the destination node id.
+     * @param p_lockOperation
+     *         Lock operation to execute with put operation
+     * @param p_lockOperationTimeoutMs
+     *         Timeout for lock operation. -1 for infinite, 0 for one shot, > 0 timeout in ms
      * @param p_chunks
-     *         Chunk buffers with the data to put.
+     *         Chunks with the ID of the chunk data to put.
      */
-    public PutAnonRequest(final short p_destination, final ChunkLockOperation p_unlockOperation,
-            final ChunkAnon... p_chunks) {
+    public PutAnonRequest(final short p_destination, final ChunkLockOperation p_lockOperation,
+            final int p_lockOperationTimeoutMs, final ChunkAnon... p_chunks) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_ANON_REQUEST);
 
+        m_lockOperation = p_lockOperation;
+        m_lockOperationTimeoutMs = p_lockOperationTimeoutMs;
         m_chunks = p_chunks;
-        switch (p_unlockOperation) {
-            case NO_LOCK_OPERATION:
-                m_lockCode = 0;
-                break;
-            case READ_LOCK:
-                m_lockCode = 1;
-                break;
-            case WRITE_LOCK:
-                m_lockCode = 2;
-                break;
-            default:
-                break;
-        }
+    }
+
+    /**
+     * Get the lock operation to execute with the put operation
+     *
+     * @return Lock operation to execute with put
+     */
+    public ChunkLockOperation getLockOperation() {
+        return m_lockOperation;
+    }
+
+    /**
+     * Get the timeout value for the lock operation
+     *
+     * @return Timeout value for lock operation
+     */
+    public int getLockOperationTimeoutMs() {
+        return m_lockOperationTimeoutMs;
     }
 
     /**
@@ -95,65 +110,71 @@ public class PutAnonRequest extends Request {
         return m_data;
     }
 
-    /**
-     * Get the unlock operation to execute after the put.
-     *
-     * @return Unlock operation.
-     */
-    public ChunkLockOperation getUnlockOperation() {
-        if (m_lockCode == 0) {
-            return ChunkLockOperation.NO_LOCK_OPERATION;
-        } else if (m_lockCode == 1) {
-            return ChunkLockOperation.READ_LOCK;
-        } else {
-            return ChunkLockOperation.WRITE_LOCK;
-        }
-    }
-
     @Override
     protected final int getPayloadLength() {
-        int size = Byte.BYTES;
+        int size = 0;
+
+        size += Byte.BYTES;
+
+        // omit timeout field if lock operation is none
+        if (m_lockOperation != ChunkLockOperation.NONE) {
+            size += Integer.BYTES;
+        }
 
         if (m_chunks != null) {
+            // sending request with chunk objects
             size += ObjectSizeUtil.sizeofCompactedNumber(m_chunks.length);
+            // chunk IDs
             size += m_chunks.length * Long.BYTES;
 
-            for (ChunkAnon chunk : m_chunks) {
+            for (AbstractChunk chunk : m_chunks) {
                 size += chunk.sizeofObject();
             }
         } else {
+            // receiving request. chunk data as byte array only, no type information
+            // chunk IDs
             size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length);
             size += m_chunkIDs.length * Long.BYTES;
 
-            for (int i = 0; i < m_data.length; i++) {
-                size += ObjectSizeUtil.sizeofByteArray(m_data[i]);
+            for (byte[] data : m_data) {
+                size += ObjectSizeUtil.sizeofByteArray(data);
             }
         }
 
         return size;
     }
 
+    // Methods
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeByte(m_lockCode);
+        p_exporter.writeByte((byte) m_lockOperation.ordinal());
+
+        if (m_lockOperation != ChunkLockOperation.NONE) {
+            p_exporter.writeInt(m_lockOperationTimeoutMs);
+        }
 
         p_exporter.writeCompactNumber(m_chunks.length);
-        for (ChunkAnon chunk : m_chunks) {
+
+        for (AbstractChunk chunk : m_chunks) {
             p_exporter.writeLong(chunk.getID());
-            // the Chunk will write the size of its buffer as well
             p_exporter.exportObject(chunk);
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_lockCode = p_importer.readByte(m_lockCode);
+        m_lockOperation = ChunkLockOperation.values()[p_importer.readByte((byte) m_lockOperation.ordinal())];
 
-        int length = p_importer.readCompactNumber(0);
+        if (m_lockOperation != ChunkLockOperation.NONE) {
+            m_lockOperationTimeoutMs = p_importer.readInt(m_lockOperationTimeoutMs);
+        }
+
+        m_compactNumberTmpState = p_importer.readCompactNumber(m_compactNumberTmpState);
+
         if (m_chunkIDs == null) {
             // Do not overwrite existing arrays
-            m_chunkIDs = new long[length];
-            m_data = new byte[length][];
+            m_chunkIDs = new long[m_compactNumberTmpState];
+            m_data = new byte[m_compactNumberTmpState][];
         }
 
         for (int i = 0; i < m_chunkIDs.length; i++) {

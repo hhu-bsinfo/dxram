@@ -16,9 +16,9 @@
 
 package de.hhu.bsinfo.dxram.chunk.bench;
 
+import de.hhu.bsinfo.dxmem.data.ChunkID;
+import de.hhu.bsinfo.dxmem.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
-import de.hhu.bsinfo.dxram.data.ChunkID;
-import de.hhu.bsinfo.dxram.data.ChunkIDRanges;
 import de.hhu.bsinfo.dxram.ms.TaskContext;
 import de.hhu.bsinfo.dxutils.RandomUtils;
 
@@ -57,14 +57,14 @@ public final class ChunkTaskUtils {
 
         switch (p_pattern) {
             case PATTERN_LOCAL_ONLY:
-                allChunkRanges = p_chunkService.getAllLocalChunkIDRanges();
+                allChunkRanges = p_chunkService.cidStatus().getAllLocalChunkIDRanges();
                 break;
 
             case PATTERN_REMOTE_ONLY_SUCCESSOR:
                 short slaveId = p_ctx.getCtxData().getSlaveId();
                 short successorSlaveId = (short) ((slaveId + 1) % p_ctx.getCtxData().getSlaveNodeIds().length);
 
-                allChunkRanges = p_chunkService.getAllLocalChunkIDRanges(
+                allChunkRanges = p_chunkService.cidStatus().getAllLocalChunkIDRanges(
                         p_ctx.getCtxData().getSlaveNodeIds()[successorSlaveId]);
 
                 break;
@@ -75,8 +75,8 @@ public final class ChunkTaskUtils {
                 allChunkRanges = new ChunkIDRanges();
                 for (int i = 0; i < p_ctx.getCtxData().getSlaveNodeIds().length; i++) {
                     if (p_ctx.getCtxData().getSlaveNodeIds()[i] != ownNodeId) {
-                        allChunkRanges.addAll(
-                                p_chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
+                        allChunkRanges.add(p_chunkService.cidStatus().getAllLocalChunkIDRanges(
+                                p_ctx.getCtxData().getSlaveNodeIds()[i]));
                     }
                 }
 
@@ -85,8 +85,8 @@ public final class ChunkTaskUtils {
             case PATTERN_REMOTE_LOCAL_MIXED_RANDOM:
                 allChunkRanges = new ChunkIDRanges();
                 for (int i = 0; i < p_ctx.getCtxData().getSlaveNodeIds().length; i++) {
-                    allChunkRanges.addAll(
-                            p_chunkService.getAllLocalChunkIDRanges(p_ctx.getCtxData().getSlaveNodeIds()[i]));
+                    allChunkRanges.add(p_chunkService.cidStatus().getAllLocalChunkIDRanges(
+                            p_ctx.getCtxData().getSlaveNodeIds()[i]));
                 }
 
                 break;
@@ -99,7 +99,7 @@ public final class ChunkTaskUtils {
         for (int i = 0; i < allChunkRanges.size(); i++) {
             long rangeStart = allChunkRanges.getRangeStart(i);
             if (ChunkID.getLocalID(rangeStart) == 0) {
-                allChunkRanges.setRangeStart(i, rangeStart + 1);
+                allChunkRanges.remove(0);
             }
         }
 
@@ -157,13 +157,13 @@ public final class ChunkTaskUtils {
             while (chunkCount > 0) {
                 long chunksInRange = ChunkID.getLocalID(rangeEnd) - ChunkID.getLocalID(rangeStart) + 1;
                 if (chunksInRange >= chunkCount) {
-                    distRanges[i].addRange(rangeStart, rangeStart + chunkCount - 1);
+                    distRanges[i].add(rangeStart, rangeStart + chunkCount - 1);
 
                     rangeStart += chunkCount;
                     chunkCount = 0;
                 } else {
                     // chunksInRange < chunkCount
-                    distRanges[i].addRange(rangeStart, rangeEnd);
+                    distRanges[i].add(rangeStart, rangeEnd);
 
                     chunkCount -= chunksInRange;
 

@@ -16,11 +16,12 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -30,11 +31,12 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
 public class GetRequest extends Request {
-
+    private ChunkLockOperation m_lockOperation = ChunkLockOperation.NONE;
+    private int m_lockOperationTimeoutMs = -1;
     // the chunk is stored for the sender of the request
     // to write the incoming data of the response to it
     // the requesting IDs are taken from the chunk
-    private DataStructure[] m_chunks;
+    private AbstractChunk[] m_chunks;
     // this is only used when receiving the request
     private long[] m_chunkIDs;
 
@@ -52,12 +54,38 @@ public class GetRequest extends Request {
      *
      * @param p_destination
      *         the destination node id.
+     * @param p_lockOperation
+     *         Lock operation to execute with get operation
+     * @param p_lockOperationTimeoutMs
+     *         Timeout for lock operation. -1 for inifinte, 0 for one shot, > 0 timeout in ms
      * @param p_chunks
      *         Chunks with the ID of the chunk data to get.
      */
-    public GetRequest(final short p_destination, final DataStructure... p_chunks) {
+    public GetRequest(final short p_destination, final ChunkLockOperation p_lockOperation,
+            final int p_lockOperationTimeoutMs, final AbstractChunk... p_chunks) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
+
+        m_lockOperation = p_lockOperation;
+        m_lockOperationTimeoutMs = p_lockOperationTimeoutMs;
         m_chunks = p_chunks;
+    }
+
+    /**
+     * Get the lock operation to execute with the get operation
+     *
+     * @return Lock operation to execute with get
+     */
+    public ChunkLockOperation getLockOperation() {
+        return m_lockOperation;
+    }
+
+    /**
+     * Get the timeout value for the lock operation
+     *
+     * @return Timeout value for lock operation
+     */
+    public int getLockOperationTimeoutMs() {
+        return m_lockOperationTimeoutMs;
     }
 
     /**
@@ -76,29 +104,53 @@ public class GetRequest extends Request {
      *
      * @return Chunks to store data to when the response arrived.
      */
-    public DataStructure[] getChunks() {
+    public AbstractChunk[] getChunks() {
         return m_chunks;
     }
 
     @Override
     protected final int getPayloadLength() {
-        if (m_chunks != null) {
-            return ObjectSizeUtil.sizeofCompactedNumber(m_chunks.length) + Long.BYTES * m_chunks.length;
-        } else {
-            return ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length) + Long.BYTES * m_chunkIDs.length;
+        int size = 0;
+
+        size += Byte.BYTES;
+
+        // omit timeout field if lock operation is none
+        if (m_lockOperation != ChunkLockOperation.NONE) {
+            size += Integer.BYTES;
         }
+
+        if (m_chunks != null) {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunks.length) + Long.BYTES * m_chunks.length;
+        } else {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length) + Long.BYTES * m_chunkIDs.length;
+        }
+
+        return size;
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeByte((byte) m_lockOperation.ordinal());
+
+        if (m_lockOperation != ChunkLockOperation.NONE) {
+            p_exporter.writeInt(m_lockOperationTimeoutMs);
+        }
+
         p_exporter.writeCompactNumber(m_chunks.length);
-        for (DataStructure chunk : m_chunks) {
+
+        for (AbstractChunk chunk : m_chunks) {
             p_exporter.writeLong(chunk.getID());
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
+        m_lockOperation = ChunkLockOperation.values()[p_importer.readByte((byte) m_lockOperation.ordinal())];
+
+        if (m_lockOperation != ChunkLockOperation.NONE) {
+            m_lockOperationTimeoutMs = p_importer.readInt(m_lockOperationTimeoutMs);
+        }
+
         m_chunkIDs = p_importer.readLongArray(m_chunkIDs);
     }
 }

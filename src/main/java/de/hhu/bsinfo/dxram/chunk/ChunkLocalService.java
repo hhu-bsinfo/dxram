@@ -1,25 +1,9 @@
-/*
- * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
- * Department Operating Systems
- *
- * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
- * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
- * later version.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- */
-
 package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.chunk.operation.GetAnon;
-import de.hhu.bsinfo.dxram.chunk.operation.PutAnon;
+import de.hhu.bsinfo.dxram.chunk.operation.CreateLocal;
+import de.hhu.bsinfo.dxram.chunk.operation.GetLocal;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -28,11 +12,11 @@ import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 /**
- * Special chunk service to work with anonymous chunks i.e. chunks with unknown size
+ * Special service with optimized local only operations (does not work with remotely stored chunks)
  *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
+ * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
-public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfig> {
+public class ChunkLocalService extends AbstractDXRAMService<ChunkLocalServiceConfig> {
     // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
@@ -42,32 +26,32 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     private NameserviceComponent m_nameservice;
 
     // chunk operations of service
-    private GetAnon m_getAnon;
-    private PutAnon m_putAnon;
+    private CreateLocal m_createLocal;
+    private GetLocal m_getLocal;
 
     /**
      * Constructor
      */
-    public ChunkAnonService() {
-        super("chunkanon", ChunkAnonServiceConfig.class);
+    public ChunkLocalService() {
+        super("chunklocal", ChunkLocalServiceConfig.class);
     }
 
     /**
-     * Get the getAnon operation
+     * Get the createLocal operation
      *
      * @return Operation
      */
-    public GetAnon getAnon() {
-        return m_getAnon;
+    public CreateLocal createLocal() {
+        return m_createLocal;
     }
 
     /**
-     * Get the putAnon operation
+     * Get the getLocal operation
      *
      * @return Operation
      */
-    public PutAnon putAnon() {
-        return m_putAnon;
+    public GetLocal getLocal() {
+        return m_getLocal;
     }
 
     @Override
@@ -92,8 +76,8 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
 
     @Override
     protected boolean startService(final DXRAMContext.Config p_config) {
-        m_getAnon = new GetAnon(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
-        m_putAnon = new PutAnon(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
+        m_createLocal = new CreateLocal(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
+        m_getLocal = new GetLocal(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
 
         return true;
     }

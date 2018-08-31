@@ -16,11 +16,12 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
+import de.hhu.bsinfo.dxmem.data.ChunkState;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
-import de.hhu.bsinfo.dxram.data.ChunkState;
-import de.hhu.bsinfo.dxram.data.DataStructure;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -30,12 +31,12 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
 public class GetResponse extends Response {
-
+    // total field used for reading, only
+    private int m_total;
     // The data of the chunk objects here is used when sending the response only
     // when the response is received, the chunk objects from the request are
-    // used to directly write the data to them and avoiding further copying
-    private byte[][] m_dataChunks;
-    private int m_totalSuccessful;
+    // used to directly write the data to them to avoid further copying
+    private ChunkByteArray[] m_dataChunks;
 
     /**
      * Creates an instance of GetResponse.
@@ -53,43 +54,37 @@ public class GetResponse extends Response {
      *
      * @param p_request
      *         the corresponding GetRequest
-     * @param p_dataChunks
-     *         Array of byte arrays with chunk data read from the memory. If a chunk does not exist, the byte[] is null
-     * @param p_totalSuccessful
-     *         Number of total successful get operations
+     * @param p_chunks
+     *         Chunks read from the memory.
      */
-    public GetResponse(final GetRequest p_request, final byte[][] p_dataChunks, final int p_totalSuccessful) {
+    public GetResponse(final GetRequest p_request, final ChunkByteArray[] p_chunks) {
         super(p_request, ChunkMessages.SUBTYPE_GET_RESPONSE);
-        m_totalSuccessful = p_totalSuccessful;
-        m_dataChunks = p_dataChunks;
-    }
 
-    /**
-     * Get the total number of successful chunk gets
-     *
-     * @return Total number of successful chunk gets
-     */
-    public int getTotalSuccessful() {
-        return m_totalSuccessful;
+        m_dataChunks = p_chunks;
     }
 
     @Override
     protected final int getPayloadLength() {
-        int size = ObjectSizeUtil.sizeofCompactedNumber(m_totalSuccessful);
+        int size = 0;
 
         // when writing payload
         if (m_dataChunks != null) {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_dataChunks.length);
+
             size += m_dataChunks.length * Byte.BYTES;
 
-            for (int i = 0; i < m_dataChunks.length; i++) {
-                if (m_dataChunks[i] != null) {
-                    size += m_dataChunks[i].length;
+            for (ChunkByteArray dataChunk : m_dataChunks) {
+                if (dataChunk.getData() != null) {
+                    size += dataChunk.getSize();
                 }
             }
         } else {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_total);
+
             // after reading message payload to request data structures
             GetRequest request = (GetRequest) getCorrespondingRequest();
 
+            // chunk states
             size += request.getChunks().length * Byte.BYTES;
 
             for (int i = 0; i < request.getChunks().length; i++) {
@@ -104,27 +99,29 @@ public class GetResponse extends Response {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeCompactNumber(m_totalSuccessful);
+        // write total count once
+        p_exporter.writeCompactNumber(m_dataChunks.length);
+
         for (int i = 0; i < m_dataChunks.length; i++) {
-            if (m_dataChunks[i] == null) {
-                // indicate no data available
-                p_exporter.writeByte((byte) ChunkState.DOES_NOT_EXIST.ordinal());
-            } else {
-                p_exporter.writeByte((byte) ChunkState.OK.ordinal());
-                p_exporter.writeBytes(m_dataChunks[i]);
+            p_exporter.writeByte((byte) m_dataChunks[i].getState().ordinal());
+
+            if (m_dataChunks[i].isStateOk()) {
+                p_exporter.writeBytes(m_dataChunks[i].getData());
             }
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_totalSuccessful = p_importer.readCompactNumber(m_totalSuccessful);
+        m_total = p_importer.readCompactNumber(m_total);
 
         // read the payload from the buffer and write it directly into
         // the chunk objects provided by the request to avoid further copying of data
         GetRequest request = (GetRequest) getCorrespondingRequest();
 
-        for (DataStructure chunk : request.getChunks()) {
+        for (int i = 0; i < m_total; i++) {
+            AbstractChunk chunk = request.getChunks()[i];
+
             chunk.setState(ChunkState.values()[p_importer.readByte((byte) chunk.getState().ordinal())]);
 
             if (chunk.getState() == ChunkState.OK) {
@@ -132,5 +129,4 @@ public class GetResponse extends Response {
             }
         }
     }
-
 }
