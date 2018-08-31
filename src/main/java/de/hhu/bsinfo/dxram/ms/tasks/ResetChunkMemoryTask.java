@@ -32,7 +32,7 @@ public class ResetChunkMemoryTask implements Task {
 
     @Override
     public int execute(final TaskContext p_ctx) {
-        p_ctx.getDXRAMServiceAccessor().getService(ChunkDebugService.class).resetMemory();
+        p_ctx.getDXRAMServiceAccessor().getService(ChunkDebugService.class).reset().resetMemory();
 
         return 0;
     }

@@ -40,7 +40,7 @@ public class PrintMemoryStatusToConsoleTask implements Task {
     @Override
     public int execute(final TaskContext p_ctx) {
         ChunkService chunkService = p_ctx.getDXRAMServiceAccessor().getService(ChunkService.class);
-        PrintMemoryStatus.printMemoryStatusToOutput(System.out, chunkService.getStatus());
+        PrintMemoryStatus.printMemoryStatusToOutput(System.out, chunkService.status().getStatus());
         return 0;
     }
 

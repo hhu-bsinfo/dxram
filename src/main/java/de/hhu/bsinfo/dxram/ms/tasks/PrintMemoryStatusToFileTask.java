@@ -100,7 +100,7 @@ public class PrintMemoryStatusToFileTask implements Task {
             return -5;
         }
 
-        PrintMemoryStatus.printMemoryStatusToOutput(out, chunkService.getStatus());
+        PrintMemoryStatus.printMemoryStatusToOutput(out, chunkService.status().getStatus());
 
         out.close();
 

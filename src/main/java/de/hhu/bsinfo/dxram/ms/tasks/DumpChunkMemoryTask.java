@@ -29,7 +29,7 @@ public class DumpChunkMemoryTask implements Task {
 
     @Override
     public int execute(final TaskContext p_ctx) {
-        p_ctx.getDXRAMServiceAccessor().getService(ChunkDebugService.class).dumpChunkMemory(m_fileName);
+        p_ctx.getDXRAMServiceAccessor().getService(ChunkDebugService.class).dump().dumpChunkMemory(m_fileName);
 
         return 0;
     }

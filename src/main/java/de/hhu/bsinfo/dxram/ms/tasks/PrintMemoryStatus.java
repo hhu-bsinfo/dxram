@@ -18,7 +18,7 @@ package de.hhu.bsinfo.dxram.ms.tasks;
 
 import java.io.PrintStream;
 
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
+import de.hhu.bsinfo.dxram.chunk.data.ChunkServiceStatus;
 
 /**
  * Helper class to print memory status.
@@ -43,7 +43,7 @@ final class PrintMemoryStatus {
      *         Status to print.
      */
     static void printMemoryStatusToOutput(final PrintStream p_outputStream,
-            final MemoryManagerComponent.Status p_status) {
+            final ChunkServiceStatus p_status) {
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
         p_outputStream.println("---------------------------------------------------------");
