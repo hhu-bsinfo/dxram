@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.dxram.log;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
@@ -12,44 +16,86 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = LogComponent.class, supportsSuperpeer = false, supportsPeer = true)
 public class LogComponentConfig extends DXRAMComponentConfig {
 
     private static final int COLD_DATA_THRESHOLD = 9000;
 
+    /**
+     * Harddrive access mode ("raf" -> RandomAccessFile, "dir" -> file access with ODirect (skips kernel buffer),
+     * "raw" -> direct access to raw partition).
+     */
     @Expose
     private String m_harddriveAccess = "raf";
 
+    /**
+     * Path of raw device (only used for harddrive access mode "raw").
+     */
     @Expose
     private String m_rawDevicePath = "/dev/raw/raw1";
 
+    /**
+     * Whether to log with checksum for every log entry or not (if true, checksum is verified during recovery).
+     */
     @Expose
     private boolean m_useChecksums = true;
 
+    /**
+     * Whether to log with timestamp for every log entry or not
+     * (if true, timestamps are used for improved segment selection).
+     */
     @Expose
     private boolean m_useTimestamps = true;
 
+    /**
+     * The flash page size of the underlying hardware/harddrive.
+     */
     @Expose
     private StorageUnit m_flashPageSize = new StorageUnit(4, StorageUnit.KB);
 
+    /**
+     * The segment size. Every secondary log is split into segments which are reorganized/recovered separately.
+     */
     @Expose
     private StorageUnit m_logSegmentSize = new StorageUnit(8, StorageUnit.MB);
 
+    /**
+     * Size of the primary log. The primary log stores log entries temporary to improve SSD access.
+     */
     @Expose
     private StorageUnit m_primaryLogSize = new StorageUnit(256, StorageUnit.MB);
 
+    /**
+     * The write buffer size. Every log entry is written to the write buffer first.
+     */
     @Expose
     private StorageUnit m_writeBufferSize = new StorageUnit(32, StorageUnit.MB);
 
+    /**
+     * Number of bytes buffered until data is flushed to specific secondary log.
+     */
     @Expose
     private StorageUnit m_secondaryLogBufferSize = new StorageUnit(128, StorageUnit.KB);
 
+    /**
+     * Threshold to activate automatic reorganization.
+     **/
     @Expose
     private int m_utilizationActivateReorganization = 60;
 
+    /**
+     * Threshold to trigger low-priority reorganization (high-priority -> not enough space to write data).
+     **/
     @Expose
     private int m_utilizationPromptReorganization = 75;
 
+    /**
+     * Log entries older than this threshold are not considered for segment age calculation
+     * (relevant, only, if timestamps are enabled).
+     **/
     @Expose
     private int m_coldDataThresholdInSec = COLD_DATA_THRESHOLD;
 
@@ -74,93 +120,6 @@ public class LogComponentConfig extends DXRAMComponentConfig {
         m_utilizationActivateReorganization = p_utilizationActivateReorganization;
         m_utilizationPromptReorganization = p_utilizationPromptReorganization;
         m_coldDataThresholdInSec = p_coldDataThresholdSec;
-    }
-
-    /**
-     * Harddrive access mode ("raf" -> RandomAccessFile, "dir" -> file access with ODirect (skips kernel buffer),
-     * "raw" -> direct access to raw partition).
-     */
-    public String getHarddriveAccess() {
-        return m_harddriveAccess;
-    }
-
-    /**
-     * Path of raw device (only used for harddrive access mode "raw").
-     */
-    public String getRawDevicePath() {
-        return m_rawDevicePath;
-    }
-
-    /**
-     * Whether to log with checksum for every log entry or not (if true, checksum is verified during recovery).
-     */
-    public boolean useChecksums() {
-        return m_useChecksums;
-    }
-
-    /**
-     * Whether to log with timestamp for every log entry or not
-     * (if true, timestamps are used for improved segment selection).
-     */
-    public boolean useTimestamps() {
-        return m_useTimestamps;
-    }
-
-    /**
-     * The flash page size of the underlying hardware/harddrive.
-     */
-    public StorageUnit getFlashPageSize() {
-        return m_flashPageSize;
-    }
-
-    /**
-     * The segment size. Every secondary log is split into segments which are reorganized/recovered separately.
-     */
-    public StorageUnit getLogSegmentSize() {
-        return m_logSegmentSize;
-    }
-
-    /**
-     * Size of the primary log. The primary log stores log entries temporary to improve SSD access.
-     */
-    public StorageUnit getPrimaryLogSize() {
-        return m_primaryLogSize;
-    }
-
-    /**
-     * The write buffer size. Every log entry is written to the write buffer first.
-     */
-    public StorageUnit getWriteBufferSize() {
-        return m_writeBufferSize;
-    }
-
-    /**
-     * Number of bytes buffered until data is flushed to specific secondary log.
-     */
-    public StorageUnit getSecondaryLogBufferSize() {
-        return m_secondaryLogBufferSize;
-    }
-
-    /**
-     * Threshold to activate automatic reorganization.
-     **/
-    public int getUtilizationActivateReorganization() {
-        return m_utilizationActivateReorganization;
-    }
-
-    /**
-     * Threshold to trigger low-priority reorganization (high-priority -> not enough space to write data).
-     **/
-    public int getUtilizationPromptReorganization() {
-        return m_utilizationPromptReorganization;
-    }
-
-    /**
-     * Log entries older than this threshold are not considered for segment age calculation
-     * (relevant, only, if timestamps are enabled).
-     **/
-    public int getColdDataThreshold() {
-        return m_coldDataThresholdInSec;
     }
 
     @Override

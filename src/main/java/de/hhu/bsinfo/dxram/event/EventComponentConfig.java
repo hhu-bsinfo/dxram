@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.dxram.event;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
@@ -10,19 +14,18 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = EventComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class EventComponentConfig extends DXRAMComponentConfig {
     private static final int THREAD_COUNT_MAX = 10;
 
-    @Expose
-    private int m_threadCount = 1;
-
     /**
      * Thread count for executor thread pool
      */
-    public int getThreadCount() {
-        return m_threadCount;
-    }
+    @Expose
+    private int m_threadCount = 1;
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {

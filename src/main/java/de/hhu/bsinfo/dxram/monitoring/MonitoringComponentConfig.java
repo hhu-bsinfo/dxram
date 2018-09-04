@@ -16,6 +16,10 @@
 
 package de.hhu.bsinfo.dxram.monitoring;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import java.io.File;
 
 import com.google.gson.annotations.Expose;
@@ -31,27 +35,52 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Burak Akguel, burak.akguel@hhu.de 14.07.2018
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = MonitoringComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class MonitoringComponentConfig extends DXRAMComponentConfig {
+    /**
+     * Returns true if monitoring is active.
+     */
     @Expose
     private boolean m_monitoringActive = false;
 
+    /**
+     * Returns NIC identifier.
+     */
     @Expose
     private String m_nic = "";
 
+    /**
+     * Returns disk identifier.
+     */
     @Expose
     private String m_disk = "";
 
+    /**
+     * Returns the amount seconds that builds a time window.
+     */
     @Expose
     private TimeUnit m_timeWindow = new TimeUnit(2, "sec");
 
+    /**
+     * Returns the amount of collects in a single time window
+     */
     @Expose
     private short m_collectsPerWindow = 10;
 
+    /**
+     * Returns path to monitoring folder.
+     */
     @Expose
     private String m_monitoringFolder = "./mon";
 
-    private TimeUnit m_csvTimeWindow;
+    /**
+     * Returns the amount of seconds after which the csv files are written.
+     */
+    @Expose
+    private TimeUnit m_csvTimeWindow = new TimeUnit(m_timeWindow.getSec() * 8, "sec");
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
@@ -86,58 +115,6 @@ public class MonitoringComponentConfig extends DXRAMComponentConfig {
 
         LOGGER.debug("Monitoring data output folder: %s", file);
 
-        // after 8 "windows" the data will be written to file
-        m_csvTimeWindow = new TimeUnit(m_timeWindow.getSec() * 8, "sec");
-
         return true;
-    }
-
-    /**
-     * Returns true if monitoring is active.
-     */
-    public boolean isMonitoringActive() {
-        return m_monitoringActive;
-    }
-
-    /**
-     * Returns NIC identifier.
-     */
-    public String getNic() {
-        return m_nic;
-    }
-
-    /**
-     * Returns disk identifier.
-     */
-    public String getDisk() {
-        return m_disk;
-    }
-
-    /**
-     * Returns path to monitoring folder.
-     */
-    public String getMonitoringFolder() {
-        return m_monitoringFolder;
-    }
-
-    /**
-     * Returns the amount seconds that builds a time window.
-     */
-    public float getSecondsTimeWindow() {
-        return m_timeWindow.getSec();
-    }
-
-    /**
-     * Returns the amount of collects in a single time window
-     */
-    public short getCollectsPerWindow() {
-        return m_collectsPerWindow;
-    }
-
-    /**
-     * Returns the amount of seconds after which the csv files are written.
-     */
-    public float getCSVSecondsTimeWindow() {
-        return m_csvTimeWindow.getSec();
     }
 }

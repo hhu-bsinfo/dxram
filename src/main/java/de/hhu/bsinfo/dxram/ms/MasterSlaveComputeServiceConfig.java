@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.dxram.ms;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
@@ -13,40 +17,31 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMServiceConfig.Settings(service = MasterSlaveComputeService.class, supportsSuperpeer = false, supportsPeer = true)
 public class MasterSlaveComputeServiceConfig extends DXRAMServiceConfig {
     private static final TimeUnit PING_INTERVAL_MIN = new TimeUnit(100, TimeUnit.MS);
     private static final TimeUnit PING_INTERVAL_MAX = new TimeUnit(10, TimeUnit.SEC);
 
-    @Expose
-    private String m_role = ComputeRole.NONE.toString();
-
-    @Expose
-    private short m_computeGroupId = 0;
-
-    @Expose
-    private TimeUnit m_pingInterval = new TimeUnit(1, TimeUnit.SEC);
-
     /**
      * Compute role to assign to the current instance (master, slave or none)
      */
-    public String getRole() {
-        return m_role;
-    }
+    @Expose
+    private String m_role = ComputeRole.NONE.toString();
 
     /**
      * Compute group id for the current instance (ignored on none)
      */
-    public short getComputeGroupId() {
-        return m_computeGroupId;
-    }
+    @Expose
+    private short m_computeGroupId = 0;
 
     /**
      * Keep alive ping time for master to contact slaves
      */
-    public TimeUnit getPingInterval() {
-        return m_pingInterval;
-    }
+    @Expose
+    private TimeUnit m_pingInterval = new TimeUnit(1, TimeUnit.SEC);
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {

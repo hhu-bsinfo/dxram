@@ -135,7 +135,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         LOGGER.trace("Entering getLookupRange with: p_chunkID=0x%X", p_chunkID);
 
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             // Read from cache
             ret = m_chunkIDCacheTree.getMetadata(p_chunkID);
             if (ret == null) {
@@ -168,7 +168,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         LOGGER.trace("Entering remove with %d chunkIDs", p_chunkIDs.getSize());
 
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             invalidate(p_chunkIDs);
         }
 
@@ -193,7 +193,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         LOGGER.trace("Entering insertID with: p_id=%d, p_chunkID=0x%X", p_id, p_chunkID);
 
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             m_applicationIDCache.put(p_id, p_chunkID);
         }
 
@@ -222,7 +222,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         LOGGER.trace("Entering getChunkID with: p_id=%d", p_id);
 
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             // Read from application cache first
             final Long chunkID = m_applicationIDCache.get(p_id);
 
@@ -260,7 +260,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         LOGGER.trace("Entering migrate with: p_chunkID=0x%X, p_nodeID=0x%X", p_chunkID, p_nodeID);
 
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             invalidate(p_chunkID);
         }
 
@@ -286,7 +286,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         LOGGER.trace("Entering migrateRange with: p_startChunkID=0x%X, p_endChunkID=0x%X, p_nodeID=0x%X", p_startCID,
                 p_endCID, p_nodeID);
 
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             invalidate(p_startCID, p_endCID);
         }
 
@@ -356,7 +356,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the IDs
      */
     public void invalidate(final long... p_chunkIDs) {
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             for (long chunkID : p_chunkIDs) {
                 assert chunkID != ChunkID.INVALID_ID;
                 m_chunkIDCacheTree.invalidateChunkID(chunkID);
@@ -371,7 +371,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the IDs in an array list
      */
     public void invalidate(final ArrayListLong p_chunkIDs) {
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             for (int i = 0; i < p_chunkIDs.getSize(); i++) {
                 assert p_chunkIDs.get(i) != ChunkID.INVALID_ID;
                 m_chunkIDCacheTree.invalidateChunkID(p_chunkIDs.get(i));
@@ -386,7 +386,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      *         the ID whose range range is invalidated
      */
     public void invalidateRange(final long p_chunkID) {
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             assert p_chunkID != ChunkID.INVALID_ID;
             m_chunkIDCacheTree.invalidateRange(p_chunkID);
         }
@@ -665,7 +665,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
             NodeFailureEvent event = (NodeFailureEvent) p_event;
 
             if (event.getRole() == NodeRole.PEER) {
-                if (getConfig().cachesEnabled()) {
+                if (getConfig().isCachesEnabled()) {
                     m_chunkIDCacheTree.invalidatePeer(event.getNodeID());
                 }
             }
@@ -719,7 +719,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         BackupRange.setReplicationFactor(backupConfig.getReplicationFactor());
         BackupRange.setBackupRangeSize(backupConfig.getBackupRangeSize().getBytes());
 
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             m_chunkIDCacheTree = new CacheTree(ORDER, getConfig().getCacheTtl().getMs(),
                     getConfig().getMaxCacheEntries());
 
@@ -734,7 +734,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             m_superpeer = new OverlaySuperpeer(m_boot.getNodeId(), m_boot.getBootstrapId(),
                     m_boot.getNumberOfAvailableSuperpeers(),
-                    (int) getConfig().getStabilizationBreakTime(),
+                    (int) getConfig().getStabilizationBreakTime().getMs(),
                     p_config.getServiceConfig(SynchronizationServiceConfig.class).getMaxBarriersPerSuperpeer(),
                     p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxNumEntries(),
                     (int) p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxSize().getBytes(),
@@ -755,7 +755,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
             m_superpeer.shutdown();
         }
 
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             if (m_chunkIDCacheTree != null) {
                 m_chunkIDCacheTree.close();
                 m_chunkIDCacheTree = null;
@@ -793,7 +793,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         LOGGER.trace("Entering getPrimaryPeer with: p_chunkID=0x%X", p_chunkID);
 
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             // Read from cache
             ret = m_chunkIDCacheTree.getPrimaryPeer(p_chunkID);
             if (ret == NodeID.INVALID_ID) {
@@ -878,7 +878,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
      */
     @SuppressWarnings("unused")
     private void clear() {
-        if (getConfig().cachesEnabled()) {
+        if (getConfig().isCachesEnabled()) {
             m_chunkIDCacheTree = new CacheTree(ORDER, getConfig().getCacheTtl().getMs(),
                     getConfig().getMaxCacheEntries());
             m_applicationIDCache.clear();

@@ -31,15 +31,24 @@ import static de.hhu.bsinfo.dxram.util.NodeCapabilities.toMask;
 @EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = ZookeeperBootComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class ZookeeperBootComponentConfig extends DXRAMComponentConfig {
+    /**
+     * Path for zookeeper entry
+     */
     @Expose
     private String m_path = "/dxram";
 
+    /**
+     * Address and port of zookeeper
+     */
     @Expose
     private IPV4Unit m_connection = new IPV4Unit("127.0.0.1", 2181);
 
     @Expose
     private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
 
+    /**
+     * Bloom filter size. Bloom filter is used to increase node ID creation performance.
+     */
     @Expose
     private StorageUnit m_bitfieldSize = new StorageUnit(2, StorageUnit.MB);
 
@@ -56,9 +65,15 @@ public class ZookeeperBootComponentConfig extends DXRAMComponentConfig {
         }
     };
 
+    /**
+     * The rack this node is in. Must be set if node was not in initial nodes file.
+     */
     @Expose
     private short m_rack = 0;
 
+    /**
+     * The switch this node is connected to. Must be set if node was not in initial nodes file.
+     */
     @Expose
     private short m_switch = 0;
 

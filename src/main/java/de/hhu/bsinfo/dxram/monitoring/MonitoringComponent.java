@@ -89,7 +89,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
             }
 
             String monitoringFolder = componentConfig.getMonitoringFolder();
-            float secondDelay = componentConfig.getSecondsTimeWindow();
+            float secondDelay = componentConfig.getTimeWindow().getSec();
 
             // check if kernel buffer is in use
             boolean isPageCacheInUse = false;
@@ -110,7 +110,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
             short numberOfCollects = componentConfig.getCollectsPerWindow();
 
             if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-                m_superpeerHandler = new SuperpeerMonitoringHandler(componentConfig.getCSVSecondsTimeWindow(), m_boot,
+                m_superpeerHandler = new SuperpeerMonitoringHandler(componentConfig.getCsvTimeWindow().getSec(), m_boot,
                         m_event, monitoringFolder);
                 m_superpeerHandler.start();
             } else {

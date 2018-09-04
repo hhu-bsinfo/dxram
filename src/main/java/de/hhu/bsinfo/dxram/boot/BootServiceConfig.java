@@ -16,6 +16,10 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
@@ -23,6 +27,9 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMServiceConfig.Settings(service = BootService.class, supportsSuperpeer = true, supportsPeer = true)
 public class BootServiceConfig extends DXRAMServiceConfig {
 

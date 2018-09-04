@@ -554,14 +554,14 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                     case "random":
                         m_placementStrategy =
                                 new RandomPlacement(getConfig().getReplicationFactor(),
-                                        getConfig().disjunctiveFirstBackupPeer(), getConfig().rackAware(),
-                                        getConfig().switchAware());
+                                        getConfig().isDisjunctiveFirstBackupPeer(), getConfig().isRackAware(),
+                                        getConfig().isSwitchAware());
                         break;
                     case "copyset":
                         m_placementStrategy =
                                 new CopysetPlacement(getConfig().getReplicationFactor(),
-                                        getConfig().disjunctiveFirstBackupPeer(), getConfig().rackAware(),
-                                        getConfig().switchAware());
+                                        getConfig().isDisjunctiveFirstBackupPeer(), getConfig().isRackAware(),
+                                        getConfig().isSwitchAware());
                         break;
                     default:
 

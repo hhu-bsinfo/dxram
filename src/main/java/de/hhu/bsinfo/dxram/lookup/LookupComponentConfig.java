@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.dxram.lookup;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
@@ -11,51 +15,37 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = LookupComponent.class, supportsSuperpeer = true, supportsPeer = true)
 public class LookupComponentConfig extends DXRAMComponentConfig {
-    @Expose
-    private boolean m_cachesEnabled = true;
-
-    @Expose
-    private long m_maxCacheEntries = 1000L;
-
-    @Expose
-    private TimeUnit m_cacheTtl = new TimeUnit(1, TimeUnit.SEC);
-
-    @Expose
-    private TimeUnit m_stabilizationBreakTime = new TimeUnit(1, TimeUnit.SEC);
-
     /**
      * Set to enable client-side lookup caching.
      */
-    public boolean cachesEnabled() {
-        return m_cachesEnabled;
-    }
+    @Expose
+    private boolean m_cachesEnabled = true;
 
     /**
      * Maximum number of entries in cache tree. Currently unused!
      */
-    public long getMaxCacheEntries() {
-        return m_maxCacheEntries;
-    }
+    @Expose
+    private long m_maxCacheEntries = 1000L;
 
     /**
      * Time to live for btree nodes in cache tree.
      */
-    public TimeUnit getCacheTtl() {
-        return m_cacheTtl;
-    }
+    @Expose
+    private TimeUnit m_cacheTtl = new TimeUnit(1, TimeUnit.SEC);
 
     /**
      * The break time between superpeer stabilization routines (such as pinging all peers and check neighbors).
      */
-    public long getStabilizationBreakTime() {
-        return m_stabilizationBreakTime.getMs();
-    }
+    @Expose
+    private TimeUnit m_stabilizationBreakTime = new TimeUnit(1, TimeUnit.SEC);
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-
         if (m_cacheTtl.getMs() < 1000L) {
             LOGGER.warn("A high effort is needed to satisfy TTL!");
         }

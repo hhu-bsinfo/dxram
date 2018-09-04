@@ -362,7 +362,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         AbstractChunk[] ret = null;
 
         try {
-            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, getConfig().useChecksums(), m_secondaryLogSize,
+            ret = SecondaryLog.recoverFromFile(p_fileName, p_path, getConfig().isUseChecksums(), m_secondaryLogSize,
                     (int) getConfig().getLogSegmentSize().getBytes(), m_mode);
         } catch (final IOException e) {
 
@@ -558,9 +558,9 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         // entry header is created)
         AbstractLogEntryHeader.setSegmentSize((int) p_config.getLogSegmentSize().getBytes());
         // Set the log entry header tsp size (must be called before the first log entry header is created)
-        AbstractLogEntryHeader.setTimestampSize(p_config.useTimestamps());
+        AbstractLogEntryHeader.setTimestampSize(p_config.isUseTimestamps());
         // Set the log entry header crc size (must be called before the first log entry header is created)
-        ChecksumHandler.setCRCSize(p_config.useChecksums());
+        ChecksumHandler.setCRCSize(p_config.isUseChecksums());
 
         m_initTime = System.currentTimeMillis();
     }
@@ -598,7 +598,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             try {
                 m_primaryLog =
                         new PrimaryLog(this, m_backupDirectory, m_nodeID, getConfig().getPrimaryLogSize().getBytes(),
-                                getConfig().useChecksums(), getConfig().useTimestamps(),
+                                getConfig().isUseChecksums(), getConfig().isUseTimestamps(),
                                 (int) getConfig().getFlashPageSize().getBytes(), m_mode);
             } catch (final IOException e) {
 
@@ -614,7 +614,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         m_writeBuffer = new PrimaryWriteBuffer(this, m_primaryLog, (int) getConfig().getWriteBufferSize().getBytes(),
                 (int) getConfig().getFlashPageSize().getBytes(),
                 (int) getConfig().getSecondaryLogBufferSize().getBytes(),
-                (int) getConfig().getLogSegmentSize().getBytes(), getConfig().useChecksums());
+                (int) getConfig().getLogSegmentSize().getBytes(), getConfig().isUseChecksums());
 
         // Create secondary log and secondary log buffer catalogs
         m_logCatalogs = new LogCatalog[Short.MAX_VALUE * 2 + 1];
@@ -789,8 +789,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                 secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_rangeID, m_backupDirectory,
                         m_secondaryLogSize, (int) getConfig().getFlashPageSize().getBytes(),
                         (int) getConfig().getLogSegmentSize().getBytes(),
-                        getConfig().getUtilizationPromptReorganization(), getConfig().useChecksums(),
-                        getConfig().useTimestamps(), m_initTime, getConfig().getColdDataThreshold(), m_mode);
+                        getConfig().getUtilizationPromptReorganization(), getConfig().isUseChecksums(),
+                        getConfig().isUseTimestamps(), m_initTime, getConfig().getColdDataThresholdInSec(), m_mode);
                 // Insert range in log catalog
                 cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(),
                         (int) getConfig().getLogSegmentSize().getBytes());
@@ -837,8 +837,8 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
                     secLog = new SecondaryLog(this, m_secondaryLogsReorgThread, p_owner, p_originalOwner, p_rangeID,
                             m_backupDirectory, m_secondaryLogSize, (int) getConfig().getFlashPageSize().getBytes(),
                             (int) getConfig().getLogSegmentSize().getBytes(),
-                            getConfig().getUtilizationPromptReorganization(), getConfig().useChecksums(),
-                            getConfig().useTimestamps(), m_initTime, getConfig().getColdDataThreshold(), m_mode);
+                            getConfig().getUtilizationPromptReorganization(), getConfig().isUseChecksums(),
+                            getConfig().isUseTimestamps(), m_initTime, getConfig().getColdDataThresholdInSec(), m_mode);
                     // Insert range in log catalog
                     cat.insertRange(p_rangeID, secLog, (int) getConfig().getSecondaryLogBufferSize().getBytes(),
                             (int) getConfig().getLogSegmentSize().getBytes());
@@ -923,7 +923,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
         }
 
         int timestamp = 0;
-        if (getConfig().useTimestamps()) {
+        if (getConfig().isUseTimestamps()) {
             // Getting the same timestamp for all chunks to be logged
             // This might be a little inaccurate but currentTimeMillis is expensive
             timestamp = (int) ((System.currentTimeMillis() - m_initTime) / 1000);
@@ -985,7 +985,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             assert length > 0;
 
             int timestamp = 0;
-            if (getConfig().useTimestamps()) {
+            if (getConfig().isUseTimestamps()) {
                 timestamp = (int) ((System.currentTimeMillis() - m_initTime) / 1000);
             }
 

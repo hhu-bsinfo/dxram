@@ -16,6 +16,10 @@
 
 package de.hhu.bsinfo.dxram.monitoring;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 import de.hhu.bsinfo.dxutils.OSValidator;
@@ -25,6 +29,9 @@ import de.hhu.bsinfo.dxutils.OSValidator;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMServiceConfig.Settings(service = MonitoringService.class, supportsSuperpeer = true, supportsPeer = true)
 public class MonitoringServiceConfig extends DXRAMServiceConfig {
     @Override

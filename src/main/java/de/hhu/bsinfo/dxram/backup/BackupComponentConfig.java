@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.dxram.backup;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
@@ -11,41 +15,16 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = BackupComponent.class, supportsSuperpeer = false, supportsPeer = true)
 public class BackupComponentConfig extends DXRAMComponentConfig {
-    @Expose
-    private boolean m_backupActive = false;
-
-    @Expose
-    private boolean m_availableForBackup = true;
-
-    @Expose
-    private String m_backupDirectory = "./log/";
-
-    @Expose
-    private StorageUnit m_backupRangeSize = new StorageUnit(256, StorageUnit.MB);
-
-    @Expose
-    private byte m_replicationFactor = 3;
-
-    @Expose
-    private String m_backupPlacementStrategy = "Random";
-
-    @Expose
-    private boolean m_disjunctiveFirstBackupPeer = true;
-
-    @Expose
-    private boolean m_rackAware = false;
-
-    @Expose
-    private boolean m_switchAware = false;
-
     /**
      * Activate/Disable the backup. This parameter should be either active for all nodes or inactive for all nodes
      */
-    public boolean isBackupActive() {
-        return m_backupActive;
-    }
+    @Expose
+    private boolean m_backupActive = false;
 
     /**
      * This parameter can be set to false for single peers to avoid storing backups and the associated overhead.
@@ -53,30 +32,26 @@ public class BackupComponentConfig extends DXRAMComponentConfig {
      * like replicating own chunks, are enabled.
      * Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
      */
-    public boolean isAvailableForBackup() {
-        return m_availableForBackup;
-    }
+    @Expose
+    private boolean m_availableForBackup = true;
 
     /**
      * Directory where the backup data is stored
      */
-    public String getBackupDirectory() {
-        return m_backupDirectory;
-    }
+    @Expose
+    private String m_backupDirectory = "./log/";
 
     /**
      * Size of a backup range
      */
-    public StorageUnit getBackupRangeSize() {
-        return m_backupRangeSize;
-    }
+    @Expose
+    private StorageUnit m_backupRangeSize = new StorageUnit(256, StorageUnit.MB);
 
     /**
      * The replication factor must must be in [1, 4], for disabling replication set m_backupActive to false
      */
-    public byte getReplicationFactor() {
-        return m_replicationFactor;
-    }
+    @Expose
+    private byte m_replicationFactor = 3;
 
     /**
      * The backup placement strategy
@@ -84,30 +59,26 @@ public class BackupComponentConfig extends DXRAMComponentConfig {
      * "Copyset": copyset replication
      * "LocationAware"
      */
-    String getBackupPlacementStrategy() {
-        return m_backupPlacementStrategy;
-    }
+    @Expose
+    private String m_backupPlacementStrategy = "Random";
 
     /**
      * If true, the first backup peer is selected disjunctive
      */
-    boolean disjunctiveFirstBackupPeer() {
-        return m_disjunctiveFirstBackupPeer;
-    }
+    @Expose
+    private boolean m_disjunctiveFirstBackupPeer = true;
 
     /**
      * If true, in every set of backup peers all backup peers are from another rack, if possible
      */
-    boolean rackAware() {
-        return m_rackAware;
-    }
+    @Expose
+    private boolean m_rackAware = false;
 
     /**
      * If true, in every set of backup peers all backup peers are behind another switch, if possible
      */
-    boolean switchAware() {
-        return m_switchAware;
-    }
+    @Expose
+    private boolean m_switchAware = false;
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {

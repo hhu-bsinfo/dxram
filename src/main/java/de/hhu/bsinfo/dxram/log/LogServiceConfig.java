@@ -16,6 +16,10 @@
 
 package de.hhu.bsinfo.dxram.log;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
@@ -23,6 +27,9 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMServiceConfig.Settings(service = LogService.class, supportsSuperpeer = false, supportsPeer = true)
 public class LogServiceConfig extends DXRAMServiceConfig {
 

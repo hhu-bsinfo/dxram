@@ -1,5 +1,9 @@
 package de.hhu.bsinfo.dxram.job;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
@@ -10,20 +14,19 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = JobWorkStealingComponent.class, supportsSuperpeer = false,
         supportsPeer = true)
 public class JobWorkStealingComponentConfig extends DXRAMComponentConfig {
     private static final int NUM_WORKERS_MAX = 64;
 
-    @Expose
-    private int m_numWorkers = 1;
-
     /**
      * Number of worker threads to dispatch jobs to
      */
-    public int getNumWorkers() {
-        return m_numWorkers;
-    }
+    @Expose
+    private int m_numWorkers = 1;
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {

@@ -25,26 +25,18 @@ public class ChunkComponentConfig extends DXRAMComponentConfig {
     private static final StorageUnit KEY_VALUE_STORE_SIZE_MAX = new StorageUnit((long) Math.pow(2, Address.WIDTH_BITS),
             StorageUnit.BYTE);
 
-    @Expose
-    private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
-
-    @Expose
-    private String m_memDumpFolderOnError = "";
-
     /**
      * Amount of main memory to use for the key value store
      */
-    public StorageUnit getKeyValueStoreSize() {
-        return m_keyValueStoreSize;
-    }
+    @Expose
+    private StorageUnit m_keyValueStoreSize = new StorageUnit(128L, StorageUnit.MB);
 
     /**
      * To enable mem dumps on critical errors (memory corruption), enter a path to a file to dump _ALL_ key value store memory to
      * (file size approx. key value store size)
      */
-    public String getMemDumpFolderOnError() {
-        return m_memDumpFolderOnError;
-    }
+    @Expose
+    private String m_memDumpFolderOnError = "";
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
