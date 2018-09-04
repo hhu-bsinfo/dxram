@@ -4,22 +4,14 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
-import java.util.ArrayList;
-
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
-
-import static de.hhu.bsinfo.dxram.util.NodeCapabilities.COMPUTE;
-import static de.hhu.bsinfo.dxram.util.NodeCapabilities.NONE;
-import static de.hhu.bsinfo.dxram.util.NodeCapabilities.STORAGE;
-import static de.hhu.bsinfo.dxram.util.NodeCapabilities.toMask;
 
 /**
  * Config for the ZookeeperBootComponent
@@ -51,19 +43,6 @@ public class ZookeeperBootComponentConfig extends DXRAMComponentConfig {
      */
     @Expose
     private StorageUnit m_bitfieldSize = new StorageUnit(2, StorageUnit.MB);
-
-    @Expose
-    private ArrayList<NodesConfiguration.NodeEntry> m_nodesConfig = new ArrayList<NodesConfiguration.NodeEntry>() {
-        {
-            // default values for local testing
-            add(new NodesConfiguration.NodeEntry(new IPV4Unit("127.0.0.1", 22221), NodeID.INVALID_ID, (short) 0,
-                    (short) 0, NodeRole.SUPERPEER, NONE, true, true, false));
-            add(new NodesConfiguration.NodeEntry(new IPV4Unit("127.0.0.1", 22222), NodeID.INVALID_ID, (short) 0,
-                    (short) 0, NodeRole.PEER, toMask(STORAGE, COMPUTE), true, true, false));
-            add(new NodesConfiguration.NodeEntry(new IPV4Unit("127.0.0.1", 22223), NodeID.INVALID_ID, (short) 0,
-                    (short) 0, NodeRole.PEER, toMask(STORAGE, COMPUTE), true, true, false));
-        }
-    };
 
     /**
      * The rack this node is in. Must be set if node was not in initial nodes file.
