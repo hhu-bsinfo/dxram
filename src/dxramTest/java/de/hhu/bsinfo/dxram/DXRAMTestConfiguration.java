@@ -54,5 +54,18 @@ public @interface DXRAMTestConfiguration {
          * @return Node role
          */
         NodeRole nodeRole();
+
+        /**
+         * Activate/Disable the backup. This parameter should be either active for all nodes or inactive for all nodes
+         */
+        boolean backupActive() default false;
+
+        /**
+         * This parameter can be set to false for single peers to avoid storing backups and the associated overhead.
+         * If this peer is not available for backup, it will not log and recover chunks but all other backup functions,
+         * like replicating own chunks, are enabled.
+         * Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
+         */
+        boolean availableForBackup() default false;
     }
 }

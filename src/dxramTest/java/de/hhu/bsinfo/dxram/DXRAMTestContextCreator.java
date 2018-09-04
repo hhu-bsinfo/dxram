@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram;
 
+import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentManager;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -51,6 +52,11 @@ class DXRAMTestContextCreator implements DXRAMContextCreator {
 
         context.getConfig().getComponentConfig(ZookeeperBootComponentConfig.class).setConnection(
                 m_zookeeperConnection);
+
+        context.getConfig().getComponentConfig(BackupComponentConfig.class).setBackupActive(
+                m_config.nodes()[m_nodeIdx].backupActive());
+        context.getConfig().getComponentConfig(BackupComponentConfig.class).setAvailableForBackup(
+                m_config.nodes()[m_nodeIdx].availableForBackup());
 
         return context;
     }
