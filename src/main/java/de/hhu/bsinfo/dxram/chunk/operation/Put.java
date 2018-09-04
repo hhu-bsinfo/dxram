@@ -42,7 +42,7 @@ public class Put extends AbstractOperation implements MessageReceiver {
     private static final ThroughputPool SOP_INCOMING = new ThroughputPool(Get.class, "Incoming", Value.Base.B_10);
 
     private static final ValuePool SOP_ERROR = new ValuePool(Get.class, "Error");
-    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(Create.class, "IncomingError");
+    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(Get.class, "IncomingError");
 
     static {
         StatisticsManager.get().registerOperation(Put.class, SOP_DEFAULT);

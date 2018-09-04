@@ -23,6 +23,7 @@ import de.hhu.bsinfo.dxram.chunk.operation.Create;
 import de.hhu.bsinfo.dxram.chunk.operation.Get;
 import de.hhu.bsinfo.dxram.chunk.operation.Put;
 import de.hhu.bsinfo.dxram.chunk.operation.Remove;
+import de.hhu.bsinfo.dxram.chunk.operation.Resize;
 import de.hhu.bsinfo.dxram.chunk.operation.Status;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -52,6 +53,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> {
     private Get m_get;
     private Put m_put;
     private Remove m_remove;
+    private Resize m_resize;
 
     /**
      * Constructor
@@ -114,6 +116,15 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> {
         return m_remove;
     }
 
+    /**
+     * Get the resize operation
+     *
+     * @return Operation
+     */
+    public Resize resize() {
+        return m_resize;
+    }
+
     @Override
     protected boolean supportsSuperpeer() {
         return false;
@@ -143,6 +154,7 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> {
         m_put = new Put(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_remove = new Remove(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice,
                 p_config.getServiceConfig(ChunkServiceConfig.class).getRemoverQueueSize());
+        m_resize = new Resize(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
 
         return true;
     }
