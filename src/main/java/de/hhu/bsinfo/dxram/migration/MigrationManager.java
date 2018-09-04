@@ -17,16 +17,18 @@
 package de.hhu.bsinfo.dxram.migration;
 
 
+import de.hhu.bsinfo.dxmem.DXMem;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
-import de.hhu.bsinfo.dxram.data.ChunkID;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.mem.MemoryManagerComponent;
 import de.hhu.bsinfo.dxram.migration.data.MigrationPayload;
 import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationFinish;
@@ -47,6 +49,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
 public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
@@ -60,8 +63,8 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
     private final AbstractBootComponent m_boot;
     private final BackupComponent m_backup;
-    private final ChunkMigrationComponent m_chunk;
-    private final MemoryManagerComponent m_memoryManager;
+    private final ChunkMigrationComponent m_chunkMigration;
+    private final DXMem m_memory;
     private final NetworkComponent m_network;
 
     private final int m_workerCount;
@@ -73,8 +76,8 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
         m_executor = Executors.newFixedThreadPool(p_workerCount, THREAD_FACTORY);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkMigrationComponent.class);
-        m_memoryManager = p_componentAccessor.getComponent(MemoryManagerComponent.class);
+        m_memory = p_componentAccessor.getComponent(ChunkComponent.class).getMemory();
+        m_chunkMigration = p_componentAccessor.getComponent(ChunkMigrationComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
@@ -144,6 +147,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     // TODO(krakowski)
     //  Move this method to dxutils
     public static long[] partition(long p_start, long p_end, int p_count) {
+        log.info("Creating {} partitions for chunks [{} , {}]", p_count, ChunkID.toHexString(p_start), ChunkID.toHexString(p_end));
         int elementCount = (int) (p_end - p_start);
 
         if (p_count > elementCount) {
@@ -214,23 +218,18 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
         log.debug("Collecting {} chunks from memory", chunkCount);
 
-        m_memoryManager.lockAccess();
-
         int index = 0;
         for (LongRange range : p_ranges) {
             for (long chunkId = range.getFrom(); chunkId < range.getTo(); chunkId++) {
 
-                if ((data[index] = m_memoryManager.get(chunkId)) == null) {
+                if ((data[index] = m_memory.get().get(chunkId).getData()) == null) {
                     log.warn("Chunk {} does not exist", ChunkID.toHexString(chunkId));
-                    m_memoryManager.unlockAccess();
                     throw new IllegalArgumentException("Can't migrate non-existent chunks");
                 }
 
                 index++;
             }
         }
-
-        m_memoryManager.unlockAccess();
 
         log.debug("Creating chunk ranges {} and migration push message for node {}",
                 LongRange.collectionToString(p_ranges),
@@ -280,11 +279,11 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
                 NodeID.toHexString(p_migrationPush.getDestination()),
                 readableFileSize(size));
 
-        final long[] chunkIds = ranges.stream().flatMapToLong(range -> Arrays.stream(range.toArray())).toArray();
+        final long[] chunkIds = ranges.stream().flatMapToLong(range -> LongStream.range(range.getFrom(), range.getTo())).toArray();
 
         log.debug("Saving received chunks");
 
-        boolean status = m_chunk.putMigratedChunks(chunkIds, payload.getData());
+        boolean status = m_chunkMigration.putMigratedChunks(chunkIds, payload.getData());
 
         log.debug("Storing migrated chunks {}", status ? "succeeded" : "failed");
 
@@ -313,16 +312,12 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
         log.debug("Removing migrated chunks from local memory");
 
-        m_memoryManager.lockManage();
-
         for (LongRange range : ranges) {
             for (long cid = range.getFrom(); cid < range.getTo(); cid++) {
-                int chunkSize = m_memoryManager.remove(cid, true);
+                int chunkSize = m_memory.remove().remove(cid, true);
                 m_backup.deregisterChunk(cid, chunkSize);
             }
         }
-
-        m_memoryManager.unlockManage();
 
 //        if (m_backup.isActive()) {
 //            for (long cid = startId; cid <= endId; cid++) {
