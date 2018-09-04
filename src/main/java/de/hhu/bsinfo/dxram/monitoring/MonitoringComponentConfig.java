@@ -99,21 +99,10 @@ public class MonitoringComponentConfig extends DXRAMComponentConfig {
             return false;
         }
 
-        if (m_monitoringFolder.isEmpty()) {
-            m_monitoringFolder = System.getProperty("user.dir") + "/mon";
+        if (m_monitoringFolder.isEmpty() || !new File(m_monitoringFolder).exists()) {
+            LOGGER.error("Monitoring folder [%s] invalid or doesn't exist", m_monitoringFolder);
+            return false;
         }
-
-        File file = new File(m_monitoringFolder);
-
-        if (!file.exists()) {
-            if (!file.mkdirs()) {
-                LOGGER.error("Monitoring folder [%s] seems to be invalid - didn't exist and couldn't be created!",
-                        m_monitoringFolder);
-                return false;
-            }
-        }
-
-        LOGGER.debug("Monitoring data output folder: %s", file);
 
         return true;
     }
