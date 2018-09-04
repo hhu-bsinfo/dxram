@@ -39,3 +39,13 @@ if (isDevelop && new File('../dxterm').exists()) {
 if (isDevelop && new File('../dxapp-helloworld').exists()) {
     includeBuild('../dxapp-helloworld')
 }
+
+// dxapps-dev includes
+
+if (isDevelop && new File('../dxapps-dev/migration').exists()) {
+    includeBuild('../dxapps-dev/migration')
+}
+
+if (isDevelop && new File('../dxapps-dev/dxa-chunkbench').exists()) {
+    includeBuild('../dxapps-dev/dxa-chunkbench')
+}
