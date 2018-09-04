@@ -42,61 +42,6 @@ public class NetworkComponentConfig extends DXRAMComponentConfig {
 
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
-        if ("Ethernet".equals(m_coreConfig.getDevice())) {
-            if (m_nioConfig.getFlowControlWindow().getBytes() > m_nioConfig.getOutgoingRingBufferSize().getBytes()) {
-                LOGGER.error("NIO: OS buffer size must be at least twice the size of flow control window size!");
-                return false;
-            }
-
-            if (m_nioConfig.getFlowControlWindow().getBytes() > Integer.MAX_VALUE) {
-                LOGGER.error("NIO: Flow control window size exceeding 2 GB, not allowed");
-                return false;
-            }
-        } else if ("Infiniband".equals(m_coreConfig.getDevice())) {
-            if (m_ibConfig.getIncomingBufferSize().getBytes() > m_ibConfig.getOutgoingRingBufferSize().getBytes()) {
-                LOGGER.error("IB in buffer size must be <= outgoing ring buffer size");
-                return false;
-            }
-
-            if (m_ibConfig.getSrqSize() < m_ibConfig.getSqSize() * m_ibConfig.getMaxConnections()) {
-                LOGGER.warn("IB m_srqSize < m_sqSize * m_maxConnections: This may result in performance " +
-                        " penalties when too many nodes are active");
-            }
-
-            if (m_ibConfig.getSharedSCQSize() < m_ibConfig.getSqSize() * m_ibConfig.getMaxConnections()) {
-                LOGGER.warn("IB m_sharedSCQSize < m_sqSize * m_maxConnections: This may result in performance " +
-                        "penalties when too many nodes are active");
-            }
-
-            if (m_ibConfig.getSrqSize() < m_ibConfig.getSharedRCQSize()) {
-                LOGGER.warn("IB m_srqSize < m_sharedRCQSize: This may result in performance penalties when too " +
-                        "many nodes are active");
-            }
-
-            if (m_ibConfig.getFlowControlWindow().getBytes() > Integer.MAX_VALUE) {
-                LOGGER.error("IB: Flow control window size exceeding 2 GB, not allowed");
-                return false;
-            }
-
-            if (m_ibConfig.getIncomingBufferSize().getGBDouble() > 2.0) {
-                LOGGER.error("IB: Exceeding max incoming buffer size of 2GB");
-                return false;
-            }
-
-            if (m_ibConfig.getOutgoingRingBufferSize().getGBDouble() > 2.0) {
-                LOGGER.error("IB: Exceeding max outgoing buffer size of 2GB");
-                return false;
-            }
-        } else {
-            LOGGER.error("Unknown device %s. Valid options: Ethernet or Infiniband", m_coreConfig.getDevice());
-            return false;
-        }
-
-        if (m_coreConfig.getRequestMapSize() <= (int) Math.pow(2, 15)) {
-            LOGGER.warn("Request map entry count is rather small. Requests might be discarded!");
-            return true;
-        }
-
-        return true;
+        return m_coreConfig.verify() && m_nioConfig.verify() && m_ibConfig.verify();
     }
 }
