@@ -97,10 +97,4 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
         list.sort(Comparator.comparingInt(ApplicationServiceConfig.ApplicationEntry::getStartOrderId));
         getConfig().getAutoStart().forEach(entry -> startApplication(entry.getClassName(), entry.getArgs()));
     }
-
-    @Override
-    protected boolean isEngineAccessor() {
-        // access the engine to hook it to the applications
-        return true;
-    }
 }

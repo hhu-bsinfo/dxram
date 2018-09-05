@@ -97,4 +97,10 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
 
         return true;
     }
+
+    @Override
+    protected boolean isEngineAccessor() {
+        // access the engine to hook it to the applications
+        return true;
+    }
 }
