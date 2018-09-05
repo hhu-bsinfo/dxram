@@ -118,5 +118,5 @@ apply from: 'artifactory.gradle'
 apply from: 'types.gradle'
 
 task wrapper(type: Wrapper) {
-    gradleVersion = "4.9"
+    gradleVersion = "4.10"
 }
