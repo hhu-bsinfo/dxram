@@ -82,13 +82,14 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
 dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 
+    compileOnly 'org.projectlombok:lombok:1.18.2'
+
     api 'commons-cli:commons-cli:1.4'
     api 'de.hhu.bsinfo:dxmem:0.5.0-SNAPSHOT'
     api 'de.hhu.bsinfo:dxnet:0.5.0-SNAPSHOT'
     api 'de.hhu.bsinfo:dxmon:0.2.0-SNAPSHOT'
     nativeApi 'de.hhu.bsinfo:dxutils:0.5.0-SNAPSHOT'
 
-    implementation 'org.projectlombok:lombok:1.18.2'
     implementation 'com.google.guava:guava:26.0-jre'
     implementation 'org.apache.zookeeper:zookeeper:3.4.13'
     implementation('org.apache.curator:curator-x-discovery:4.0.1') {
@@ -99,7 +100,6 @@ dependencies {
     testImplementation 'org.assertj:assertj-core:3.9.0'
     testImplementation "org.mockito:mockito-core:2.19.0"
 
-    extTestImplementation 'org.projectlombok:lombok:1.18.2'
     extTestImplementation 'com.google.guava:guava:26.0-jre'
     extTestImplementation 'org.apache.zookeeper:zookeeper:3.4.13'
     extTestImplementation('org.apache.curator:curator-x-discovery:4.0.1') {
