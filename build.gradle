@@ -27,7 +27,6 @@ plugins {
 }
 
 apply plugin: 'dxbuild'
-apply from: 'testing.gradle'
 group = 'de.hhu.bsinfo'
 version = '0.5.0' + (Boolean.valueOf(System.getProperty("snapshot")) ? "-SNAPSHOT" : "")
 
@@ -100,10 +99,10 @@ dependencies {
     testImplementation 'org.assertj:assertj-core:3.9.0'
     testImplementation "org.mockito:mockito-core:2.19.0"
 
-    dxramTestImplementation 'org.projectlombok:lombok:1.18.2'
-    dxramTestImplementation 'com.google.guava:guava:26.0-jre'
-    dxramTestImplementation 'org.apache.zookeeper:zookeeper:3.4.13'
-    dxramTestImplementation('org.apache.curator:curator-x-discovery:4.0.1') {
+    extTestImplementation 'org.projectlombok:lombok:1.18.2'
+    extTestImplementation 'com.google.guava:guava:26.0-jre'
+    extTestImplementation 'org.apache.zookeeper:zookeeper:3.4.13'
+    extTestImplementation('org.apache.curator:curator-x-discovery:4.0.1') {
         exclude group: 'org.apache.zookeeper', module: 'zookeeper'
     }
 }
