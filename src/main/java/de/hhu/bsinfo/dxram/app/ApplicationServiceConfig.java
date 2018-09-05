@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
+import java.util.Collections;
 import java.util.List;
 
 import com.google.gson.annotations.Expose;
@@ -33,18 +34,18 @@ public class ApplicationServiceConfig extends DXRAMServiceConfig {
          * Arguments to pass to the application on start
          */
         @Expose
-        private String[] m_args;
+        private String[] m_args = new String[0];
 
         /**
          * Integer to determine the start order of applications
          */
         @Expose
-        private int m_startOrderId;
+        private int m_startOrderId = 0;
     }
 
     /**
      * List of applications to run once DXRAM finished booting
      */
     @Expose
-    private List<ApplicationEntry> m_autoStart;
+    private List<ApplicationEntry> m_autoStart = Collections.emptyList();
 }
