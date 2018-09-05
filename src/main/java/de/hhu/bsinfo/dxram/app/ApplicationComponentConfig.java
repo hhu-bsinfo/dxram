@@ -18,6 +18,9 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 @EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = ApplicationComponent.class, supportsSuperpeer = false, supportsPeer = true)
 public class ApplicationComponentConfig extends DXRAMComponentConfig {
+    /**
+     * Path to scan for application jar files
+     */
     @Expose
     private String m_applicationPath = "dxapp";
 }

@@ -46,8 +46,25 @@ public class DXRAMVersion {
         return m_revision;
     }
 
-    public static final DXRAMVersion fromString(String p_version) {
+    /**
+     * Check if this version is compatible to another one
+     *
+     * @param p_other
+     *         Other version to compare to
+     * @return True if compatible, false otherwise.
+     */
+    public boolean compareCompatibility(final DXRAMVersion p_other) {
+        return m_major == p_other.m_major && m_minor == p_other.m_minor;
+    }
 
+    /**
+     * Create a DXRAMVersion object from a string
+     *
+     * @param p_version
+     *         Version string
+     * @return DXRAMVersion object
+     */
+    public static DXRAMVersion fromString(final String p_version) {
         Pattern pattern = Pattern.compile("^(\\d).(\\d).(\\d)(?:-\\w+)*$");
 
         Matcher matcher = pattern.matcher(p_version);

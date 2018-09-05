@@ -3,13 +3,12 @@ package de.hhu.bsinfo.dxram.app;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
-import com.google.gson.annotations.Expose;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+
+import com.google.gson.annotations.Expose;
+
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 
 /**
  * Config for the ApplicationService
@@ -21,11 +20,31 @@ import java.util.List;
 @EqualsAndHashCode(callSuper = false)
 @DXRAMServiceConfig.Settings(service = ApplicationService.class, supportsSuperpeer = false, supportsPeer = true)
 public class ApplicationServiceConfig extends DXRAMServiceConfig {
+    @Data
+    @Accessors(prefix = "m_")
+    public static class ApplicationEntry {
+        /**
+         * Fully qualified name of the application class
+         */
+        @Expose
+        private String m_className;
 
-    @Expose
-    private List<String> m_autoStart = Arrays.asList("de.hhu.bsinfo.dxterm.server.TerminalServerApplication");
+        /**
+         * Arguments to pass to the application on start
+         */
+        @Expose
+        private String[] m_args;
 
-    public List<String> getAutoStartApps() {
-        return m_autoStart;
+        /**
+         * Integer to determine the start order of applications
+         */
+        @Expose
+        private int m_startOrderId;
     }
+
+    /**
+     * List of applications to run once DXRAM finished booting
+     */
+    @Expose
+    private List<ApplicationEntry> m_autoStart;
 }
