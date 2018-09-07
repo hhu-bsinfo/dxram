@@ -115,7 +115,6 @@ class ApplicationLoader {
             }
 
             try {
-                LOGGER.info("Loading class %s", classname);
                 Class<?> clazz = Class.forName(classname, true, ucl);
 
                 if (AbstractApplication.class.equals(clazz.getSuperclass())) {
