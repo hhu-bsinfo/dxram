@@ -53,7 +53,9 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
 
         // check if a config needs to be created
         if (!new File(config).exists()) {
-            createDefaultConfiguration(config, p_componentManager, p_serviceManager);
+            if (!createDefaultConfiguration(config, p_componentManager, p_serviceManager)) {
+                return null;
+            }
 
             LOGGER.info("Default configuration created (%s), please restart DXRAM", config);
             return null;
@@ -67,8 +69,9 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
      *
      * @param p_configFilePath
      *         Path for configuration file
+     * @return True if creating default config was successful, false on error
      */
-    private static void createDefaultConfiguration(final String p_configFilePath,
+    static boolean createDefaultConfiguration(final String p_configFilePath,
             final DXRAMComponentManager p_componentManager, final DXRAMServiceManager p_serviceManager) {
         String configFilePath;
 
@@ -86,18 +89,18 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
         if (file.exists()) {
             if (!file.delete()) {
                 LOGGER.error("Deleting existing config file %s failed", file);
-                return;
+                return false;
             }
         }
 
         try {
             if (!file.createNewFile()) {
                 LOGGER.error("Creating new config file %s failed", file);
-                return;
+                return false;
             }
         } catch (final IOException e) {
             LOGGER.error("Creating new config file %s failed: %s", file, e.getMessage());
-            return;
+            return false;
         }
 
         DXRAMContext context = new DXRAMContext();
@@ -114,6 +117,8 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
         } catch (final FileNotFoundException e) {
             // we can ignored this here, already checked that
         }
+
+        return true;
     }
 
     /**
@@ -123,7 +128,7 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
      *         Path to existing configuration file
      * @return DXRAMContext instance on success, null on failure
      */
-    private static DXRAMContext loadConfiguration(final String p_configFilePath) {
+    static DXRAMContext loadConfiguration(final String p_configFilePath) {
         LOGGER.info("Loading configuration '%s'...", p_configFilePath);
 
         Gson gson = DXRAMGsonContext.createGsonInstance();
