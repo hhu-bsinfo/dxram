@@ -6,17 +6,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Properties;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
-import de.hhu.bsinfo.dxutils.JsonUtil;
-import de.hhu.bsinfo.dxutils.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -147,7 +143,10 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
             return null;
         }
 
-        JsonUtil.override(element, System.getProperties(), "dxram.", Collections.singletonList("dxram.config"));
+        gson.toJson(element);
+        LOGGER.info(element.);
+
+        overrideConfigurationWithVMArguments(element.getAsJsonObject());
 
         DXRAMContext context;
 

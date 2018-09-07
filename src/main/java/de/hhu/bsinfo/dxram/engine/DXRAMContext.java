@@ -17,6 +17,7 @@
 package de.hhu.bsinfo.dxram.engine;
 
 import lombok.Data;
+import lombok.ToString;
 import lombok.experimental.Accessors;
 
 import java.util.HashMap;
@@ -35,6 +36,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.10.2016
  */
+@ToString
 public class DXRAMContext {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMContext.class.getSimpleName());
 
@@ -220,6 +222,7 @@ public class DXRAMContext {
     /**
      * Class providing configuration values for engine and all components/services
      */
+    @ToString
     public static class Config {
         /**
          * Engine specific settings
@@ -278,6 +281,7 @@ public class DXRAMContext {
      */
     @Data
     @Accessors(prefix = "m_")
+    @ToString
     public static class EngineConfig {
         /**
          * Address and port of this instance

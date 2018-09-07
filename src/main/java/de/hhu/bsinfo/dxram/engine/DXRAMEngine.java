@@ -220,6 +220,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             return false;
         }
 
+        LOGGER.debug("Created context: %s", m_context);
+
         // verify configuration values
         if (!m_context.verifyConfigurationValuesComponents()) {
             return false;
