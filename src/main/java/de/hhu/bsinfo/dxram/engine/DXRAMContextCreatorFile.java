@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Properties;
 
@@ -15,6 +16,8 @@ import com.google.gson.JsonObject;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import de.hhu.bsinfo.dxutils.JsonUtil;
 
 /**
  * The default context creator which loads a configuration from a file, creates a default configuration and writes
@@ -143,10 +146,7 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
             return null;
         }
 
-        gson.toJson(element);
-        LOGGER.info(element.);
-
-        overrideConfigurationWithVMArguments(element.getAsJsonObject());
+        JsonUtil.override(element, System.getProperties(), "dxram.", Collections.singletonList("dxram.config"));
 
         DXRAMContext context;
 
@@ -163,5 +163,85 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
         }
 
         return context;
+    }
+
+    /**
+     * Override current configuration with further values provided via VM arguments
+     *
+     * @param p_object
+     *         Root object of JSON configuration tree
+     */
+    private static void overrideConfigurationWithVMArguments(final JsonObject p_object) {
+        Properties props = System.getProperties();
+        Enumeration e = props.propertyNames();
+
+        while (e.hasMoreElements()) {
+            String key = (String) e.nextElement();
+
+            if (key.startsWith("dxram.") && !"dxram.config".equals(key)) {
+
+                String[] tokens = key.split("\\.");
+
+                JsonObject parent = p_object;
+                JsonObject child = null;
+
+                // skip dxram token
+                for (int i = 1; i < tokens.length; i++) {
+
+                    JsonElement elem;
+
+                    // support access to arrays/maps
+                    if (tokens[i].contains("[")) {
+                        String[] arrayTokens = tokens[i].split("\\[");
+                        // trim ]
+                        arrayTokens[1] = arrayTokens[1].substring(0, arrayTokens[1].length() - 1);
+
+                        JsonElement elemArray = parent.get(arrayTokens[0]);
+                        elem = elemArray.getAsJsonObject().get(arrayTokens[1]);
+                    } else {
+                        elem = parent.get(tokens[i]);
+                    }
+
+                    // if first element is already invalid
+                    if (elem == null) {
+                        break;
+                    }
+
+                    if (elem.isJsonObject()) {
+                        child = elem.getAsJsonObject();
+                    } else if (i + 1 == tokens.length) {
+                        break;
+                    }
+
+                    if (child == null) {
+                        break;
+                    }
+
+                    parent = child;
+                }
+
+                String propertyKey = props.getProperty(key);
+
+                // try to determine type, not a very nice way =/
+                if (propertyKey.matches("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                        "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$")) {
+                    // ip address
+                    parent.addProperty(tokens[tokens.length - 1], propertyKey);
+                    LOGGER.debug("Overriding IP address %s of parent %s with %s", tokens[tokens.length - 1], parent,
+                            propertyKey);
+                } else if (propertyKey.matches("[-+]?\\d*\\.?\\d+")) {
+                    // numeric
+                    parent.addProperty(tokens[tokens.length - 1], Long.parseLong(propertyKey));
+                    LOGGER.debug("Overriding numeric %s of parent %s with %s", tokens[tokens.length - 1], parent,
+                            propertyKey);
+                } else {
+                    // string
+                    parent.addProperty(tokens[tokens.length - 1], propertyKey);
+                    LOGGER.debug("Overriding string %s of parent %s with %s", tokens[tokens.length - 1], parent,
+                            propertyKey);
+                }
+            }
+        }
     }
 }
