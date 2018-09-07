@@ -28,6 +28,13 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
 
     private static final String DXRAM_CONFIG_FILE_PATH = "config/dxram.json";
 
+    /**
+     * Constructor
+     */
+    public DXRAMContextCreatorFile() {
+
+    }
+
     @Override
     public DXRAMContext create(final DXRAMComponentManager p_componentManager,
             final DXRAMServiceManager p_serviceManager) {
