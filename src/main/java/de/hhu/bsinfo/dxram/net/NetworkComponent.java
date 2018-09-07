@@ -272,38 +272,46 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
         // node id is not loaded from config
         getConfig().getCoreConfig().setOwnNodeId(m_boot.getNodeId());
 
-        if (!"Infiniband".equals(getConfig().getCoreConfig().getDevice())) {
-            // Check if given ip address is bound to one of this node's network interfaces
-            boolean found = false;
-            InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeId()).getAddress();
-            try {
-                Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-                outerloop:
-                while (networkInterfaces.hasMoreElements()) {
-                    NetworkInterface currentNetworkInterface = networkInterfaces.nextElement();
-                    Enumeration<InetAddress> addresses = currentNetworkInterface.getInetAddresses();
-                    while (addresses.hasMoreElements()) {
-                        InetAddress currentAddress = addresses.nextElement();
-                        if (myAddress.equals(currentAddress)) {
+        switch (getConfig().getCoreConfig().getDevice()) {
+            case ETHERNET: {
+                // Check if given ip address is bound to one of this node's network interfaces
+                boolean found = false;
+                InetAddress myAddress = m_boot.getNodeAddress(m_boot.getNodeId()).getAddress();
+                try {
+                    Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+                    outerloop:
+                    while (networkInterfaces.hasMoreElements()) {
+                        NetworkInterface currentNetworkInterface = networkInterfaces.nextElement();
+                        Enumeration<InetAddress> addresses = currentNetworkInterface.getInetAddresses();
+                        while (addresses.hasMoreElements()) {
+                            InetAddress currentAddress = addresses.nextElement();
+                            if (myAddress.equals(currentAddress)) {
 
-                            LOGGER.info("%s is bound to %s", myAddress.getHostAddress(),
-                                    currentNetworkInterface.getDisplayName());
+                                LOGGER.info("%s is bound to %s", myAddress.getHostAddress(),
+                                        currentNetworkInterface.getDisplayName());
 
-                            found = true;
-                            break outerloop;
+                                found = true;
+                                break outerloop;
+                            }
                         }
                     }
+                } catch (final SocketException ignored) {
+                    LOGGER.error("Could not get network interfaces for ip confirmation");
+                } finally {
+                    if (!found) {
+                        LOGGER.error("Could not find network interface with address %s", myAddress.getHostAddress());
+                        return false;
+                    }
                 }
-            } catch (final SocketException ignored) {
-                LOGGER.error("Could not get network interfaces for ip confirmation");
-            } finally {
-                if (!found) {
-                    LOGGER.error("Could not find network interface with address %s", myAddress.getHostAddress());
-                    return false;
-                }
+
+                break;
             }
-        } else {
-            DXRAMJNIManager.loadJNIModule("MsgrcJNIBinding");
+
+            case INFINIBAND: {
+                DXRAMJNIManager.loadJNIModule("MsgrcJNIBinding");
+
+                break;
+            }
         }
 
         m_dxnet = new DXNet(getConfig().getCoreConfig(), getConfig().getNioConfig(), getConfig().getIbConfig(), null,
