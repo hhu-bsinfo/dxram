@@ -6,13 +6,17 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Properties;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
+import de.hhu.bsinfo.dxutils.JsonUtil;
+import de.hhu.bsinfo.dxutils.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -138,7 +142,11 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
             return null;
         }
 
-        overrideConfigurationWithVMArguments(element.getAsJsonObject());
+        JsonUtil.override(element, System.getProperties(), "dxram.", Collections.singletonList("dxram.config"));
+
+        //overrideConfigurationWithVMArguments(element.getAsJsonObject());
+
+        LOGGER.info(element.getAsJsonObject().toString());
 
         DXRAMContext context;
 
@@ -189,7 +197,15 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
                         arrayTokens[1] = arrayTokens[1].substring(0, arrayTokens[1].length() - 1);
 
                         JsonElement elemArray = parent.get(arrayTokens[0]);
-                        elem = elemArray.getAsJsonObject().get(arrayTokens[1]);
+
+                        LOGGER.info("Reading %s[%s]", arrayTokens[0], arrayTokens[1]);
+                        // Differentiate between arrays and maps
+                        if (StringUtils.isNumeric(arrayTokens[1])) {
+                            LOGGER.info("Found numeric index at %s", arrayTokens[0]);
+                            elem = getOrCreateArrayObject(elemArray, Integer.parseInt(arrayTokens[1]));
+                        } else {
+                            elem = elemArray.getAsJsonObject().get(arrayTokens[1]);
+                        }
                     } else {
                         elem = parent.get(tokens[i]);
                     }
@@ -199,7 +215,7 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
                         break;
                     }
 
-                    if (elem.isJsonObject()) {
+                    if (elem.isJsonObject() || elem.isJsonArray()) {
                         child = elem.getAsJsonObject();
                     } else if (i + 1 == tokens.length) {
                         break;
@@ -212,22 +228,46 @@ public class DXRAMContextCreatorFile implements DXRAMContextCreator {
                     parent = child;
                 }
 
-                String propertyKey = props.getProperty(key);
+                String jsonKey = tokens[tokens.length - 1];
+                String jsonValue = props.getProperty(key);
+                LOGGER.info("Setting %s to %s", jsonKey, jsonValue);
 
                 // try to determine type, not a very nice way =/
-                if (propertyKey.matches("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                if (jsonValue.matches("^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." + "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
                         "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
                         "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$")) {
                     // ip address
-                    parent.addProperty(tokens[tokens.length - 1], propertyKey);
-                } else if (propertyKey.matches("[-+]?\\d*\\.?\\d+")) {
+                    parent.addProperty(jsonKey, jsonValue);
+                } else if (jsonValue.matches("[-+]?\\d*\\.?\\d+")) {
                     // numeric
-                    parent.addProperty(tokens[tokens.length - 1], Long.parseLong(propertyKey));
+                    parent.addProperty(jsonKey, Long.parseLong(jsonValue));
                 } else {
                     // string
-                    parent.addProperty(tokens[tokens.length - 1], propertyKey);
+                    parent.addProperty(jsonKey, jsonValue);
                 }
             }
         }
+    }
+
+    private static JsonObject getOrCreateArrayObject(final JsonElement p_parent, final int p_index) {
+        JsonArray array =  p_parent.getAsJsonArray();
+
+        int size = array.size();
+        if (p_index > size) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        JsonObject object;
+        if (p_index == size) {
+            LOGGER.info("Creating new autostart entry");
+            object = new JsonObject();
+            array.add(object);
+            LOGGER.info(array.toString());
+        } else {
+            LOGGER.info("Reusing old autostart entry");
+            object = array.get(p_index).getAsJsonObject();
+        }
+
+        return object;
     }
 }

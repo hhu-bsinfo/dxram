@@ -17,6 +17,8 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     // component dependencies
     private ApplicationComponent m_appComponent;
 
+    private static final String ARG_SEPERATOR = "@";
+
     /**
      * Constructor
      */
@@ -95,6 +97,6 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     protected void engineInitFinished() {
         List<ApplicationServiceConfig.ApplicationEntry> list = getConfig().getAutoStart();
         list.sort(Comparator.comparingInt(ApplicationServiceConfig.ApplicationEntry::getStartOrderId));
-        getConfig().getAutoStart().forEach(entry -> startApplication(entry.getClassName(), entry.getArgs()));
+        getConfig().getAutoStart().forEach(entry -> startApplication(entry.getClassName(), entry.getArgs().split(ARG_SEPERATOR)));
     }
 }

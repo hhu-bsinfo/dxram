@@ -34,7 +34,7 @@ public class ApplicationServiceConfig extends DXRAMServiceConfig {
          * Arguments to pass to the application on start
          */
         @Expose
-        private String[] m_args = new String[0];
+        private String m_args;
 
         /**
          * Integer to determine the start order of applications
