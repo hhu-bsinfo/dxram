@@ -17,9 +17,12 @@
 package de.hhu.bsinfo.dxram.net;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 import de.hhu.bsinfo.dxnet.NodeMap;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 
 /**
  * Wrapper interface to hide the boot component for dxnet
@@ -27,9 +30,10 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-class NodeMappings implements NodeMap {
-
+class NodeMappings implements NodeMap, NodeRegistry.Listener {
     private AbstractBootComponent m_boot;
+
+    private List<NodeMap.Listener> m_listener;
 
     /**
      * Constructor
@@ -39,6 +43,9 @@ class NodeMappings implements NodeMap {
      */
     NodeMappings(final AbstractBootComponent p_bootComponent) {
         m_boot = p_bootComponent;
+        m_listener = new ArrayList<>();
+
+        m_boot.registerRegistryListener(this);
     }
 
     @Override
@@ -49,5 +56,55 @@ class NodeMappings implements NodeMap {
     @Override
     public InetSocketAddress getAddress(final short p_nodeID) {
         return m_boot.getNodeAddress(p_nodeID);
+    }
+
+    @Override
+    public List<Mapping> getAvailableMappings() {
+        List<Mapping> mappings = new ArrayList<>();
+        List<NodeRegistry.NodeDetails> details = m_boot.getOnlineNodes();
+
+        for (NodeRegistry.NodeDetails detail : details) {
+            mappings.add(new Mapping(detail.getId(), detail.getAddress()));
+        }
+
+        return mappings;
+    }
+
+    @Override
+    public void registerListener(final Listener p_listener) {
+        m_listener.add(p_listener);
+    }
+
+    @Override
+    public void onPeerJoined(final NodeRegistry.NodeDetails p_nodeDetails) {
+        for (NodeMap.Listener listener : m_listener) {
+            listener.nodeMappingAdded(p_nodeDetails.getId(), p_nodeDetails.getAddress());
+        }
+    }
+
+    @Override
+    public void onPeerLeft(final NodeRegistry.NodeDetails p_nodeDetails) {
+        for (NodeMap.Listener listener : m_listener) {
+            listener.nodeMappingRemoved(p_nodeDetails.getId());
+        }
+    }
+
+    @Override
+    public void onSuperpeerJoined(final NodeRegistry.NodeDetails p_nodeDetails) {
+        for (NodeMap.Listener listener : m_listener) {
+            listener.nodeMappingAdded(p_nodeDetails.getId(), p_nodeDetails.getAddress());
+        }
+    }
+
+    @Override
+    public void onSuperpeerLeft(final NodeRegistry.NodeDetails p_nodeDetails) {
+        for (NodeMap.Listener listener : m_listener) {
+            listener.nodeMappingRemoved(p_nodeDetails.getId());
+        }
+    }
+
+    @Override
+    public void onNodeUpdated(final NodeRegistry.NodeDetails p_nodeDetails) {
+
     }
 }
