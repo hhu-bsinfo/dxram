@@ -16,13 +16,13 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
+import java.net.InetSocketAddress;
+import java.util.List;
+
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-
-import java.net.InetSocketAddress;
-import java.util.List;
 
 /**
  * Component executing the bootstrapping of a node in DXRAM.
@@ -46,6 +46,14 @@ public abstract class AbstractBootComponent<T extends DXRAMComponentConfig> exte
             final Class<T> p_configClass) {
         super(p_priorityInit, p_priorityShutdown, p_configClass);
     }
+
+    /**
+     * Register a node registry listener
+     *
+     * @param p_listener
+     *         Listener to register
+     */
+    public abstract void registerRegistryListener(final NodeRegistry.Listener p_listener);
 
     /**
      * Returns this node's details.

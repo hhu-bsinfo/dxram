@@ -45,8 +45,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 @SuppressWarnings("WeakerAccess")
-public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig>
-        implements NodeRegistry.Listener {
+public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> {
 
     private DXRAMContext.Config m_contextConfig;
 
@@ -108,7 +107,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         m_curatorClient = CuratorFrameworkFactory.newClient(zooKeeperAddress, RETRY_POLICY);
         m_curatorClient.start();
 
-        m_nodeRegistry = new NodeRegistry(m_curatorClient, this);
+        m_nodeRegistry = new NodeRegistry(m_curatorClient);
         m_counter = new DistributedAtomicInteger(m_curatorClient, COUNTER_PATH, RETRY_POLICY);
 
         // Assign a globally unique counter value to this superpeer
@@ -359,6 +358,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     @Override
+    public void registerRegistryListener(final NodeRegistry.Listener p_listener) {
+        m_nodeRegistry.registerListener(p_listener);
+    }
+
+    @Override
     public NodeRegistry.NodeDetails getDetails() {
         return m_nodeRegistry.getDetails();
     }
@@ -510,35 +514,5 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         }
 
         return details.getCapabilities();
-    }
-
-    @Override
-    public void onPeerJoined(NodeRegistry.NodeDetails p_nodeDetails) {
-        LOGGER.info("Node %s with capabilities %s joined the network",
-                p_nodeDetails, NodeCapabilities.toString(p_nodeDetails.getCapabilities()));
-    }
-
-    @Override
-    public void onPeerLeft(NodeRegistry.NodeDetails p_nodeDetails) {
-        LOGGER.info("Node %s with capabilities %s left the network",
-                p_nodeDetails, NodeCapabilities.toString(p_nodeDetails.getCapabilities()));
-    }
-
-    @Override
-    public void onSuperpeerJoined(NodeRegistry.NodeDetails p_nodeDetails) {
-        LOGGER.info("Node %s with capabilities %s joined the network",
-                p_nodeDetails, NodeCapabilities.toString(p_nodeDetails.getCapabilities()));
-    }
-
-    @Override
-    public void onSuperpeerLeft(NodeRegistry.NodeDetails p_nodeDetails) {
-        LOGGER.info("Node %s with capabilities %s left the network",
-                p_nodeDetails, NodeCapabilities.toString(p_nodeDetails.getCapabilities()));
-    }
-
-    @Override
-    public void onNodeUpdated(NodeRegistry.NodeDetails p_nodeDetails) {
-        LOGGER.info("Updated node %s with capabilities %s",
-                p_nodeDetails, NodeCapabilities.toString(p_nodeDetails.getCapabilities()));
     }
 }
