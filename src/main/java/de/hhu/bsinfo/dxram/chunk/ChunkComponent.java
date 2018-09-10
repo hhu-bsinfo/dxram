@@ -22,6 +22,7 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 
 /**
  * Component class for local chunk handling (access to local key-value memory)
@@ -66,7 +67,7 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
         LOGGER.info("Allocating native memory (%d mb). This may take a while...",
                 p_config.getComponentConfig(ChunkComponentConfig.class).getKeyValueStoreSize().getMB());
 

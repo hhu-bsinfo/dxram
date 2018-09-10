@@ -6,6 +6,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 
 /**
  * Component to run applications locally on the DXRAM instance with access to all exposed services
@@ -82,7 +83,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
         m_loader = new ApplicationLoader(getConfig().getApplicationPath());
         m_runner = new ApplicationRunner(m_loader, getParentEngine().getVersion(), getParentEngine());
 

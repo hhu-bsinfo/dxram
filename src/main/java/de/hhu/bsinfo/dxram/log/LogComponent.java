@@ -462,7 +462,7 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
 
         applyConfiguration(getConfig());
 
@@ -475,11 +475,19 @@ public class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
             m_flushLock = new ReentrantLock(false);
 
             // Load jni modules
-            DXRAMJNIManager.loadJNIModule("JNINativeCRCGenerator");
+            if (!p_jniManager.loadJNIModule("JNINativeCRCGenerator")) {
+                return false;
+            }
+
             if (m_mode == HarddriveAccessMode.ODIRECT) {
-                DXRAMJNIManager.loadJNIModule(HarddriveAccessMode.getJNIFileName(m_mode));
+                if (!p_jniManager.loadJNIModule(HarddriveAccessMode.getJNIFileName(m_mode))) {
+                    return false;
+                }
             } else if (m_mode == HarddriveAccessMode.RAW_DEVICE) {
-                DXRAMJNIManager.loadJNIModule(HarddriveAccessMode.getJNIFileName(m_mode));
+                if (!p_jniManager.loadJNIModule(HarddriveAccessMode.getJNIFileName(m_mode))) {
+                    return false;
+                }
+
                 JNIFileRaw.prepareRawDevice(getConfig().getRawDevicePath(), 0);
             }
 

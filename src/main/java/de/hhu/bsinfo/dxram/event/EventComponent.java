@@ -24,6 +24,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 
 /**
  * Node local event system to notify other listening components about
@@ -103,7 +104,7 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
         LOGGER.info("EventExecutor: Initialising %d threads", getConfig().getThreadCount());
 
         m_executor = new TaskExecutor("EventExecutor", getConfig().getThreadCount());

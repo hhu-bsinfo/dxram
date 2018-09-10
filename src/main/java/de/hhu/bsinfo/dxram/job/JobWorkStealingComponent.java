@@ -22,6 +22,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.job.ws.Worker;
 import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
 
@@ -100,7 +101,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
         m_workers = new Worker[getConfig().getNumWorkers()];
 
         for (int i = 0; i < m_workers.length; i++) {

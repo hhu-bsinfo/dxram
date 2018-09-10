@@ -268,7 +268,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
         // node id is not loaded from config
         getConfig().getCoreConfig().setOwnNodeId(m_boot.getNodeId());
 
@@ -308,7 +308,9 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
             }
 
             case INFINIBAND: {
-                DXRAMJNIManager.loadJNIModule("MsgrcJNIBinding");
+                if (p_jniManager.loadJNIModule("MsgrcJNIBinding")) {
+                    return false;
+                }
 
                 break;
             }

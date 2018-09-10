@@ -33,6 +33,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.CRC16;
@@ -90,7 +91,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      * @return True if initialing was successful, false otherwise.
      */
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
         m_contextConfig = p_config;
         m_address = m_contextConfig.getEngineConfig().getAddress().getIP();
         m_port = m_contextConfig.getEngineConfig().getAddress().getPort();

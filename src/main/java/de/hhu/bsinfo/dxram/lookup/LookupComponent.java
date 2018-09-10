@@ -31,6 +31,7 @@ import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
@@ -713,7 +714,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
         // Set static values for backup range (cannot be set in BackupComponent as superpeers do not initialize it)
         BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponentConfig.class);
         BackupRange.setReplicationFactor(backupConfig.getReplicationFactor());
