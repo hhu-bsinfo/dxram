@@ -16,6 +16,8 @@
 
 package de.hhu.bsinfo.dxram.monitoring;
 
+import java.io.IOException;
+
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
@@ -75,7 +77,12 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
 
             if (diskIdentifier.isEmpty()) {
                 // pick first disk found
-                diskIdentifier = DeviceLister.getDisks().get(0);
+                try {
+                    diskIdentifier = DeviceLister.getDisks().get(0);
+                } catch (final IOException e) {
+                    LOGGER.error("Failed to auto assign first disk identifier: %s", e.getMessage());
+                    return false;
+                }
 
                 LOGGER.warn("Empty disk identifier from config, auto assigning disk: %s", diskIdentifier);
             }
@@ -83,7 +90,12 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
             String nicIdentifier = componentConfig.getNic();
 
             if (nicIdentifier.isEmpty()) {
-                nicIdentifier = DeviceLister.getNICs().get(0);
+                try {
+                    nicIdentifier = DeviceLister.getNICs().get(0);
+                } catch (final IOException e) {
+                    LOGGER.error("Failed to auto assign first NIC identifier: %s", e.getMessage());
+                    return false;
+                }
 
                 LOGGER.warn("Empty NIC identifier from config, auto assigning interface: %s", nicIdentifier);
             }

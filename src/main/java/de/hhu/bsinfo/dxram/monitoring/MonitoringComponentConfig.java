@@ -21,6 +21,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.File;
+import java.io.IOException;
 
 import com.google.gson.annotations.Expose;
 
@@ -89,14 +90,22 @@ public class MonitoringComponentConfig extends DXRAMComponentConfig {
             return false;
         }
 
-        if (!m_nic.isEmpty() && !DeviceLister.getNICs().contains(m_nic)) {
-            LOGGER.error("Monitoring component - m_nic [%s] is invalid", m_nic);
-            return false;
+        try {
+            if (!m_nic.isEmpty() && !DeviceLister.getNICs().contains(m_nic)) {
+                LOGGER.error("Monitoring component - m_nic [%s] is invalid", m_nic);
+                return false;
+            }
+        } catch (final IOException ignored) {
+            LOGGER.warn("Getting available NICs to verify configured NIC failed, ignore");
         }
 
-        if (!m_disk.isEmpty() && !DeviceLister.getDisks().contains(m_disk)) {
-            LOGGER.error("Monitoring component - m_diskIdentifier [%s] is invalid", m_disk);
-            return false;
+        try {
+            if (!m_disk.isEmpty() && !DeviceLister.getDisks().contains(m_disk)) {
+                LOGGER.error("Monitoring component - m_diskIdentifier [%s] is invalid", m_disk);
+                return false;
+            }
+        } catch (final IOException ignored) {
+            LOGGER.warn("Getting available disks to verify configured disk failed, ignore");
         }
 
         if (m_monitoringFolder.isEmpty() || !new File(m_monitoringFolder).exists()) {
