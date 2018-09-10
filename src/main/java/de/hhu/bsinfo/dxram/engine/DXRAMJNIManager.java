@@ -16,6 +16,9 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,26 +32,29 @@ import de.hhu.bsinfo.dxutils.OSValidator;
 public final class DXRAMJNIManager {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMJNIManager.class.getSimpleName());
 
-    private static String ms_jniPath;
+    private final File m_jniPath;
 
     /**
      * Constructor
+     *
+     * @param p_jniPath Path to root folder with jni libraries
      */
-    private DXRAMJNIManager() {
+    DXRAMJNIManager(final String p_jniPath) throws FileNotFoundException {
+        m_jniPath = new File(p_jniPath);
+
+        if (!m_jniPath.exists()) {
+            throw new FileNotFoundException("JNI root directory " + m_jniPath.getAbsolutePath() + " does not exist");
+        }
     }
 
     /**
-     * Setup JNI related things for DXRAM according to the provided profile via settings.
+     * Load a JNI module
      *
      * @param p_module
      *         the module to load.
+     * @return True if module loaded, false on error.
      */
-    public static void loadJNIModule(final String p_module) {
-
-        LOGGER.debug("Setting up JNI class for %s", p_module);
-
-        String path;
-        final String cwd = System.getProperty("user.dir");
+    public boolean loadJNIModule(final String p_module) {
         String extension;
 
         if (OSValidator.isUnix()) {
@@ -56,28 +62,27 @@ public final class DXRAMJNIManager {
         } else if (OSValidator.isMac()) {
             extension = ".dylib";
         } else {
-
-            LOGGER.error("Non supported OS");
-
-            return;
+            LOGGER.error("Non supported OS for module %s", p_module);
+            return false;
         }
 
         // Load JNI-lib for given module
-        path = cwd + '/' + ms_jniPath + "/lib" + p_module + extension;
+        File module = new File(m_jniPath.getAbsolutePath() + "/lib" + p_module + extension);
 
-        LOGGER.debug("Loading %s: %s", p_module, path);
+        if (!module.exists()) {
+            LOGGER.error("Failed to load module %s from %s, does not exist", p_module, module.getAbsolutePath());
+            return false;
+        }
 
-        System.load(path);
+        LOGGER.info("Loading module %s: %s", p_module, module.getAbsolutePath());
+
+        try {
+            System.load(module.getAbsolutePath());
+        } catch (final Throwable e) {
+            LOGGER.error("Loading module %s from %s failed: %s", p_module, module.getAbsolutePath(), e.getMessage());
+            return false;
+        }
+
+        return true;
     }
-
-    /**
-     * Setup JNI related things for DXRAM according to the provided profile via settings.
-     *
-     * @param p_engineConfig
-     *         EngineConfig data for setup.
-     */
-    public static void setup(final DXRAMContext.EngineConfig p_engineConfig) {
-        ms_jniPath = p_engineConfig.getJniPath();
-    }
-
 }

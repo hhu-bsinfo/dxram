@@ -47,7 +47,7 @@ public class NullComponent extends AbstractDXRAMComponent<NullComponentConfig> {
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config) {
+    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
         return true;
     }
 

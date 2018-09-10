@@ -87,7 +87,7 @@ public abstract class AbstractDXRAMComponent<T extends DXRAMComponentConfig> {
         resolveComponentDependencies(p_engine);
 
         try {
-            ret = initComponent(m_parentEngine.getConfig());
+            ret = initComponent(m_parentEngine.getConfig(), p_engine.getJNIManager());
         } catch (final Exception e) {
             LOGGER.error("Initializing component failed", e);
 
@@ -165,9 +165,10 @@ public abstract class AbstractDXRAMComponent<T extends DXRAMComponentConfig> {
      *
      * @param p_config
      *         Configuration instance provided by the engine.
+     * @param p_jniManager Instance of JNI manager to load JNI libraries
      * @return True if initialing was successful, false otherwise.
      */
-    protected abstract boolean initComponent(final DXRAMContext.Config p_config);
+    protected abstract boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager);
 
     /**
      * Called when the component gets shut down. Cleanup your component in here.
