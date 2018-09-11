@@ -76,8 +76,10 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
 
         ret = new BackupPeer[ms_replicationFactor];
         for (int i = 0; i < ms_replicationFactor; i++) {
-            ret[i] = new BackupPeer((short) ((p_backupPeers & 0x000000000000FFFFL << i * 16) >> i * 16), (short) 0,
-                    (short) 0);
+            short node = (short) ((p_backupPeers & 0x000000000000FFFFL << i * 16) >> i * 16);
+            if (node != NodeID.INVALID_ID) {
+                ret[i] = new BackupPeer(node, (short) 0, (short) 0);
+            }
         }
 
         return ret;
@@ -94,10 +96,11 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
         long ret = 0;
 
         for (int i = 0; i < ms_replicationFactor; i++) {
-            if (p_backupPeers[i] == null) {
-                break;
+            if (p_backupPeers[i] != null) {
+                ret += (p_backupPeers[i].getNodeID() & 0x000000000000FFFFL) << i * 16;
+            } else {
+                ret += (NodeID.INVALID_ID & 0x000000000000FFFFL) << i * 16;
             }
-            ret += (p_backupPeers[i].getNodeID() & 0x000000000000FFFFL) << i * 16;
         }
 
         return ret;
