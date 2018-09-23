@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
 @DXRAMComponentConfig.Settings(component = LogComponent.class, supportsSuperpeer = false, supportsPeer = true)
-public class LogComponentConfig extends DXRAMComponentConfig {
+public final class LogComponentConfig extends DXRAMComponentConfig {
 
     private static final int COLD_DATA_THRESHOLD = 9000;
 
@@ -103,11 +103,11 @@ public class LogComponentConfig extends DXRAMComponentConfig {
 
     }
 
-    public LogComponentConfig(final String p_harddriveAccess, final String p_rawDevicePath,
-            final boolean p_useChecksums, final boolean p_useTimestamps, final int p_flashPageSize,
-            final int p_logSegmentSize, final int p_primaryLogSize, final int p_writeBufferSize,
-            final int p_secondaryLogBufferSize, final int p_utilizationActivateReorganization,
-            final int p_utilizationPromptReorganization, final int p_coldDataThresholdSec) {
+    LogComponentConfig(final String p_harddriveAccess, final String p_rawDevicePath, final boolean p_useChecksums,
+            final boolean p_useTimestamps, final int p_flashPageSize, final int p_logSegmentSize,
+            final int p_primaryLogSize, final int p_writeBufferSize, final int p_secondaryLogBufferSize,
+            final int p_utilizationActivateReorganization, final int p_utilizationPromptReorganization,
+            final int p_coldDataThresholdSec) {
         m_harddriveAccess = p_harddriveAccess;
         m_rawDevicePath = p_rawDevicePath;
         m_useChecksums = p_useChecksums;

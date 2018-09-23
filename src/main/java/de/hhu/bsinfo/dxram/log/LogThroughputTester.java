@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
-import de.hhu.bsinfo.dxram.log.header.AbstractSecLogEntryHeader;
+import de.hhu.bsinfo.dxram.log.storage.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
@@ -35,10 +35,8 @@ import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 /**
  * Class for testing the logging and reorganization without starting DXRAM. Chunks are NOT send over network.
  * Example:
- * java -Dlog4j.configurationFile=config/log4j2.xml -cp lib/gson-2.7.jar:lib/log4j-api-2.7.jar:lib/log4j-core-2.7.jar:
- * dxram.jar
- * de.hhu.bsinfo.dxram.log.LogThroughputTester
- * 10000000 10 1024
+ * java -Dlog4j.configurationFile=config/log4j2.xml -cp "lib/*"  de.hhu.bsinfo.dxram.log.LogThroughputTester raf
+ * 100000 64 10 none 0
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 28.01.2018
  */
@@ -123,7 +121,7 @@ public final class LogThroughputTester {
             }
 
             LOGGER.info("Starting workload...");
-            Workload thread = null;
+            AbstractWorkload thread = null;
             if ("sequential".equals(ms_workload)) {
                 thread = new Sequential(rangeMapping);
             } else if ("random".equals(ms_workload)) {
@@ -225,7 +223,8 @@ public final class LogThroughputTester {
         System.out.printf("Parameters: access_mode=%s chunk_count=%d chunk_size=%d batch_size=%d " +
                         "workload=%s updates=%d timestamps=%s segment_size=%d primary_buffer_size=%d " +
                         "secondary_log_buffer_size=%d reorg_activation_utilization=%d " +
-                        "reorg_prompt_utilization=%d cold_data_threshold_sec=%d\n", ms_accessMode, ms_chunkCount, ms_size,
+                        "reorg_prompt_utilization=%d cold_data_threshold_sec=%d\n", ms_accessMode, ms_chunkCount,
+                ms_size,
                 ms_batchSize, ms_workload, ms_updates, ms_timestampsEnabled, ms_logSegmentSize, ms_primaryBufferSize,
                 ms_secondaryLogBufferSize, ms_utilizationReorgActivation, ms_utilizationReorgPrompt,
                 ms_coldDataThresholdSec);
@@ -289,6 +288,9 @@ public final class LogThroughputTester {
                                 ((double) p_timeDiffUpdatingNs / 1000 / 1000 / 1000) : 0);
     }
 
+    /**
+     * Load task for filling the logs.
+     */
     private static class Load extends Thread {
 
         private long[] m_rangeMapping;
@@ -340,7 +342,7 @@ public final class LogThroughputTester {
                 }
 
                 buffer.position(0);
-                ms_log.incomingLogChunks(rangeID, ms_batchSize, buffer, (short) 2);
+                ms_log.incomingLogChunks((short) 2, rangeID, ms_batchSize, buffer);
                 ms_chunksLogged += ms_batchSize;
             }
         }
@@ -349,25 +351,45 @@ public final class LogThroughputTester {
     /**
      * The worker thread executing the workload.
      */
-    private abstract static class Workload extends Thread {
+    private abstract static class AbstractWorkload extends Thread {
 
         long[] m_rangeMapping;
 
+        /**
+         * Initializes the distribution.
+         */
         abstract void initializeDistribution();
 
+        /**
+         * Returns the next chunk ID
+         *
+         * @return the next chunk ID
+         */
         abstract long getNextChunkID();
 
-        Workload(final long[] p_rangeMapping) {
+        /**
+         * Creates an instance of AbstractWorkload.
+         *
+         * @param p_rangeMapping
+         *         all available backup ranges
+         */
+        AbstractWorkload(final long[] p_rangeMapping) {
             m_rangeMapping = p_rangeMapping;
         }
     }
 
-    private static class Sequential extends Workload {
+    /**
+     * The sequential workload for updating chunks sequentially.
+     */
+    private static class Sequential extends AbstractWorkload {
 
         private long m_chunkID;
 
         /**
-         * Constructor
+         * Creates an instance of Sequential.
+         *
+         * @param p_rangeMapping
+         *         all available backup ranges
          */
         Sequential(final long[] p_rangeMapping) {
             super(p_rangeMapping);
@@ -421,7 +443,7 @@ public final class LogThroughputTester {
                     }
 
                     buffer.position(0);
-                    ms_log.incomingLogChunks(rangeID, ms_batchSize, buffer, (short) 2);
+                    ms_log.incomingLogChunks((short) 2, rangeID, ms_batchSize, buffer);
                     chunksLogged += ms_batchSize;
                     ms_chunksUpdated += ms_batchSize;
                 }
@@ -429,12 +451,18 @@ public final class LogThroughputTester {
         }
     }
 
-    private static class Random extends Workload {
+    /**
+     * The random workload for updating chunks randomly.
+     */
+    private static class Random extends AbstractWorkload {
 
         private java.util.Random m_rand;
 
         /**
-         * Constructor
+         * Creates an instance of Random.
+         *
+         * @param p_rangeMapping
+         *         all available backup ranges
          */
         Random(final long[] p_rangeMapping) {
             super(p_rangeMapping);
@@ -505,13 +533,16 @@ public final class LogThroughputTester {
                 }
 
                 buffer.position(0);
-                ms_log.incomingLogChunks(rangeID, ms_batchSize, buffer, (short) 2);
+                ms_log.incomingLogChunks((short) 2, rangeID, ms_batchSize, buffer);
                 ms_chunksUpdated += ms_batchSize;
             }
         }
     }
 
-    private static class Zipf extends Workload {
+    /**
+     * The zipf workload for updating chunks according to the zipf distribution.
+     */
+    private static class Zipf extends AbstractWorkload {
 
         private double m_skew = 1.0f;
         private java.util.Random m_rand;
@@ -520,7 +551,10 @@ public final class LogThroughputTester {
         private int[] m_permutation;
 
         /**
-         * Constructor
+         * Creates an instance of Zipf.
+         *
+         * @param p_rangeMapping
+         *         all available backup ranges
          */
         Zipf(final long[] p_rangeMapping) {
             super(p_rangeMapping);
@@ -649,13 +683,16 @@ public final class LogThroughputTester {
                 }
 
                 buffer.position(0);
-                ms_log.incomingLogChunks(rangeID, ms_batchSize, buffer, (short) 2);
+                ms_log.incomingLogChunks((short) 2, rangeID, ms_batchSize, buffer);
                 ms_chunksUpdated += ms_batchSize;
             }
         }
     }
 
-    private static class HotAndCold extends Workload {
+    /**
+     * The hot-and-cold workload for updating chunks according to the hot-and-cold distribution.
+     */
+    private static class HotAndCold extends AbstractWorkload {
 
         private static final float HOT_FRACTION = 0.1f;
         private static final float HOT_PROBABILITY = 0.9f;
@@ -666,7 +703,10 @@ public final class LogThroughputTester {
         private java.util.Random m_rand;
 
         /**
-         * Constructor
+         * Creates an instance of HotAndCold.
+         *
+         * @param p_rangeMapping
+         *         all available backup ranges
          */
         HotAndCold(final long[] p_rangeMapping) {
             super(p_rangeMapping);
@@ -766,7 +806,7 @@ public final class LogThroughputTester {
                 }
 
                 buffer.position(0);
-                ms_log.incomingLogChunks(rangeID, ms_batchSize, buffer, (short) 2);
+                ms_log.incomingLogChunks((short) 2, rangeID, ms_batchSize, buffer);
                 ms_chunksUpdated += ms_batchSize;
             }
         }

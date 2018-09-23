@@ -31,6 +31,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
 @DXRAMServiceConfig.Settings(service = LogService.class, supportsSuperpeer = false, supportsPeer = true)
-public class LogServiceConfig extends DXRAMServiceConfig {
+public final class LogServiceConfig extends DXRAMServiceConfig {
 
 }

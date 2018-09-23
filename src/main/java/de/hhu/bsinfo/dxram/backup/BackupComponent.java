@@ -111,15 +111,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     }
 
     /**
-     * Pass through for segment size of log
-     *
-     * @return Segment size of log in bytes
-     */
-    public int getLogSegmentSizeBytes() {
-        return m_log.getSegmentSizeBytes();
-    }
-
-    /**
      * Registers a chunk in a backup range. Creates a new backup range if necessary.
      *
      * @param p_chunkID
@@ -272,8 +263,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
         // Create a new backup range for recovered backup range; use two old backup peers
         m_lock.writeLock().lock();
         if (REREPLICATION_ACTIVE) {
-            replacementPeer = m_placementStrategy.determineReplacementBackupPeer(p_backupRange.getBackupPeers(),
-                    m_boot.getAvailableBackupPeers());
+            replacementPeer = m_placementStrategy
+                    .determineReplacementBackupPeer(p_backupRange.getBackupPeers(), m_boot.getAvailableBackupPeers());
         }
 
         if (replacementPeer == null) {
@@ -281,8 +272,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
             return NodeID.INVALID_ID;
         }
 
-        p_backupRange.replaceBackupPeer(new BackupPeer(m_nodeID, m_boot.getRack(), m_boot.getSwitch()),
-                replacementPeer);
+        p_backupRange
+                .replaceBackupPeer(new BackupPeer(m_nodeID, m_boot.getRack(), m_boot.getSwitch()), replacementPeer);
         p_backupRange.addChunks(p_recoveryMetadata.getSizeInBytes());
         p_backupRange.setRangeID((short) m_backupRanges.size());
 
@@ -295,8 +286,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
             if (backupPeer != null) {
 
                 LOGGER.info("%d. backup peer determined for recovered range %d of 0x%X (now: %d on 0x%X): 0x%X",
-                        counter++, oldBackupRange, p_failedPeer,
-                        p_backupRange.getRangeID(), m_nodeID, backupPeer.getNodeID());
+                        counter++, oldBackupRange, p_failedPeer, p_backupRange.getRangeID(), m_nodeID,
+                        backupPeer.getNodeID());
 
             }
         }
@@ -329,8 +320,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
             m_lock.writeLock().lock();
             rangeID = m_backupRangeTree.getBackupRange(p_chunkID);
             backupRange = m_backupRanges.get(rangeID);
-            size = p_size + m_log.getApproxHeaderSize(ChunkID.getCreatorID(p_chunkID), ChunkID.getLocalID(p_chunkID),
-                    p_size);
+            size = p_size +
+                    m_log.getApproxHeaderSize(ChunkID.getCreatorID(p_chunkID), ChunkID.getLocalID(p_chunkID), p_size);
 
             backupRange.removeChunk(size);
             m_lock.writeLock().unlock();
@@ -427,17 +418,16 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                     if (currentBackupPeer.getNodeID() == failedPeer.getNodeID()) {
                         if (REREPLICATION_ACTIVE) {
                             // Determine new backup peer and replace it in backup range
-                            newBackupPeer = m_placementStrategy.determineReplacementBackupPeer(backupPeers,
-                                    m_boot.getAvailableBackupPeers());
+                            newBackupPeer = m_placementStrategy
+                                    .determineReplacementBackupPeer(backupPeers, m_boot.getAvailableBackupPeers());
 
                             currentBackupRange.replaceBackupPeer(failedPeer, newBackupPeer);
                             m_lock.writeLock().unlock();
 
                             // Send new backup peer all chunks of backup range
                             if (newBackupPeer != null) {
-                                m_chunkBackup
-                                        .replicateBackupRange(newBackupPeer.getNodeID(),
-                                                m_backupRangeTree.getAllChunkIDRangesOfBackupRange(rangeID), rangeID);
+                                m_chunkBackup.replicateBackupRange(newBackupPeer.getNodeID(),
+                                        m_backupRangeTree.getAllChunkIDRangesOfBackupRange(rangeID), rangeID);
                             }
                         } else {
                             newBackupPeer = null;
@@ -485,9 +475,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                                 LOGGER.info("Replicating backup range %d to new peer %s", i, joinedPeer);
 
                                 // Backup range was not complete -> send all chunks to joined peer
-                                int num = m_chunkBackup
-                                        .replicateBackupRange(joinedPeer.getNodeID(),
-                                                m_backupRangeTree.getAllChunkIDRangesOfBackupRange(rangeID), rangeID);
+                                int num = m_chunkBackup.replicateBackupRange(joinedPeer.getNodeID(),
+                                        m_backupRangeTree.getAllChunkIDRangesOfBackupRange(rangeID), rangeID);
 
                                 LOGGER.info("Replicated %d chunk(s) of backup range %d to new peer %s", num, i,
                                         joinedPeer);
@@ -553,24 +542,22 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                 String placementStrategy = getConfig().getBackupPlacementStrategy();
                 switch (placementStrategy.toLowerCase()) {
                     case "random":
-                        m_placementStrategy =
-                                new RandomPlacement(getConfig().getReplicationFactor(),
-                                        getConfig().isDisjunctiveFirstBackupPeer(), getConfig().isRackAware(),
-                                        getConfig().isSwitchAware());
+                        m_placementStrategy = new RandomPlacement(getConfig().getReplicationFactor(),
+                                getConfig().isDisjunctiveFirstBackupPeer(), getConfig().isRackAware(),
+                                getConfig().isSwitchAware());
                         break;
                     case "copyset":
-                        m_placementStrategy =
-                                new CopysetPlacement(getConfig().getReplicationFactor(),
-                                        getConfig().isDisjunctiveFirstBackupPeer(), getConfig().isRackAware(),
-                                        getConfig().isSwitchAware());
+                        m_placementStrategy = new CopysetPlacement(getConfig().getReplicationFactor(),
+                                getConfig().isDisjunctiveFirstBackupPeer(), getConfig().isRackAware(),
+                                getConfig().isSwitchAware());
                         break;
                     default:
 
                         LOGGER.warn("Unknown replica placement strategy %s. Using disjunctive random placement!",
                                 placementStrategy);
 
-                        m_placementStrategy = new RandomPlacement(getConfig().getReplicationFactor(), true, false,
-                                false);
+                        m_placementStrategy =
+                                new RandomPlacement(getConfig().getReplicationFactor(), true, false, false);
                         break;
                 }
                 // TODO: initialize when needed
@@ -580,11 +567,9 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                 m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
                         LogMessages.SUBTYPE_INIT_BACKUP_RANGE_REQUEST, InitBackupRangeRequest.class);
                 m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
-                        LogMessages.SUBTYPE_INIT_BACKUP_RANGE_RESPONSE,
-                        InitBackupRangeResponse.class);
+                        LogMessages.SUBTYPE_INIT_BACKUP_RANGE_RESPONSE, InitBackupRangeResponse.class);
                 m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
-                        LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST,
-                        InitRecoveredBackupRangeRequest.class);
+                        LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_REQUEST, InitRecoveredBackupRangeRequest.class);
                 m_network.registerMessageType(DXRAMMessageTypes.LOG_MESSAGES_TYPE,
                         LogMessages.SUBTYPE_INIT_RECOVERED_BACKUP_RANGE_RESPONSE,
                         InitRecoveredBackupRangeResponse.class);
@@ -625,8 +610,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
         BackupRange ret = null;
         final int size;
 
-        size = p_size + m_log.getApproxHeaderSize(ChunkID.getCreatorID(p_chunkID), ChunkID.getLocalID(p_chunkID),
-                p_size);
+        size = p_size +
+                m_log.getApproxHeaderSize(ChunkID.getCreatorID(p_chunkID), ChunkID.getLocalID(p_chunkID), p_size);
 
         // First chunk to register -> initialize backup range
         if (m_currentBackupRange == null) {
@@ -639,17 +624,15 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                                 "Fallback to random replication! ***", availablePeers.size(),
                         m_placementStrategy.getReplicationFactor() * 5);
 
-                m_placementStrategy =
-                        new RandomPlacement(m_placementStrategy.getReplicationFactor(),
-                                m_placementStrategy.isDisjunctive(), m_placementStrategy.isRackAware(),
-                                m_placementStrategy.isSwitchAware());
+                m_placementStrategy = new RandomPlacement(m_placementStrategy.getReplicationFactor(),
+                        m_placementStrategy.isDisjunctive(), m_placementStrategy.isRackAware(),
+                        m_placementStrategy.isSwitchAware());
             }
 
             if (!m_placementStrategy.initialize(availablePeers)) {
-                m_placementStrategy =
-                        new RandomPlacement(m_placementStrategy.getReplicationFactor(),
-                                m_placementStrategy.isDisjunctive(), m_placementStrategy.isRackAware(),
-                                m_placementStrategy.isSwitchAware());
+                m_placementStrategy = new RandomPlacement(m_placementStrategy.getReplicationFactor(),
+                        m_placementStrategy.isDisjunctive(), m_placementStrategy.isRackAware(),
+                        m_placementStrategy.isSwitchAware());
             }
 
             initializeNewBackupRange();
@@ -718,8 +701,9 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
         BackupRange backupRange;
 
         m_lock.writeLock().lock();
-        backupRange = m_placementStrategy.determineBackupPeers((short) m_backupRanges.size(),
-                m_boot.getAvailableBackupPeers(), m_currentBackupRange);
+        backupRange = m_placementStrategy
+                .determineBackupPeers((short) m_backupRanges.size(), m_boot.getAvailableBackupPeers(),
+                        m_currentBackupRange);
         m_lock.writeLock().unlock();
 
         if (backupRange != null) {

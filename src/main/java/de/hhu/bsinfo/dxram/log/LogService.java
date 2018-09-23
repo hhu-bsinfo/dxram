@@ -43,7 +43,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class LogService extends AbstractDXRAMService<LogServiceConfig> implements SpecialMessageReceiver {
+public final class LogService extends AbstractDXRAMService<LogServiceConfig> implements SpecialMessageReceiver {
     // component dependencies
     private NetworkComponent m_network;
     private LogComponent m_log;
@@ -54,15 +54,6 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      */
     public LogService() {
         super("log", LogServiceConfig.class);
-    }
-
-    /**
-     * Returns the current utilization of primary log and all secondary logs
-     *
-     * @return the current utilization
-     */
-    public String getCurrentUtilization() {
-        return m_log.getCurrentUtilization();
     }
 
     /**
@@ -87,6 +78,15 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
             GetUtilizationResponse response = (GetUtilizationResponse) request.getResponse();
             return response.getUtilization();
         }
+    }
+
+    /**
+     * Returns the current utilization of primary log and all secondary logs
+     *
+     * @return the current utilization
+     */
+    private String getCurrentUtilization() {
+        return m_log.getCurrentUtilization();
     }
 
     @Override
@@ -127,25 +127,6 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
         }
     }
 
-    /**
-     * Handles an incoming GetUtilizationRequest
-     * Method is used in js script.
-     *
-     * @param p_request
-     *         the GetUtilizationRequest
-     */
-    @SuppressWarnings("WeakerAccess")
-    public void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
-
-        try {
-            m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
-        } catch (final NetworkException e) {
-
-            LOGGER.error("Could not answer GetUtilizationRequest", e);
-
-        }
-    }
-
     @Override
     protected boolean supportsSuperpeer() {
         return false;
@@ -183,8 +164,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the LogMessage
      */
     private void incomingLogMessage(final LogMessage p_message) {
-        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(),
-                p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getSource(), p_message.getRangeID(), p_message.getNumberOfDataStructures(),
+                p_message.getMessageBuffer());
     }
 
     /**
@@ -194,8 +175,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the LogAnonMessage
      */
     private void incomingLogAnonMessage(final LogAnonMessage p_message) {
-        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(),
-                p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getSource(), p_message.getRangeID(), p_message.getNumberOfDataStructures(),
+                p_message.getMessageBuffer());
     }
 
     /**
@@ -205,8 +186,8 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
      *         the LogBufferMessage
      */
     private void incomingLogBufferMessage(final LogBufferMessage p_message) {
-        m_log.incomingLogChunks(p_message.getRangeID(), p_message.getNumberOfDataStructures(),
-                p_message.getMessageBuffer(), p_message.getSource());
+        m_log.incomingLogChunks(p_message.getSource(), p_message.getRangeID(), p_message.getNumberOfDataStructures(),
+                p_message.getMessageBuffer());
     }
 
     /**
@@ -249,14 +230,31 @@ public class LogService extends AbstractDXRAMService<LogServiceConfig> implement
         boolean res;
 
         res = m_log.incomingInitRecoveredBackupRange(p_request.getRangeID(), p_request.getSource(),
-                p_request.getOriginalRangeID(),
-                p_request.getOriginalOwner(), p_request.isNewBackupRange());
+                p_request.getOriginalRangeID(), p_request.getOriginalOwner(), p_request.isNewBackupRange());
 
         try {
             m_network.sendMessage(new InitRecoveredBackupRangeResponse(p_request, res));
         } catch (final NetworkException e) {
 
             LOGGER.error("Could not acknowledge initialization of backup range", e);
+
+        }
+    }
+
+    /**
+     * Handles an incoming GetUtilizationRequest
+     * Method is used in js script.
+     *
+     * @param p_request
+     *         the GetUtilizationRequest
+     */
+    private void incomingGetUtilizationRequest(final GetUtilizationRequest p_request) {
+
+        try {
+            m_network.sendMessage(new GetUtilizationResponse(p_request, getCurrentUtilization()));
+        } catch (final NetworkException e) {
+
+            LOGGER.error("Could not answer GetUtilizationRequest", e);
 
         }
     }

@@ -124,9 +124,9 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
         for (int i = 0; i < p_chunkIDRanges.length; i += 2) {
             for (long currentChunkID = p_chunkIDRanges[i]; currentChunkID <= p_chunkIDRanges[i + 1]; currentChunkID++) {
                 // Store payload behind ChunkID and size
-                int bytes = m_chunk.getMemory().get().get(currentChunkID, chunkArray,
-                        chunkBuffer.position() + Long.BYTES + Integer.BYTES, chunkArray.length,
-                        ChunkLockOperation.NONE, -1);
+                int bytes = m_chunk.getMemory().get()
+                        .get(currentChunkID, chunkArray, chunkBuffer.position() + Long.BYTES + Integer.BYTES,
+                                chunkArray.length, ChunkLockOperation.NONE, -1);
 
                 if (bytes == 0) {
                     // Chunk does not fit in current buffer -> send buffer and repeat
@@ -142,9 +142,9 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
                     allCounter += counter;
                     counter = 0;
 
-                    bytes = m_chunk.getMemory().get().get(currentChunkID, chunkArray,
-                            chunkBuffer.position() + Long.BYTES + Integer.BYTES, chunkArray.length,
-                            ChunkLockOperation.NONE, -1);
+                    bytes = m_chunk.getMemory().get()
+                            .get(currentChunkID, chunkArray, chunkBuffer.position() + Long.BYTES + Integer.BYTES,
+                                    chunkArray.length, ChunkLockOperation.NONE, -1);
                 }
 
                 if (bytes < 0) {
@@ -196,8 +196,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
      * @lock manage lock from memory manager component must be locked
      */
     public boolean putRecoveredChunks(final long[] p_chunkIDs, final long p_dataAddress, final int[] p_offsets,
-            final int[] p_lengths,
-            final int p_usedEntries) {
+            final int[] p_lengths, final int p_usedEntries) {
 
         while (m_recoveryChunkQueue.size() >= MAXIMUM_QUEUE_SIZE) {
             Thread.yield();
@@ -216,19 +215,12 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
      *         the recovery metadata to update
      * @param p_chunks
      *         Chunks to put.
-     * @return the number of created and put Chunks
      */
-    public int putRecoveredChunks(final RecoveryMetadata p_metadata, final AbstractChunk[] p_chunks) {
-        int ret;
-        long size;
-
-        size = m_chunk.getMemory().recovery().createAndPutRecovered(p_chunks);
-        ret = p_chunks.length;
+    public void putRecoveredChunks(final RecoveryMetadata p_metadata, final AbstractChunk[] p_chunks) {
+        long size = m_chunk.getMemory().recovery().createAndPutRecovered(p_chunks);
 
         // FIXME won't work for large chunks > 2 GB
-        p_metadata.add(ret, (int) size);
-
-        return ret;
+        p_metadata.add(p_chunks.length, (int) size);
     }
 
     @Override
@@ -323,8 +315,9 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
                 }
 
                 time = System.currentTimeMillis();
-                m_chunk.getMemory().recovery().createAndPutRecovered(entry.m_chunkIDs, entry.m_dataAddress,
-                        entry.m_offsets, entry.m_lengths, entry.m_usedEntries);
+                m_chunk.getMemory().recovery()
+                        .createAndPutRecovered(entry.m_chunkIDs, entry.m_dataAddress, entry.m_offsets, entry.m_lengths,
+                                entry.m_usedEntries);
                 m_timeToPut += System.currentTimeMillis() - time;
             }
         }

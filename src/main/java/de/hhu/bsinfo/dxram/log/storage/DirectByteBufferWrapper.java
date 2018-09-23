@@ -6,18 +6,19 @@ import java.nio.ByteOrder;
 import de.hhu.bsinfo.dxutils.ByteBufferHelper;
 
 /**
- * Wrapper class for ByteBuffer and off-heap address
+ * Wrapper class for ByteBuffer and off-heap address.
  */
-public class DirectByteBufferWrapper {
+public final class DirectByteBufferWrapper {
 
     private static int ms_pageSize;
     private static boolean ms_native;
 
-    private ByteBuffer m_buffer;
-    private long m_addr;
+    private final ByteBuffer m_buffer;
+    private final long m_addr;
 
     /**
-     * Creates an instance of DirectBufferWrapper
+     * Creates an instance of DirectBufferWrapper.
+     * Also creates the ByteBuffer it wraps.
      *
      * @param p_size
      *         the buffer size
