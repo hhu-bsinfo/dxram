@@ -17,11 +17,11 @@
 package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 
 /**
- * Skeleton for superpeer metadata
+ * Inteface for superpeer metadata.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.10.2016
  */
-abstract class AbstractMetadata {
+interface MetadataInterface {
 
     /**
      * Stores all metadata from given byte array
@@ -34,14 +34,14 @@ abstract class AbstractMetadata {
      *         the number of bytes
      * @return the amount of stored metadata
      */
-    public abstract int storeMetadata(byte[] p_data, int p_offset, int p_size);
+    int storeMetadata(byte[] p_data, int p_offset, int p_size);
 
     /**
      * Returns all metadata
      *
      * @return all metadata in a byte array
      */
-    public abstract byte[] receiveAllMetadata();
+    byte[] receiveAllMetadata();
 
     /**
      * Returns all entries in area
@@ -52,7 +52,7 @@ abstract class AbstractMetadata {
      *         the second bound
      * @return corresponding metadata in a byte array
      */
-    public abstract byte[] receiveMetadataInRange(short p_bound1, short p_bound2);
+    byte[] receiveMetadataInRange(short p_bound1, short p_bound2);
 
     /**
      * Removes all metadata outside of area
@@ -63,7 +63,7 @@ abstract class AbstractMetadata {
      *         the second bound
      * @return number of removed metadata
      */
-    public abstract int removeMetadataOutsideOfRange(short p_bound1, short p_bound2);
+    int removeMetadataOutsideOfRange(short p_bound1, short p_bound2);
 
     /**
      * Returns the amount of metadata in area
@@ -74,5 +74,5 @@ abstract class AbstractMetadata {
      *         the second bound
      * @return the amount of metadata
      */
-    public abstract int quantifyMetadata(short p_bound1, short p_bound2);
+    int quantifyMetadata(short p_bound1, short p_bound2);
 }

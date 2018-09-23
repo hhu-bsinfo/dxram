@@ -31,7 +31,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 06.05.2016
  */
-public class BarriersTable extends AbstractMetadata {
+public class BarriersTable implements MetadataInterface {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(BarriersTable.class.getSimpleName());
 

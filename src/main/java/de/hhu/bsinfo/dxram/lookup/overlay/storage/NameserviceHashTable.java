@@ -29,47 +29,26 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.lookup.overlay.OverlayHelper;
 import de.hhu.bsinfo.dxutils.CRC16;
+import de.hhu.bsinfo.dxutils.hashtable.HashFunctionCollection;
+import de.hhu.bsinfo.dxutils.hashtable.IntLongHashTable;
 
 /**
  * HashTable to store ID-Mappings (Linear probing)
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 27.01.2014
  */
-public class NameserviceHashTable extends AbstractMetadata {
+public class NameserviceHashTable extends IntLongHashTable implements MetadataInterface {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceHashTable.class.getSimpleName());
-
-    // Attributes
-    private int[] m_table;
-    private int m_count;
-    private int m_elementCapacity;
-    private int m_threshold;
-    private float m_loadFactor;
-
-    // Constructors
 
     /**
      * Creates an instance of IDHashTable
      *
      * @param p_initialElementCapacity
      *         the initial capacity of IDHashTable
-     * @param p_loadFactor
-     *         the load factor of IDHashTable
      */
-    public NameserviceHashTable(final int p_initialElementCapacity, final float p_loadFactor) {
-        super();
-
-        m_count = 0;
-        m_elementCapacity = p_initialElementCapacity;
-        m_loadFactor = p_loadFactor;
-
-        if (m_elementCapacity == 0) {
-            m_table = new int[3];
-            m_threshold = (int) m_loadFactor;
-        } else {
-            m_table = new int[m_elementCapacity * 3];
-            m_threshold = (int) (m_elementCapacity * m_loadFactor);
-        }
+    public NameserviceHashTable(final int p_initialElementCapacity) {
+        super(p_initialElementCapacity);
     }
 
     /**
@@ -89,25 +68,6 @@ public class NameserviceHashTable extends AbstractMetadata {
             ret.add(new NameserviceEntry(buffer.getInt(i * 12), buffer.getLong(i * 12 + 4)));
         }
         return ret;
-    }
-
-    /**
-     * Hashes the given key
-     *
-     * @param p_key
-     *         the key
-     * @return the hash value
-     */
-    private static int hash(final int p_key) {
-        int hash = p_key;
-
-        hash = (hash >> 16 ^ hash) * 0x45d9f3b;
-        hash = (hash >> 16 ^ hash) * 0x45d9f3b;
-        return hash >> 16 ^ hash;
-        /*
-         * hash ^= (hash >>> 20) ^ (hash >>> 12);
-         * return hash ^ (hash >>> 7) ^ (hash >>> 4);
-         */
     }
 
     @Override
@@ -135,9 +95,9 @@ public class NameserviceHashTable extends AbstractMetadata {
         ByteBuffer data;
         int iter;
 
-        data = ByteBuffer.allocate(m_count * 12);
+        data = ByteBuffer.allocate(size() * 12);
 
-        for (int i = 0; i < m_elementCapacity; i++) {
+        for (int i = 0; i < capacity(); i++) {
             iter = getKey(i);
             if (iter != 0) {
 
@@ -156,9 +116,9 @@ public class NameserviceHashTable extends AbstractMetadata {
         int iter;
         ByteBuffer data;
 
-        data = ByteBuffer.allocate(m_count * 12);
+        data = ByteBuffer.allocate(size() * 12);
 
-        for (int i = 0; i < m_elementCapacity; i++) {
+        for (int i = 0; i < capacity(); i++) {
             iter = getKey(i);
             if (iter != 0) {
                 if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(iter - 1), p_bound1, p_bound2)) {
@@ -179,7 +139,7 @@ public class NameserviceHashTable extends AbstractMetadata {
         int count = 0;
         int iter;
 
-        for (int i = 0; i < m_elementCapacity; i++) {
+        for (int i = 0; i < capacity(); i++) {
             iter = getKey(i);
             if (iter != 0) {
                 if (!OverlayHelper.isHashInSuperpeerRange(CRC16.hash(iter - 1), p_bound1, p_bound2)) {
@@ -202,7 +162,7 @@ public class NameserviceHashTable extends AbstractMetadata {
         int count = 0;
         int iter;
 
-        for (int i = 0; i < m_elementCapacity; i++) {
+        for (int i = 0; i < capacity(); i++) {
             iter = getKey(i);
             if (iter != 0) {
                 if (OverlayHelper.isHashInSuperpeerRange(CRC16.hash(iter - 1), p_bound1, p_bound2)) {
@@ -220,24 +180,8 @@ public class NameserviceHashTable extends AbstractMetadata {
      *         the searched key (is incremented before insertion to avoid 0)
      * @return the value to which the key is mapped in IDHashTable
      */
-    public final long get(final int p_key) {
-        long ret = 0;
-        int index;
-        int iter;
-        final int key = p_key + 1;
-
-        index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
-
-        iter = getKey(index);
-        while (iter != 0) {
-            if (iter == key) {
-                ret = getValue(index);
-                break;
-            }
-            iter = getKey(++index);
-        }
-
-        return ret;
+    public final long getChunkID(final int p_key) {
+        return get(p_key + 1);
     }
 
     /**
@@ -247,35 +191,9 @@ public class NameserviceHashTable extends AbstractMetadata {
      *         the key (is incremented before insertion to avoid 0)
      * @param p_value
      *         the value
-     * @return the old value
      */
-    public final long put(final int p_key, final long p_value) {
-        long ret = -1;
-        int index;
-        int iter;
-        final int key = p_key + 1;
-
-        index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
-
-        iter = getKey(index);
-        while (iter != 0) {
-            if (iter == key) {
-                ret = getValue(index);
-                set(index, key, p_value);
-                break;
-            }
-            iter = getKey(++index);
-        }
-        if (ret == -1) {
-            set(index, key, p_value);
-            m_count++;
-        }
-
-        if (m_count >= m_threshold) {
-            rehash();
-        }
-
-        return ret;
+    final void putChunkID(final int p_key, final long p_value) {
+        put(p_key + 1, p_value);
     }
 
     /**
@@ -291,7 +209,7 @@ public class NameserviceHashTable extends AbstractMetadata {
         int iter;
         final int key = p_key + 1;
 
-        index = (hash(key) & 0x7FFFFFFF) % m_elementCapacity;
+        index = (HashFunctionCollection.hash(key) & 0x7FFFFFFF) % capacity();
 
         iter = getKey(index);
         while (iter != 0) {
@@ -320,7 +238,7 @@ public class NameserviceHashTable extends AbstractMetadata {
     public final void print() {
         int iter;
 
-        for (int i = 0; i < m_elementCapacity; i++) {
+        for (int i = 0; i < capacity(); i++) {
             iter = getKey(i);
             if (iter != 0) {
                 System.out.println("Key: " + iter + ", value: " + ChunkID.toHexString(getValue(i)));
@@ -337,7 +255,7 @@ public class NameserviceHashTable extends AbstractMetadata {
 
         list = new TreeSet<>(Comparator.comparingInt(p_entryA -> p_entryA.m_key));
 
-        for (int i = 0; i < m_elementCapacity; i++) {
+        for (int i = 0; i < capacity(); i++) {
             iter = getKey(i);
             if (iter != 0) {
                 list.add(new Entry(iter, getValue(i)));
@@ -347,86 +265,6 @@ public class NameserviceHashTable extends AbstractMetadata {
         for (Entry entry : list) {
             System.out.println("Key: " + entry.m_key + ", value: " + ChunkID.toHexString(entry.m_value));
         }
-    }
-
-    /**
-     * Sets the key-value tuple at given index
-     *
-     * @param p_index
-     *         the index
-     * @param p_key
-     *         the key
-     * @param p_value
-     *         the value
-     */
-    private void set(final int p_index, final int p_key, final long p_value) {
-        int index;
-
-        index = p_index % m_elementCapacity * 3;
-        m_table[index] = p_key;
-        m_table[index + 1] = (int) (p_value >> 32);
-        m_table[index + 2] = (int) p_value;
-    }
-
-    /**
-     * Gets the key at given index
-     *
-     * @param p_index
-     *         the index
-     * @return the key
-     */
-    private int getKey(final int p_index) {
-        return m_table[p_index % m_elementCapacity * 3];
-    }
-
-    /**
-     * Gets the value at given index
-     *
-     * @param p_index
-     *         the index
-     * @return the value
-     */
-    private long getValue(final int p_index) {
-        int index;
-
-        index = p_index % m_elementCapacity * 3 + 1;
-        return (long) m_table[index] << 32 | m_table[index + 1] & 0xFFFFFFFFL;
-    }
-
-    /**
-     * Increases the capacity of and internally reorganizes IDHashTable
-     */
-    private void rehash() {
-        int index = 0;
-        int oldCount;
-        int oldElementCapacity;
-        int oldThreshold;
-        int[] oldTable;
-        int[] newTable;
-
-        oldCount = m_count;
-        oldElementCapacity = m_elementCapacity;
-        oldThreshold = m_threshold;
-        oldTable = m_table;
-
-        m_elementCapacity = m_elementCapacity * 2 + 1;
-        newTable = new int[m_elementCapacity * 3];
-        m_threshold = (int) (m_elementCapacity * m_loadFactor);
-        m_table = newTable;
-
-        LOGGER.trace("Reached threshold (%d) -> Rehashing. New size: %d... ", oldThreshold, m_elementCapacity);
-
-        m_count = 0;
-        while (index < oldElementCapacity) {
-            if (oldTable[index * 3] != 0) {
-                put(oldTable[index * 3] - 1,
-                        (long) oldTable[index * 3 + 1] << 32 | oldTable[index * 3 + 2] & 0xFFFFFFFFL);
-            }
-            index = (index + 1) % m_elementCapacity;
-        }
-        m_count = oldCount;
-
-        LOGGER.trace("done");
     }
 
     /**

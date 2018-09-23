@@ -44,7 +44,7 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.05.2016
  */
-public class SuperpeerStorage extends AbstractMetadata {
+public class SuperpeerStorage implements MetadataInterface {
     private static final Logger LOGGER = LogManager.getFormatterLogger(SuperpeerStorage.class.getSimpleName());
 
     private int m_maxNumEntries;

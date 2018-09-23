@@ -397,14 +397,14 @@ public final class MetadataHandler {
 
         m_dataLock.readLock().lock();
 
-        ret.append("Number of nameservice entries: ").append(m_nameservice.quantifyMetadata(p_nodeID, p_nodeID)).append(
-                ", assigned: ").append(m_nameservice.quantifyMetadata(p_predecessor, p_nodeID)).append('\n');
+        ret.append("Number of nameservice entries: ").append(m_nameservice.quantifyMetadata(p_nodeID, p_nodeID))
+                .append(", assigned: ").append(m_nameservice.quantifyMetadata(p_predecessor, p_nodeID)).append('\n');
 
-        ret.append("Number of storages: \t\t ").append(m_storage.quantifyMetadata(p_nodeID, p_nodeID)).append(
-                ", assigned: ").append(m_storage.quantifyMetadata(p_predecessor, p_nodeID)).append('\n');
+        ret.append("Number of storages: \t\t ").append(m_storage.quantifyMetadata(p_nodeID, p_nodeID))
+                .append(", assigned: ").append(m_storage.quantifyMetadata(p_predecessor, p_nodeID)).append('\n');
 
-        ret.append("Number of barriers: \t\t ").append(m_barriers.quantifyMetadata(p_nodeID, p_nodeID)).append(
-                ", assigned: ").append(m_barriers.quantifyMetadata(p_predecessor, p_nodeID)).append('\n');
+        ret.append("Number of barriers: \t\t ").append(m_barriers.quantifyMetadata(p_nodeID, p_nodeID))
+                .append(", assigned: ").append(m_barriers.quantifyMetadata(p_predecessor, p_nodeID)).append('\n');
 
         ret.append("Storing LookupTrees of following peers:\n");
 
@@ -445,8 +445,8 @@ public final class MetadataHandler {
      * @lock overlay lock must be read-locked
      */
     public byte[] compareAndReturnBackups(final ArrayList<Short> p_peers, final int p_numberOfNameserviceEntries,
-            final int p_numberOfStorages,
-            final int p_numberOfBarriers, final short p_predecessor, final short p_nodeID) {
+            final int p_numberOfStorages, final int p_numberOfBarriers, final short p_predecessor,
+            final short p_nodeID) {
         int size;
         int count = 0;
         int index;
@@ -463,7 +463,8 @@ public final class MetadataHandler {
 
         LOGGER.trace("Compare and return metadata of area: 0x%X, 0x%X", p_predecessor, p_nodeID);
 
-        // TODO: Inefficient to send all data (nameservice, storages, barriers) in corresponding area if quantity differs
+        // TODO: Inefficient to send all data (nameservice, storages, barriers) in corresponding area if quantity
+        // differs
         size = 4 * Integer.BYTES;
         // Compare number of actual nameservice entries with expected number
         if (m_nameservice.quantifyMetadata(p_predecessor, p_nodeID) != p_numberOfNameserviceEntries) {
@@ -1001,7 +1002,7 @@ public final class MetadataHandler {
         long ret;
 
         m_dataLock.readLock().lock();
-        ret = m_nameservice.get(p_nameserviceID);
+        ret = m_nameservice.getChunkID(p_nameserviceID);
         m_dataLock.readLock().unlock();
 
         return ret;
@@ -1017,7 +1018,7 @@ public final class MetadataHandler {
      */
     public void putNameserviceEntry(final int p_nameserviceID, final long p_chunkID) {
         m_dataLock.writeLock().lock();
-        m_nameservice.put(p_nameserviceID, p_chunkID);
+        m_nameservice.putChunkID(p_nameserviceID, p_chunkID);
         m_dataLock.writeLock().unlock();
     }
 

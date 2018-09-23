@@ -216,7 +216,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         m_peers = new ArrayList<>();
         m_assignedPeersIncludingBackups = new ArrayList<>();
 
-        m_metadata = new MetadataHandler(new PeerHandler[NodeID.MAX_ID], new NameserviceHashTable(1000, 0.9f),
+        m_metadata = new MetadataHandler(new PeerHandler[NodeID.MAX_ID], new NameserviceHashTable(1000),
                 new SuperpeerStorage(p_storageMaxNumEntries, p_storageMaxSizeBytes),
                 new BarriersTable(p_maxNumOfBarriers, m_nodeID),
                 m_assignedPeersIncludingBackups);
