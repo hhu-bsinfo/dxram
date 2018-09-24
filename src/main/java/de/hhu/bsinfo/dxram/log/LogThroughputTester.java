@@ -59,6 +59,7 @@ public final class LogThroughputTester {
     private static int ms_utilizationReorgActivation = 60;
     private static int ms_utilizationReorgPrompt = 75;
     private static int ms_coldDataThresholdSec = 90;
+    private static boolean ms_recoveryEnabled = false;
 
     private static int ms_chunkCount;
     private static volatile long ms_timeStartLoading;
@@ -164,6 +165,13 @@ public final class LogThroughputTester {
             e.printStackTrace();
         }
 
+        if (ms_recoveryEnabled) {
+            LOGGER.info("Starting recovery:");
+            for (int i = 0; i < rangeMapping.length; i++) {
+                ms_log.recoverBackupRange((short) 2, (short) i);
+            }
+        }
+
         StatisticsManager.get().stopPeriodicPrinting();
         StatisticsManager.get().printStatistics(System.out);
 
@@ -179,14 +187,14 @@ public final class LogThroughputTester {
      *         the program arguments.
      */
     private static void processArgs(final String[] p_arguments) {
-        if (p_arguments.length != 6 && p_arguments.length != 13) {
+        if (p_arguments.length != 7 && p_arguments.length != 14) {
             System.out.println("To execute benchmark:");
             System.out.println("Normal:");
             System.out.println("Args: " + " <access mode (raf, dir or raw)> <chunk count> <chunk size> <batch size> " +
-                    "<workload (none, sequential, random, zipf or hotncold)> <number of updates>");
+                    "<workload (none, sequential, random, zipf or hotncold)> <number of updates> <enable recovery>");
             System.out.println("Extended:");
             System.out.println("Args: " + " <access mode (raf, dir or raw)> <chunk count> <chunk size> <batch size> " +
-                    "<workload (none, sequential, random, zipf or hotncold)> <number of updates> " +
+                    "<workload (none, sequential, random, zipf or hotncold)> <number of updates>  <enable recovery>" +
                     "<timestamps enabled> <segment size in MB> <primary buffer size in MB> " +
                     "<secondary log buffer size in KB> <utilization for reorganization activation (in percent)> " +
                     "<utilization to prompt reorganization (in percent)> <cold data threshold in sec>");
@@ -209,31 +217,31 @@ public final class LogThroughputTester {
             ms_workload = "none";
         }
         ms_updates = Integer.parseInt(p_arguments[5]);
+        ms_recoveryEnabled = Boolean.parseBoolean(p_arguments[6]);
 
-        if (p_arguments.length == 13) {
-            ms_timestampsEnabled = Boolean.parseBoolean(p_arguments[6]);
-            ms_logSegmentSize = Integer.parseInt(p_arguments[7]);
-            ms_primaryBufferSize = Integer.parseInt(p_arguments[8]);
-            ms_secondaryLogBufferSize = Integer.parseInt(p_arguments[9]);
-            ms_utilizationReorgActivation = Integer.parseInt(p_arguments[10]);
-            ms_utilizationReorgPrompt = Integer.parseInt(p_arguments[11]);
-            ms_coldDataThresholdSec = Integer.parseInt(p_arguments[12]);
+        if (p_arguments.length == 14) {
+            ms_timestampsEnabled = Boolean.parseBoolean(p_arguments[7]);
+            ms_logSegmentSize = Integer.parseInt(p_arguments[8]);
+            ms_primaryBufferSize = Integer.parseInt(p_arguments[9]);
+            ms_secondaryLogBufferSize = Integer.parseInt(p_arguments[10]);
+            ms_utilizationReorgActivation = Integer.parseInt(p_arguments[11]);
+            ms_utilizationReorgPrompt = Integer.parseInt(p_arguments[12]);
+            ms_coldDataThresholdSec = Integer.parseInt(p_arguments[13]);
         }
 
         System.out.printf("Parameters: access_mode=%s chunk_count=%d chunk_size=%d batch_size=%d " +
-                        "workload=%s updates=%d timestamps=%s segment_size=%d primary_buffer_size=%d " +
+                        "workload=%s updates=%d recovery=%b timestamps=%s segment_size=%d primary_buffer_size=%d " +
                         "secondary_log_buffer_size=%d reorg_activation_utilization=%d " +
                         "reorg_prompt_utilization=%d cold_data_threshold_sec=%d\n", ms_accessMode, ms_chunkCount,
                 ms_size,
-                ms_batchSize, ms_workload, ms_updates, ms_timestampsEnabled, ms_logSegmentSize, ms_primaryBufferSize,
-                ms_secondaryLogBufferSize, ms_utilizationReorgActivation, ms_utilizationReorgPrompt,
-                ms_coldDataThresholdSec);
+                ms_batchSize, ms_workload, ms_updates, ms_recoveryEnabled, ms_timestampsEnabled, ms_logSegmentSize,
+                ms_primaryBufferSize, ms_secondaryLogBufferSize, ms_utilizationReorgActivation,
+                ms_utilizationReorgPrompt, ms_coldDataThresholdSec);
     }
 
     /**
      * Setup files and classes for the benchmark.
      */
-
     private static void setup() {
         String pathLogFiles = "/media/ssd/dxram_log/";
         File[] files = new File(pathLogFiles).listFiles();
@@ -252,7 +260,9 @@ public final class LogThroughputTester {
                 new LogComponentConfig(ms_accessMode, "/dev/raw/raw1", true, ms_timestampsEnabled, 4, ms_logSegmentSize,
                         256, ms_primaryBufferSize, ms_secondaryLogBufferSize, ms_utilizationReorgActivation,
                         ms_utilizationReorgPrompt, ms_coldDataThresholdSec);
-        ms_log.initComponent(ms_conf, pathLogFiles, ms_backupRangeSize);
+        ms_log.initComponent(ms_conf, pathLogFiles, ms_backupRangeSize, ms_recoveryEnabled ?
+                (long) ms_chunkCount * ms_size +
+                        1024 * 1024 * 1024 /* create larger kvs to avoid performance issues */ : -1);
     }
 
     /**
