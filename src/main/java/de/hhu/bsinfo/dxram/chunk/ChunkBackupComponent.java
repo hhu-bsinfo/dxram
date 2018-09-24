@@ -17,9 +17,7 @@
 package de.hhu.bsinfo.dxram.chunk;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
-import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxmem.data.ChunkState;
@@ -33,7 +31,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.LogBufferMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
 
 /**
  * Component for chunk handling.
@@ -41,14 +38,11 @@ import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComponentConfig> {
-    private static final int MAXIMUM_QUEUE_SIZE = 10;
 
     // component dependencies
     private AbstractBootComponent m_boot;
     private ChunkComponent m_chunk;
     private NetworkComponent m_network;
-
-    private ConcurrentLinkedQueue<Entry> m_recoveryChunkQueue;
 
     /**
      * Constructor
@@ -164,65 +158,6 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
         return allCounter;
     }
 
-    /**
-     * Initializes a new thread for storing all recovered Chunks in memory
-     *
-     * @return the Thread
-     */
-    public RecoveryWriterThread initRecoveryThread() {
-        m_recoveryChunkQueue = new ConcurrentLinkedQueue<Entry>();
-
-        RecoveryWriterThread thread = new RecoveryWriterThread();
-        thread.setName("Recovery: Writer-Thread");
-        thread.start();
-
-        return thread;
-    }
-
-    /**
-     * Put recovered chunks into local memory.
-     *
-     * @param p_chunkIDs
-     *         ChunkIDs of recovered Chunks.
-     * @param p_dataAddress
-     *         the addrees of the byte array all recovered Chunks are stored in
-     *         (contains also not to be recovered, invalid Chunks).
-     * @param p_offsets
-     *         the offsets within the byte array.
-     * @param p_lengths
-     *         the Chunks lengths.
-     * @param p_usedEntries
-     *         the number of actually used entries within the arrays (might be smaller than the array lengths).
-     * @lock manage lock from memory manager component must be locked
-     */
-    public boolean putRecoveredChunks(final long[] p_chunkIDs, final long p_dataAddress, final int[] p_offsets,
-            final int[] p_lengths, final int p_usedEntries) {
-
-        while (m_recoveryChunkQueue.size() >= MAXIMUM_QUEUE_SIZE) {
-            Thread.yield();
-        }
-        m_recoveryChunkQueue.add(new Entry(p_chunkIDs, p_dataAddress, p_offsets, p_lengths, p_usedEntries));
-
-        LOGGER.trace("Stored %d recovered chunks locally", p_usedEntries);
-
-        return true;
-    }
-
-    /**
-     * Put a recovered chunks into local memory.
-     *
-     * @param p_metadata
-     *         the recovery metadata to update
-     * @param p_chunks
-     *         Chunks to put.
-     */
-    public void putRecoveredChunks(final RecoveryMetadata p_metadata, final AbstractChunk[] p_chunks) {
-        long size = m_chunk.getMemory().recovery().createAndPutRecovered(p_chunks);
-
-        // FIXME won't work for large chunks > 2 GB
-        p_metadata.add(p_chunks.length, (int) size);
-    }
-
     @Override
     protected boolean supportsSuperpeer() {
         return false;
@@ -250,77 +185,6 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
     protected boolean shutdownComponent() {
         // Add DXRAMComponentOrder.Shutdown value if something is put here
         return true;
-    }
-
-    private static final class Entry {
-
-        private long[] m_chunkIDs;
-        private long m_dataAddress;
-        private int[] m_offsets;
-        private int[] m_lengths;
-        private int m_usedEntries;
-
-        private Entry(final long[] p_chunkIDs, final long p_dataAddress, final int[] p_offsets, final int[] p_lengths,
-                final int p_usedEntries) {
-            m_chunkIDs = p_chunkIDs;
-            m_dataAddress = p_dataAddress;
-            m_offsets = p_offsets;
-            m_lengths = p_lengths;
-            m_usedEntries = p_usedEntries;
-        }
-    }
-
-    /**
-     * Recovery helper thread. Writes all given Chunks to memory.
-     */
-    public class RecoveryWriterThread extends Thread {
-
-        private int m_timeToPut = 0;
-
-        /**
-         * Returns the duration for putting all chunks
-         *
-         * @return the time in ms
-         */
-        public int getTimeToPut() {
-            return m_timeToPut;
-        }
-
-        /**
-         * Returns if all chunks were already put to memory
-         *
-         * @return true if queue is empty
-         */
-        public boolean finished() {
-            return m_recoveryChunkQueue.isEmpty();
-        }
-
-        @Override
-        public void run() {
-            long time;
-            Entry entry;
-
-            while (true) {
-                entry = null;
-                while (entry == null) {
-                    entry = m_recoveryChunkQueue.poll();
-
-                    if (entry == null) {
-                        if (Thread.currentThread().isInterrupted()) {
-                            return;
-                        }
-
-                        Thread.yield();
-                    }
-                }
-
-                time = System.currentTimeMillis();
-                m_chunk.getMemory().recovery()
-                        .createAndPutRecovered(entry.m_chunkIDs, entry.m_dataAddress, entry.m_offsets, entry.m_lengths,
-                                entry.m_usedEntries);
-                m_timeToPut += System.currentTimeMillis() - time;
-            }
-        }
     }
 
 }

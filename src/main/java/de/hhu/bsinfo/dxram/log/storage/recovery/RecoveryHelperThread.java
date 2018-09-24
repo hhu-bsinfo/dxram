@@ -1,13 +1,14 @@
-package de.hhu.bsinfo.dxram.log.storage.logs.secondarylog;
+package de.hhu.bsinfo.dxram.log.storage.recovery;
 
-import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxmem.data.ChunkByteBuffer;
-import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
+import de.hhu.bsinfo.dxmem.operations.Recovery;
 import de.hhu.bsinfo.dxram.log.storage.DirectByteBufferWrapper;
-import de.hhu.bsinfo.dxram.log.storage.versioncontrol.TemporaryVersionsStorage;
-import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
+import de.hhu.bsinfo.dxram.log.storage.logs.secondarylog.SecondaryLog;
+import de.hhu.bsinfo.dxram.log.storage.logs.secondarylog.SegmentHeader;
+import de.hhu.bsinfo.dxram.log.storage.versioncontrol.TemporaryVersionStorage;
+import de.hhu.bsinfo.dxutils.hashtable.GenericHashTable;
 
 /**
  * Recovery helper thread. Determines ChunkID ranges for to be recovered backup range and recovers segments as well.
@@ -20,13 +21,13 @@ final class RecoveryHelperThread extends Thread {
 
     private SecondaryLog m_secondaryLog;
     private DirectByteBufferWrapper m_wrapper;
-    private TemporaryVersionsStorage m_versionsForRecovery;
-    private HashMap<Long, ChunkByteBuffer> m_largeChunks;
+    private TemporaryVersionStorage m_versionsForRecovery;
+    private GenericHashTable<ChunkByteBuffer> m_largeChunks;
     private ReentrantLock m_largeChunkLock;
     private long m_lowestCID;
     private byte[] m_index;
     private ReentrantLock m_indexLock;
-    private ChunkBackupComponent m_chunkComponent;
+    private Recovery m_dxmemRecoveryOp;
 
     /**
      * Creates an instance of RecoveryHelperThread
@@ -49,14 +50,14 @@ final class RecoveryHelperThread extends Thread {
      *         the segment index
      * @param p_indexLock
      *         lock to avoid recovering segments multiple times
-     * @param p_chunkComponent
-     *         the chunk component to access the memory management
+     * @param p_dxmemRecoveryOp
+     *         DXMem recovery operation to access the memory management during recovery
      */
     RecoveryHelperThread(final RecoveryMetadata p_metadata, final SecondaryLog p_secondaryLog,
-            final DirectByteBufferWrapper p_wrapper, final TemporaryVersionsStorage p_versionsForRecovery,
-            final HashMap<Long, ChunkByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock,
+            final DirectByteBufferWrapper p_wrapper, final TemporaryVersionStorage p_versionsForRecovery,
+            final GenericHashTable<ChunkByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock,
             final long p_lowestCID, final byte[] p_index, final ReentrantLock p_indexLock,
-            final ChunkBackupComponent p_chunkComponent) {
+            final Recovery p_dxmemRecoveryOp) {
         m_recoveryMetadata = p_metadata;
 
         m_secondaryLog = p_secondaryLog;
@@ -67,7 +68,7 @@ final class RecoveryHelperThread extends Thread {
         m_lowestCID = p_lowestCID;
         m_index = p_index;
         m_indexLock = p_indexLock;
-        m_chunkComponent = p_chunkComponent;
+        m_dxmemRecoveryOp = p_dxmemRecoveryOp;
     }
 
     @Override
@@ -89,7 +90,7 @@ final class RecoveryHelperThread extends Thread {
 
             if (segmentHeaders[idx] != null && !segmentHeaders[idx].isEmpty()) {
                 LogRecoveryHandler.recoverSegment(m_secondaryLog, idx, m_wrapper, m_versionsForRecovery, m_lowestCID,
-                        m_recoveryMetadata, m_largeChunks, m_largeChunkLock, m_chunkComponent);
+                        m_recoveryMetadata, m_largeChunks, m_largeChunkLock, m_dxmemRecoveryOp);
             }
             idx++;
         }

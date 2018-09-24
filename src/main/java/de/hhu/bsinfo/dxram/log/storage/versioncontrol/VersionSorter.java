@@ -35,7 +35,7 @@ public final class VersionSorter {
      *         the lowest ChunkID in versions array
      * @return all ChunkID ranges
      */
-    public static long[] determineRanges(final TemporaryVersionsStorage p_versionStorage, final long p_lowestCID) {
+    public static long[] determineRanges(final TemporaryVersionStorage p_versionStorage, final long p_lowestCID) {
         long[] ret;
         long[] localRanges = null;
         long[] otherRanges = null;
@@ -43,7 +43,7 @@ public final class VersionSorter {
         if (p_versionStorage.getVersionsArray().size() > 0) {
             localRanges = getRanges(p_versionStorage.getVersionsArray(), p_lowestCID);
         }
-        if (p_versionStorage.getVersionsHashTable().size() > 0) {
+        if (!p_versionStorage.getVersionsHashTable().isEmpty()) {
             StringBuilder stringBuilder =
                     new StringBuilder("Hash table contains ").append(p_versionStorage.getVersionsHashTable().size())
                             .append(" entries. ").append(ChunkID.toHexString(p_lowestCID)).append('\n');

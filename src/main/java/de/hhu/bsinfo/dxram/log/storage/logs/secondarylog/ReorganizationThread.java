@@ -32,7 +32,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.log.storage.BackupRangeCatalog;
 import de.hhu.bsinfo.dxram.log.storage.DirectByteBufferWrapper;
 import de.hhu.bsinfo.dxram.log.storage.header.AbstractSecLogEntryHeader;
-import de.hhu.bsinfo.dxram.log.storage.versioncontrol.TemporaryVersionsStorage;
+import de.hhu.bsinfo.dxram.log.storage.versioncontrol.TemporaryVersionStorage;
 import de.hhu.bsinfo.dxram.log.storage.versioncontrol.Version;
 import de.hhu.bsinfo.dxram.log.storage.versioncontrol.VersionBuffer;
 import de.hhu.bsinfo.dxram.log.storage.versioncontrol.VersionHandler;
@@ -69,7 +69,7 @@ public final class ReorganizationThread extends Thread {
     private final VersionHandler m_versionHandler;
 
     private final LinkedHashSet<SecondaryLog> m_reorganizationRequests;
-    private final TemporaryVersionsStorage m_allVersions;
+    private final TemporaryVersionStorage m_allVersions;
 
     private final ReentrantLock m_reorganizationLock;
     private final Condition m_reorganizationFinishedCondition;
@@ -119,7 +119,7 @@ public final class ReorganizationThread extends Thread {
         m_coldDataThreshold = p_coldDataThreshold;
         m_useTimestamps = p_useTimestamps;
 
-        m_allVersions = new TemporaryVersionsStorage(m_secondaryLogSize);
+        m_allVersions = new TemporaryVersionStorage(m_secondaryLogSize);
 
         m_reorganizationLock = new ReentrantLock(false);
         m_reorganizationFinishedCondition = m_reorganizationLock.newCondition();
@@ -627,7 +627,7 @@ public final class ReorganizationThread extends Thread {
      *         the lowest LID at the time the versions are read-in
      */
     private void reorganizeAll(final SecondaryLog p_secondarayLog, final DirectByteBufferWrapper p_bufferWrapper,
-            final TemporaryVersionsStorage p_allVersions, final long p_lowestLID) {
+            final TemporaryVersionStorage p_allVersions, final long p_lowestLID) {
         SegmentHeader[] segmentHeaders = p_secondarayLog.getSegmentHeaders();
         for (int i = 0; i < segmentHeaders.length; i++) {
             if (segmentHeaders[i] != null && !Thread.currentThread().isInterrupted()) {
@@ -655,7 +655,7 @@ public final class ReorganizationThread extends Thread {
      * @return whether the reorganization was successful or not
      */
     private boolean reorganizeIteratively(final SecondaryLog p_secondarayLog,
-            final DirectByteBufferWrapper p_bufferWrapper, final TemporaryVersionsStorage p_allVersions,
+            final DirectByteBufferWrapper p_bufferWrapper, final TemporaryVersionStorage p_allVersions,
             final long p_lowestLID) {
 
         int segment = chooseSegment(p_secondarayLog);
@@ -681,7 +681,7 @@ public final class ReorganizationThread extends Thread {
      * @return whether the reorganization was successful or not
      */
     private boolean reorganizeSegment(final SecondaryLog p_secondaryLog, final int p_segmentIndex,
-            final DirectByteBufferWrapper p_bufferWrapper, final TemporaryVersionsStorage p_allVersions,
+            final DirectByteBufferWrapper p_bufferWrapper, final TemporaryVersionStorage p_allVersions,
             final long p_lowestCID) {
         boolean ret = true;
         int length;

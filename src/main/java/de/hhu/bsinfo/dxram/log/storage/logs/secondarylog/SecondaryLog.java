@@ -641,7 +641,7 @@ public final class SecondaryLog extends Log {
      *         if the secondary log could not be read
      * @note executed only by reorganization thread
      */
-    int readSegment(final DirectByteBufferWrapper p_bufferWrapper, final int p_segmentIndex) throws IOException {
+    public int readSegment(final DirectByteBufferWrapper p_bufferWrapper, final int p_segmentIndex) throws IOException {
         int ret = 0;
         SegmentHeader header;
 
@@ -723,7 +723,7 @@ public final class SecondaryLog extends Log {
      *
      * @return the NodeID
      */
-    final short getOriginalOwner() {
+    public final short getOriginalOwner() {
         return m_originalOwner;
     }
 
@@ -863,7 +863,7 @@ public final class SecondaryLog extends Log {
      *
      * @return all segment headers
      */
-    SegmentHeader[] getSegmentHeaders() {
+    public SegmentHeader[] getSegmentHeaders() {
         return m_segmentHeaders;
     }
 

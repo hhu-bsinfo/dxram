@@ -20,7 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import de.hhu.bsinfo.dxmem.DXMem;
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.operations.Recovery;
 import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
@@ -28,7 +30,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
@@ -40,19 +42,19 @@ import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeResponse;
 import de.hhu.bsinfo.dxram.log.storage.BackupRangeCatalog;
 import de.hhu.bsinfo.dxram.log.storage.DirectByteBufferWrapper;
 import de.hhu.bsinfo.dxram.log.storage.Scheduler;
+import de.hhu.bsinfo.dxram.log.storage.diskaccess.HarddriveAccessMode;
 import de.hhu.bsinfo.dxram.log.storage.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.storage.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.storage.header.ChecksumHandler;
 import de.hhu.bsinfo.dxram.log.storage.logs.Log;
 import de.hhu.bsinfo.dxram.log.storage.logs.LogHandler;
-import de.hhu.bsinfo.dxram.log.storage.logs.secondarylog.FileRecoveryHandler;
-import de.hhu.bsinfo.dxram.log.storage.logs.secondarylog.LogRecoveryHandler;
+import de.hhu.bsinfo.dxram.log.storage.recovery.FileRecoveryHandler;
+import de.hhu.bsinfo.dxram.log.storage.recovery.LogRecoveryHandler;
+import de.hhu.bsinfo.dxram.log.storage.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.log.storage.versioncontrol.VersionHandler;
 import de.hhu.bsinfo.dxram.log.storage.writebuffer.BufferPool;
 import de.hhu.bsinfo.dxram.log.storage.writebuffer.WriteBufferHandler;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
-import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
 import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
@@ -79,7 +81,9 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
     private NetworkComponent m_network;
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
-    private ChunkBackupComponent m_chunk;
+    private ChunkComponent m_chunk;
+
+    private Recovery m_dxmemRecoveryOp;
 
     // private state
     private LogHandler m_logHandler;
@@ -249,7 +253,7 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
      * @return the recovery metadata
      */
     public RecoveryMetadata recoverBackupRange(final short p_owner, final short p_rangeID) {
-        return m_logRecoveryHandler.recoverBackupRange(p_owner, p_rangeID, m_chunk);
+        return m_logRecoveryHandler.recoverBackupRange(p_owner, p_rangeID, m_dxmemRecoveryOp);
     }
 
     /**
@@ -292,7 +296,7 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkBackupComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
     }
 
     @Override
@@ -336,6 +340,9 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
             purgeLogDirectory(m_backupDirectory);
 
             createHandlers();
+
+            // Get the recovery operation for recovery.
+            m_dxmemRecoveryOp = m_chunk.getMemory().recovery();
         }
 
         return true;
@@ -350,8 +357,11 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
      *         the directory to store logs in
      * @param p_backupRangeSize
      *         the backup range size
+     * @param p_kvss
+     *         the key-value store size; -1 if memory management is not required
      */
-    void initComponent(final LogComponentConfig p_config, final String p_backupDir, final int p_backupRangeSize) {
+    void initComponent(final LogComponentConfig p_config, final String p_backupDir, final int p_backupRangeSize,
+            final long p_kvss) {
         setConfig(p_config);
 
         applyConfiguration(p_config);
@@ -388,6 +398,11 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
         purgeLogDirectory(m_backupDirectory);
 
         createHandlers();
+
+        if (p_kvss != -1) {
+            // Initialize DXMem and get the recovery operation for recovery.
+            m_dxmemRecoveryOp = new DXMem(m_nodeID, p_kvss).recovery();
+        }
     }
 
     /**

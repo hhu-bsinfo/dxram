@@ -5,7 +5,7 @@ package de.hhu.bsinfo.dxram.log.storage.logs.secondarylog;
  *
  * @author Kevin Beineke 07.11.2014
  */
-final class SegmentHeader {
+public final class SegmentHeader {
 
     private final int m_index;
     private volatile int m_usedBytes;
@@ -56,7 +56,7 @@ final class SegmentHeader {
      *
      * @return true if segment is empty, false otherwise
      */
-    boolean isEmpty() {
+    public boolean isEmpty() {
         return m_usedBytes == 0;
     }
 

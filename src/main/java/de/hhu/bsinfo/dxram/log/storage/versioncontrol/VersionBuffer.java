@@ -358,7 +358,7 @@ public final class VersionBuffer extends LongIntHashTable {
      * @throws IOException
      *         if versions could not be read from log
      */
-    long readAll(final TemporaryVersionsStorage p_allVersions, final boolean p_writeBack) throws IOException {
+    long readAll(final TemporaryVersionStorage p_allVersions, final boolean p_writeBack) throws IOException {
         boolean update;
         LongHashTable versionHashTable = p_allVersions.getVersionsHashTable();
         VersionArray versionArray = p_allVersions.getVersionsArray();

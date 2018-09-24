@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.log.storage.logs.secondarylog;
+package de.hhu.bsinfo.dxram.log.storage.recovery;
 
 import java.io.File;
 import java.io.IOException;

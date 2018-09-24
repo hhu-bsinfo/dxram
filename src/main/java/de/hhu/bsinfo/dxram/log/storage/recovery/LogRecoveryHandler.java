@@ -1,8 +1,7 @@
-package de.hhu.bsinfo.dxram.log.storage.logs.secondarylog;
+package de.hhu.bsinfo.dxram.log.storage.recovery;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.LogManager;
@@ -10,18 +9,21 @@ import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxmem.data.ChunkByteBuffer;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
-import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
+import de.hhu.bsinfo.dxmem.operations.Recovery;
 import de.hhu.bsinfo.dxram.log.storage.BackupRangeCatalog;
 import de.hhu.bsinfo.dxram.log.storage.DirectByteBufferWrapper;
 import de.hhu.bsinfo.dxram.log.storage.Scheduler;
 import de.hhu.bsinfo.dxram.log.storage.header.AbstractLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.storage.header.AbstractSecLogEntryHeader;
 import de.hhu.bsinfo.dxram.log.storage.header.ChecksumHandler;
-import de.hhu.bsinfo.dxram.log.storage.versioncontrol.TemporaryVersionsStorage;
+import de.hhu.bsinfo.dxram.log.storage.logs.secondarylog.SecondaryLog;
+import de.hhu.bsinfo.dxram.log.storage.logs.secondarylog.SecondaryLogBuffer;
+import de.hhu.bsinfo.dxram.log.storage.logs.secondarylog.SegmentHeader;
+import de.hhu.bsinfo.dxram.log.storage.versioncontrol.TemporaryVersionStorage;
 import de.hhu.bsinfo.dxram.log.storage.versioncontrol.Version;
 import de.hhu.bsinfo.dxram.log.storage.versioncontrol.VersionHandler;
 import de.hhu.bsinfo.dxram.log.storage.versioncontrol.VersionSorter;
-import de.hhu.bsinfo.dxram.recovery.RecoveryMetadata;
+import de.hhu.bsinfo.dxutils.hashtable.GenericHashTable;
 import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 import de.hhu.bsinfo.dxutils.stats.TimePool;
 import de.hhu.bsinfo.dxutils.stats.ValuePool;
@@ -70,7 +72,7 @@ public final class LogRecoveryHandler {
     private final boolean m_useChecksums;
 
     private final DirectByteBufferWrapper[] m_byteBuffersForRecovery;
-    private TemporaryVersionsStorage m_versionsForRecovery;
+    private TemporaryVersionStorage m_versionsForRecovery;
 
     /**
      * Creates an instance of LogRecoveryHandler.
@@ -118,12 +120,12 @@ public final class LogRecoveryHandler {
      *         the owner
      * @param p_rangeID
      *         the range ID
-     * @param p_chunkComponent
-     *         the chunk component to access the memory management
+     * @param p_dxmemRecoveryOp
+     *         DXMem recovery operation to access the memory management during recovery
      * @return recovery metadata (chunk ID ranges, number of recovered chunks, total size)
      */
     public RecoveryMetadata recoverBackupRange(final short p_owner, final short p_rangeID,
-            final ChunkBackupComponent p_chunkComponent) {
+            final Recovery p_dxmemRecoveryOp) {
         RecoveryMetadata ret = null;
         SecondaryLogBuffer secLogBuffer;
 
@@ -137,7 +139,7 @@ public final class LogRecoveryHandler {
                 SOP_GET_ALL_VERSIONS.start();
 
                 if (m_versionsForRecovery == null) {
-                    m_versionsForRecovery = new TemporaryVersionsStorage(m_secondaryLogSize);
+                    m_versionsForRecovery = new TemporaryVersionStorage(m_secondaryLogSize);
                 } else {
                     m_versionsForRecovery.clear();
                 }
@@ -150,7 +152,7 @@ public final class LogRecoveryHandler {
                 secLogBuffer.flushSecLogBuffer();
 
                 ret = recoverFromLog(secLogBuffer.getLog(), m_byteBuffersForRecovery, m_versionsForRecovery, lowestCID,
-                        p_chunkComponent);
+                        p_dxmemRecoveryOp);
             } else {
 
                 LOGGER.error("Backup range %d could not be recovered. Secondary log is missing!", p_rangeID);
@@ -174,19 +176,19 @@ public final class LogRecoveryHandler {
      *         all versions read from SSD
      * @param p_lowestCID
      *         the lowest CID in range
-     * @param p_chunkComponent
-     *         the ChunkBackupComponent to store recovered chunks
+     * @param p_dxmemRecoveryOp
+     *         DXMem recovery operation to store recovered chunks
      * @return ChunkIDs of all recovered chunks, number of recovered chunks and bytes
      */
     private RecoveryMetadata recoverFromLog(final SecondaryLog p_secondaryLog,
-            final DirectByteBufferWrapper[] p_wrappers, final TemporaryVersionsStorage p_versions,
-            final long p_lowestCID, final ChunkBackupComponent p_chunkComponent) {
+            final DirectByteBufferWrapper[] p_wrappers, final TemporaryVersionStorage p_versions,
+            final long p_lowestCID, final Recovery p_dxmemRecoveryOp) {
         SegmentHeader[] segmentHeaders = p_secondaryLog.getSegmentHeaders();
         byte[] index = new byte[segmentHeaders.length];
         ReentrantLock indexLock = new ReentrantLock(false);
         ReentrantLock largeChunkLock = new ReentrantLock(false);
         final RecoveryMetadata recoveryMetadata = new RecoveryMetadata();
-        HashMap<Long, ChunkByteBuffer> largeChunks;
+        GenericHashTable<ChunkByteBuffer> largeChunks;
 
         short rangeID = p_secondaryLog.getRangeID();
         short owner = p_secondaryLog.getOwner();
@@ -207,7 +209,7 @@ public final class LogRecoveryHandler {
         }
 
         // HashMap to store large Chunks in
-        largeChunks = new HashMap<>();
+        largeChunks = new GenericHashTable<>();
 
         if (owner == originalOwner) {
             LOGGER.info("Starting recovery of backup range %d of 0x%X", rangeID, owner);
@@ -218,14 +220,11 @@ public final class LogRecoveryHandler {
 
         long time = System.currentTimeMillis();
 
-        // Write Chunks in parallel
-        ChunkBackupComponent.RecoveryWriterThread writerThread = p_chunkComponent.initRecoveryThread();
-
         RecoveryHelperThread[] helperThreads = new RecoveryHelperThread[LogRecoveryHandler.RECOVERY_THREADS];
         for (int i = 0; i < LogRecoveryHandler.RECOVERY_THREADS; i++) {
             RecoveryHelperThread helperThread =
                     new RecoveryHelperThread(recoveryMetadata, p_secondaryLog, p_wrappers[i + 1], p_versions,
-                            largeChunks, largeChunkLock, p_lowestCID, index, indexLock, p_chunkComponent);
+                            largeChunks, largeChunkLock, p_lowestCID, index, indexLock, p_dxmemRecoveryOp);
             helperThread.setName("Recovery: Helper-Thread " + (i + 1));
             helperThread.start();
             helperThreads[i] = helperThread;
@@ -252,7 +251,7 @@ public final class LogRecoveryHandler {
 
             if (segmentHeaders[idx] != null && !segmentHeaders[idx].isEmpty()) {
                 recoverSegment(p_secondaryLog, idx, p_wrappers[0], p_versions, p_lowestCID, recoveryMetadata,
-                        largeChunks, largeChunkLock, p_chunkComponent);
+                        largeChunks, largeChunkLock, p_dxmemRecoveryOp);
             }
             idx++;
         }
@@ -261,24 +260,23 @@ public final class LogRecoveryHandler {
             for (int i = 0; i < LogRecoveryHandler.RECOVERY_THREADS; i++) {
                 helperThreads[i].join();
             }
-            while (!writerThread.finished()) {
-                Thread.yield();
-            }
-            writerThread.interrupt();
-            writerThread.join();
         } catch (InterruptedException e) {
 
             LOGGER.error("Interrupt: Could not wait for RecoveryHelperThread/RecoveryWriterThread to finish!");
 
         }
 
-        SOP_PUT_LARGE_CHUNKS.start();
-
         if (!largeChunks.isEmpty()) {
-            p_chunkComponent.putRecoveredChunks(recoveryMetadata, largeChunks.values().toArray(new ChunkByteBuffer[0]));
-        }
 
-        SOP_PUT_LARGE_CHUNKS.stop();
+            SOP_PUT_LARGE_CHUNKS.start();
+
+            ChunkByteBuffer[] chunks = largeChunks.values(ChunkByteBuffer.class);
+            long size = p_dxmemRecoveryOp.createAndPutRecovered(chunks);
+            recoveryMetadata.add(chunks.length, (int) size);
+
+            SOP_PUT_LARGE_CHUNKS.stop();
+
+        }
 
         LOGGER.info("Recovery of backup range finished: ");
         LOGGER.info("\t Recovered %d chunks in %d ms", recoveryMetadata.getNumberOfChunks(),
@@ -307,14 +305,14 @@ public final class LogRecoveryHandler {
      *         a class to bundle recovery metadata
      * @param p_largeChunks
      *         a HashMap to store large, split chunks
-     * @param p_chunkComponent
-     *         the ChunkBackupComponent
+     * @param p_dxmemRecoveryOp
+     *         DXMem recovery operation to access the memory management during recovery
      */
     static void recoverSegment(final SecondaryLog p_secondaryLog, final int p_segmentIndex,
-            final DirectByteBufferWrapper p_wrapper, final TemporaryVersionsStorage p_allVersions,
+            final DirectByteBufferWrapper p_wrapper, final TemporaryVersionStorage p_allVersions,
             final long p_lowestCID, final RecoveryMetadata p_recoveryMetadata,
-            final HashMap<Long, ChunkByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock,
-            final ChunkBackupComponent p_chunkComponent) {
+            final GenericHashTable<ChunkByteBuffer> p_largeChunks, final ReentrantLock p_largeChunkLock,
+            final Recovery p_dxmemRecoveryOp) {
         int headerSize;
         int readBytes = 0;
         int segmentLength;
@@ -430,16 +428,11 @@ public final class LogRecoveryHandler {
 
                                 index++;
                             } else {
-
                                 SOP_PUT_REGULAR_CHUNKS.start();
 
-                                if (!p_chunkComponent
-                                        .putRecoveredChunks(chunkIDs, p_wrapper.getAddress(), offsets, lengths,
-                                                length)) {
-
-                                    LOGGER.error("Memory management failure. Could not recover chunks!");
-
-                                }
+                                p_dxmemRecoveryOp
+                                        .createAndPutRecovered(chunkIDs, p_wrapper.getAddress(), offsets, lengths,
+                                                length);
 
                                 SOP_PUT_REGULAR_CHUNKS.stop();
 
@@ -464,15 +457,9 @@ public final class LogRecoveryHandler {
 
                 // Put other chunks in memory
                 if (index != 0) {
-
                     SOP_PUT_REGULAR_CHUNKS.start();
 
-                    if (!p_chunkComponent
-                            .putRecoveredChunks(chunkIDs, p_wrapper.getAddress(), offsets, lengths, index)) {
-
-                        LOGGER.error("Memory management failure. Could not recover chunks!");
-
-                    }
+                    p_dxmemRecoveryOp.createAndPutRecovered(chunkIDs, p_wrapper.getAddress(), offsets, lengths, length);
 
                     SOP_PUT_REGULAR_CHUNKS.stop();
 

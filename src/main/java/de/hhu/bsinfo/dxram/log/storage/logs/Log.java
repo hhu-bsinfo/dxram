@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.log.storage.diskaccess.DiskAccessInterface;
 import de.hhu.bsinfo.dxram.log.storage.diskaccess.FileDiskAccess;
 import de.hhu.bsinfo.dxram.log.storage.diskaccess.RawDiskAccess;
 import de.hhu.bsinfo.dxram.log.storage.versioncontrol.VersionBuffer;
-import de.hhu.bsinfo.dxram.util.HarddriveAccessMode;
+import de.hhu.bsinfo.dxram.log.storage.diskaccess.HarddriveAccessMode;
 
 /**
  * Skeleton for a log.

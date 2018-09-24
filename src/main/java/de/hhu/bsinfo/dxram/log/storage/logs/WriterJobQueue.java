@@ -16,7 +16,6 @@
 
 package de.hhu.bsinfo.dxram.log.storage.logs;
 
-import de.hhu.bsinfo.dxnet.core.NetworkRuntimeException;
 import de.hhu.bsinfo.dxram.log.storage.DirectByteBufferWrapper;
 import de.hhu.bsinfo.dxutils.UnsafeHandler;
 
@@ -49,7 +48,7 @@ final class WriterJobQueue {
      */
     WriterJobQueue() {
         if ((SIZE & SIZE - 1) != 0) {
-            throw new NetworkRuntimeException("Buffer queue size must be a power of 2!");
+            throw new RuntimeException("Buffer queue size must be a power of 2!");
         }
 
         m_jobIDs = new JobID[SIZE];

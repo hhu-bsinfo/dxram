@@ -128,9 +128,11 @@ public class WriteBuffer {
      * Repeats until there is no more data left for given range. Is used prior to the reorganization.
      */
     void flush(final short p_owner, final short p_range) {
-        while (m_rangeSizeHashTable.get((p_owner << 16) + p_range) != 0) {
+        int currentRangeSize;
+        do {
             flush();
-        }
+            currentRangeSize = m_rangeSizeHashTable.get((p_owner << 16) + p_range);
+        } while (currentRangeSize > 0);
     }
 
     /**

@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.recovery;
+package de.hhu.bsinfo.dxram.log.storage.recovery;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +32,7 @@ public class RecoveryMetadata {
     /**
      * Constructor
      */
-    public RecoveryMetadata() {
+    RecoveryMetadata() {
         m_chunkIDRanges = null;
         m_numberOfChunks = new AtomicInteger(0);
         m_size = new AtomicInteger(0);
@@ -44,7 +44,7 @@ public class RecoveryMetadata {
      * @param p_chunkIDRanges
      *         the ChunkID ranges of all recovered chunks
      */
-    public void setChunkIDRanges(final long[] p_chunkIDRanges) {
+    void setChunkIDRanges(final long[] p_chunkIDRanges) {
         m_chunkIDRanges = p_chunkIDRanges;
     }
 

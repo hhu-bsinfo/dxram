@@ -130,7 +130,7 @@ public final class VersionHandler {
      *         if versions could not be read from log
      */
     public final long getCurrentVersions(final short p_ownerID, final short p_rangeID,
-            final TemporaryVersionsStorage p_allVersions, final boolean p_writeBack) throws IOException {
+            final TemporaryVersionStorage p_allVersions, final boolean p_writeBack) throws IOException {
         VersionBuffer versionBuffer = m_backupRangeCatalog.getVersionBuffer(p_ownerID, p_rangeID);
 
         if (versionBuffer == null) {
