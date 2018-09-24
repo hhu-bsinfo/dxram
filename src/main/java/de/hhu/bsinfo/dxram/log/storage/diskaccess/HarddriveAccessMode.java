@@ -14,10 +14,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.util;
+package de.hhu.bsinfo.dxram.log.storage.diskaccess;
 
 /**
- * Represents the harddrive access modes.
+ * Represents the hard drive access modes.
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 25.11.2016
  */
@@ -29,7 +29,7 @@ public enum HarddriveAccessMode {
     private static final String RAW_DEVICE_STR = "raw";
 
     /**
-     * Get the harddrive access mode from a full string.
+     * Get the hard drive access mode from a full string.
      *
      * @param p_str
      *         String to parse.
