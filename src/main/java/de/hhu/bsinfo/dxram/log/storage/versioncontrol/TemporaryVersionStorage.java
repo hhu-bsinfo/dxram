@@ -30,18 +30,18 @@ import de.hhu.bsinfo.dxutils.stats.ValuePool;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 24.11.2016
  */
-public final class TemporaryVersionsStorage {
+public final class TemporaryVersionStorage {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(TemporaryVersionsStorage.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(TemporaryVersionStorage.class.getSimpleName());
 
     private static final ValuePool SOP_READ_VERSIONS_FROM_ARRAY =
-            new ValuePool(TemporaryVersionsStorage.class, "ReadVersionsFromArray");
+            new ValuePool(TemporaryVersionStorage.class, "ReadVersionsFromArray");
     private static final ValuePool SOP_READ_VERSIONS_FROM_HASH_TABLE =
-            new ValuePool(TemporaryVersionsStorage.class, "ReadVersionsFromHashTable");
+            new ValuePool(TemporaryVersionStorage.class, "ReadVersionsFromHashTable");
 
     static {
-        StatisticsManager.get().registerOperation(TemporaryVersionsStorage.class, SOP_READ_VERSIONS_FROM_ARRAY);
-        StatisticsManager.get().registerOperation(TemporaryVersionsStorage.class, SOP_READ_VERSIONS_FROM_HASH_TABLE);
+        StatisticsManager.get().registerOperation(TemporaryVersionStorage.class, SOP_READ_VERSIONS_FROM_ARRAY);
+        StatisticsManager.get().registerOperation(TemporaryVersionStorage.class, SOP_READ_VERSIONS_FROM_HASH_TABLE);
     }
 
     private final long m_maximumBackupRangeSize;
@@ -49,12 +49,12 @@ public final class TemporaryVersionsStorage {
     private final LongHashTable m_versionHashTable;
 
     /**
-     * Creates an instance of TemporaryVersionsStorage.
+     * Creates an instance of TemporaryVersionStorage.
      *
      * @param p_secondaryLogSize
      *         the size of the secondary log
      */
-    public TemporaryVersionsStorage(final long p_secondaryLogSize) {
+    public TemporaryVersionStorage(final long p_secondaryLogSize) {
         m_maximumBackupRangeSize = p_secondaryLogSize / 2;
 
         // Initialize array with default value suitable for 64-byte chunks; use localID 0 to fit first backup range
