@@ -287,7 +287,7 @@ final class ProcessThread extends Thread {
         for (int j = 0; j < list.size(); j++) {
             i = 0;
             HashTableElement<BufferNode> element = list.get(j);
-            combinedRangeID = element.getKey();
+            combinedRangeID = (int) element.getKey();
             bufferNode = element.getValue();
             readyForSecLog = bufferNode.readyForSecLog();
 
