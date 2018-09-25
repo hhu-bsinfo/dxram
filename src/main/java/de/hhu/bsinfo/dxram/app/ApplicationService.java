@@ -97,6 +97,19 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     protected void engineInitFinished() {
         List<ApplicationServiceConfig.ApplicationEntry> list = getConfig().getAutoStart();
         list.sort(Comparator.comparingInt(ApplicationServiceConfig.ApplicationEntry::getStartOrderId));
-        getConfig().getAutoStart().forEach(entry -> startApplication(entry.getClassName(), entry.getArgs().split(ARG_SEPERATOR)));
+
+        getConfig().getAutoStart().forEach(entry -> {
+            String[] args;
+
+            // to handle arguments passed using JVM args which use an @ to separate tokens because space doesn't work
+            // not a very safe and elegant way to handle that...
+            if (entry.getArgs().contains(ARG_SEPERATOR)) {
+                args = entry.getArgs().split(ARG_SEPERATOR);
+            } else {
+                args = entry.getArgs().split(" ");
+            }
+
+            startApplication(entry.getClassName(), args);
+        });
     }
 }
