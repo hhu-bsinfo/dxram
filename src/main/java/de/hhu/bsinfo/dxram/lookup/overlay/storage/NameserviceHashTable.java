@@ -19,9 +19,6 @@ package de.hhu.bsinfo.dxram.lookup.overlay.storage;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.TreeSet;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,7 +79,7 @@ public class NameserviceHashTable extends IntLongHashTable implements MetadataIn
 
                 LOGGER.trace("Storing nameservice entry");
 
-                put(data.getInt(), data.getLong());
+                putChunkID(data.getInt(), data.getLong());
                 ret++;
             }
         }
@@ -224,7 +221,7 @@ public class NameserviceHashTable extends IntLongHashTable implements MetadataIn
         iter = getKey(++index);
         while (iter != 0) {
             set(index, 0, 0);
-            put(iter, getValue(index));
+            putChunkID(iter, getValue(index));
 
             iter = getKey(++index);
         }
@@ -243,52 +240,6 @@ public class NameserviceHashTable extends IntLongHashTable implements MetadataIn
             if (iter != 0) {
                 System.out.println("Key: " + iter + ", value: " + ChunkID.toHexString(getValue(i)));
             }
-        }
-    }
-
-    /**
-     * Print all tuples in IDHashTable sorted
-     */
-    public final void printSorted() {
-        int iter;
-        Collection<Entry> list;
-
-        list = new TreeSet<>(Comparator.comparingInt(p_entryA -> p_entryA.m_key));
-
-        for (int i = 0; i < capacity(); i++) {
-            iter = getKey(i);
-            if (iter != 0) {
-                list.add(new Entry(iter, getValue(i)));
-            }
-        }
-
-        for (Entry entry : list) {
-            System.out.println("Key: " + entry.m_key + ", value: " + ChunkID.toHexString(entry.m_value));
-        }
-    }
-
-    /**
-     * A single Entry in IDHashTable
-     */
-    private static class Entry {
-
-        // Attributes
-        private int m_key;
-        private long m_value;
-
-        // Constructors
-
-        /**
-         * Creates an instance of Entry
-         *
-         * @param p_key
-         *         the key
-         * @param p_value
-         *         the value
-         */
-        protected Entry(final int p_key, final long p_value) {
-            m_key = p_key;
-            m_value = p_value;
         }
     }
 }
