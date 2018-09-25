@@ -27,3 +27,7 @@ if (isDevelop && new File('../dxmem').exists()) {
 if (isDevelop && new File('../dxnet').exists()) {
     includeBuild('../dxnet')
 }
+
+if (isDevelop && new File('../dxlog').exists()) {
+    includeBuild('../dxlog')
+}

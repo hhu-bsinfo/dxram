@@ -20,8 +20,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxmem.data.ChunkID;
+import de.hhu.bsinfo.dxlog.storage.diskaccess.HarddriveAccessMode;
+import de.hhu.bsinfo.dxlog.storage.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
@@ -34,7 +36,6 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 import de.hhu.bsinfo.dxram.log.LogComponent;
-import de.hhu.bsinfo.dxram.log.storage.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeRequest;
@@ -42,7 +43,6 @@ import de.hhu.bsinfo.dxram.recovery.messages.RecoverBackupRangeResponse;
 import de.hhu.bsinfo.dxram.recovery.messages.RecoveryMessages;
 import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeRequest;
 import de.hhu.bsinfo.dxram.recovery.messages.ReplicateBackupRangeResponse;
-import de.hhu.bsinfo.dxram.log.storage.diskaccess.HarddriveAccessMode;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
 
@@ -145,7 +145,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
 
         // FIXME: Very old, not functional code
 
-        HarddriveAccessMode mode = HarddriveAccessMode.convert(m_log.getConfig().getHarddriveAccess());
+        HarddriveAccessMode mode = HarddriveAccessMode.convert(m_log.getConfig().getDxlogConfig().getHarddriveAccess());
         if (mode != HarddriveAccessMode.RAW_DEVICE) {
             String fileName;
             File folderToScan;
@@ -356,15 +356,14 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
             } else {
                 // Initialize backup ranges in backup, lookup and log modules by joining recovered chunks with
                 // migrated chunks
-                replacementBackupPeer = m_backup.registerRecoveredChunks(recoveryMetadata, backupRange,
-                        p_request.getOwner());
+                replacementBackupPeer =
+                        m_backup.registerRecoveredChunks(recoveryMetadata, backupRange, p_request.getOwner());
 
                 // Store recovery metadata for replication of recovered backup range to be handled by another thread
                 // after initialization by superpeer
                 m_replicationLock.lock();
                 m_finishedRecoveries.add(new FinishedRecovery(replacementBackupPeer, recoveryMetadata.getCIDRanges(),
-                        recoveryMetadata.getNumberOfChunks(),
-                        backupRange.getRangeID()));
+                        recoveryMetadata.getNumberOfChunks(), backupRange.getRangeID()));
 
                 m_replicationLock.unlock();
 
@@ -402,8 +401,8 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
             // Send replicas to backup peers
             if (finishedRecovery.getReplacementBackupPeer() != NodeID.INVALID_ID) {
                 m_chunkBackup.replicateBackupRange(finishedRecovery.getReplacementBackupPeer(),
-                        finishedRecovery.getCIDRanges(),
-                        finishedRecovery.getNumberOfChunks(), finishedRecovery.getRangeID());
+                        finishedRecovery.getCIDRanges(), finishedRecovery.getNumberOfChunks(),
+                        finishedRecovery.getRangeID());
             }
         }
     }
@@ -431,17 +430,13 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
      */
     private void registerNetworkMessages() {
         m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
-                RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST,
-                RecoverBackupRangeRequest.class);
+                RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_REQUEST, RecoverBackupRangeRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
-                RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE,
-                RecoverBackupRangeResponse.class);
+                RecoveryMessages.SUBTYPE_RECOVER_BACKUP_RANGE_RESPONSE, RecoverBackupRangeResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
-                RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST,
-                ReplicateBackupRangeRequest.class);
+                RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_REQUEST, ReplicateBackupRangeRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.RECOVERY_MESSAGES_TYPE,
-                RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_RESPONSE,
-                ReplicateBackupRangeResponse.class);
+                RecoveryMessages.SUBTYPE_REPLICATE_BACKUP_RANGE_RESPONSE, ReplicateBackupRangeResponse.class);
     }
 
     /**

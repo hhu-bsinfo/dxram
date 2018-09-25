@@ -106,7 +106,8 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
 
             // check if kernel buffer is in use
             boolean isPageCacheInUse = false;
-            String hardwareAccessMode = p_config.getComponentConfig(LogComponentConfig.class).getHarddriveAccess();
+            String hardwareAccessMode =
+                    p_config.getComponentConfig(LogComponentConfig.class).getDxlogConfig().getHarddriveAccess();
 
             if (hardwareAccessMode.equals("raf")) {
                 isPageCacheInUse = true;
@@ -123,8 +124,9 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
             short numberOfCollects = componentConfig.getCollectsPerWindow();
 
             if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-                m_superpeerHandler = new SuperpeerMonitoringHandler(componentConfig.getCsvTimeWindow().getSec(), m_boot,
-                        m_event, monitoringFolder);
+                m_superpeerHandler =
+                        new SuperpeerMonitoringHandler(componentConfig.getCsvTimeWindow().getSec(), m_boot, m_event,
+                                monitoringFolder);
                 m_superpeerHandler.start();
             } else {
                 short ownNid = m_boot.getNodeId();
@@ -141,8 +143,8 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
                 m_peerHandler.setupComponents();
                 m_peerHandler.start();
 
-                m_dxramPeerHandler = new PeerDXRAMMonitoringHandler(ownNid, numberOfCollects, secondDelay,
-                        monitoringFolder);
+                m_dxramPeerHandler =
+                        new PeerDXRAMMonitoringHandler(ownNid, numberOfCollects, secondDelay, monitoringFolder);
                 m_dxramPeerHandler.start();
             }
         }
