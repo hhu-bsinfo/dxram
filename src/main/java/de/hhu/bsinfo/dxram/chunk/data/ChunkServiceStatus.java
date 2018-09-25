@@ -72,6 +72,12 @@ public class ChunkServiceStatus implements Importable, Exportable {
     }
 
     @Override
+    public String toString() {
+        return "HeapStatus: " + m_heapStatus + "\nCIDTableStatus: " + m_cidTableStatus + "\nLIDStoreStatus: " +
+                m_lidStoreStatus;
+    }
+
+    @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.exportObject(m_heapStatus);
         p_exporter.exportObject(m_cidTableStatus);
