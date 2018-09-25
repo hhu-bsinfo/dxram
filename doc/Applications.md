@@ -1,49 +1,53 @@
-DXRAM provides a framework to easily develop small and big applications. Your application runs on one or multiple
+DXRAM provides a framework to easily develop small and large applications. Your application runs on one or multiple
 DXRAM peers independently but you can connect and synchronize them using services provided by the DXRAM core. This
 document gives you a brief introduction on how to get started with writing and deploying your own DXRAM application
 (abbreviated: *dxapp*).
 
 # Examples
 We provide examples to get you started with implementing your own dxapp. The
-[HelloWorldApplication](https://github.com/hhu-bsinfo/dxapp-helloworld/) implements a simple hello world example.
-*HellWorldWithConfigApplicataion* adds configuration values that are available through a JSON configuration file which
-is automatically generated in the same folder as the jar file after the application is launched the first time.
-For further reference, [DXTerm](https://github.com/hhu-bsinfo/dxterm/), DXRAM's terminal, is also implemented as a
-dxapp with more advanced features.
+[dxa-helloworld](https://github.com/hhu-bsinfo/dxapps/) application implements a simple hello world example. Further
+applications like a command line interface to send commands to peer nodes
+([dxa-dxterminal](https://github.com/hhu-bsinfo/dxapps/)) as well as several benchmark and test
+applications used for developing DXRAM are also included in the same repository.
 
 # Setup ApplicationService, compilation and deployment
-Here are the steps to setup, compile and deploy the *HelloWorldApplication*. The application is compiled as a separate
-project and linked against DXRAM (see the dedicated repository).
+These are the steps to setup, compile and deploy the *dxa-hellowrold* application. All dxapps must be compiled as a
+separate jar file and linked against DXRAM (see the dedicated repository).
 
-The *ApplicationService* must be enabled and running on the DXRAM peer(s) you want to run your dxapp(s) on. On the
-default configuration, it is enabled on all DXRAM peers but can be turned on/off in the DXRAM configuration file:
+You have to compile your dxapp as a separate jar-package (most likely from a separate project). For starters, you
+might want to pick one of the already implemented applications from the
+[dxapps repository](https://github.com/hhu-bsinfo/dxapps/) and just write your code in *dxa-helloworld*. Later, you can
+take care of a clean build system setup if you need to. The hello-world example is minimalistic but gives you a
+basic framework to start writing your own applications.
+
+All jar-packages must be placed inside a configurable folder (default: *dxapp*). These are scanned by DXRAM for classes
+implementing the *AbstractApplication* class. All sub-classes found (multiple per jar-package possible) are
+bootstrapped by the ApplicationService on startup.
+
+There two methods to make DXRAM run your application: Add it to the autostart list in the configuration file or
+run it using the DXRAM API.
+
+Below is an excerpt of a configuration file that puts the dxa-helloworld application into autostart to run it once
+the peer has finished initializing:
 ```
 "ApplicationServiceConfig": {
-  "m_class": "de.hhu.bsinfo.dxram.app.ApplicationServiceConfig",
-  "m_serviceClass": "ApplicationService",
-  "m_enabledForSuperpeer": false,
-  "m_enabledForPeer": true
-}
+"m_autoStart": [
+    {
+        "m_className": "de.hhu.bsinfo.dxapp.HelloWorld",
+        "m_args": "123",
+        "m_startOrderId": 0
+    }
+],
+"m_classConfig": "de.hhu.bsinfo.dxram.app.ApplicationServiceConfig"
+},
 ```
-Ensure that *m_enabledForPeer* is set to *true*.
 
-When the service is running, all jar-packages inside the *dxapp* folder are scanned for classes implementing the
-*AbstractApplication* class. Instances of all found classes (multiple per jar-package possible) are created and the
-main-method is started in a separate thread.
+Make sure that your class name matches the fully qualified class path in your compiled jar. You can also pass command
+line arguments to your application using the configuration file. The *m_startOrderId* determines the start order
+when multiple applications are listed.
 
-Note: This happens after all core DXRAM services are initialized and started to ensure the node is fully booted before
-running user applications.
-
-The hello world examples are straight forward and the documentation of the abstract methods of
-*AbstractApplication* provides the necessary information you need in order to implement your own dxapps.
-
-# DXApp using further dependencies (external jars)
-If you need further dependencies for your applications loaded to the JVM before your dxapp is loaded,
-because your dxapp uses them, override the *getExternalDependencies* method in your dxapp implementation.
-
-# DXApps using other DXApps
-You can also compile a dxapp package that is used by another dxapp as some sort of library. Override the *init*
-method to initialize your library and don't execute anything in main. If main returns, the dxapp is not unloaded.
-Furthermore, you have to ensure that your "library" is loaded before your dxapp using it. Enable your dxapp to use a
-configuration file (return true on *useConfigurationFile*, see examples) and configure the *m_initOrderId* for your
-"library" and application accordingly.
+The second option to run applications is the DXRAM API. You can access the *ApplicationService* and run applications
+that are available in the dxapp folder. This is used by our command line application
+[dxa-dxterminal](https://github.com/hhu-bsinfo/dxapps/). Follow the instructions inside the repository on how to
+setup the terminal and check the list of available commands. This allows you to run applications dynamically and
+also supports running them repeatedly.
