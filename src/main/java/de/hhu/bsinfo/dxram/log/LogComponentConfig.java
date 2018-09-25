@@ -10,7 +10,6 @@ import de.hhu.bsinfo.dxlog.DXLogConfig;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 /**
  * Config for the LogComponent
@@ -20,7 +19,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = NetworkComponent.class, supportsSuperpeer = true, supportsPeer = true)
+@DXRAMComponentConfig.Settings(component = LogComponent.class, supportsSuperpeer = false, supportsPeer = true)
 public class LogComponentConfig extends DXRAMComponentConfig {
 
     /**
