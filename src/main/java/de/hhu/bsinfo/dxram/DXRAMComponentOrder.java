@@ -41,9 +41,9 @@ public final class DXRAMComponentOrder {
         public static final short NETWORK = 5;
         public static final short LOOKUP = 7;
         public static final short FAILURE = 8;
-        public static final short LOG = 9;
-        public static final short BACKUP = 10;
-        public static final short CHUNK = 11;
+        public static final short CHUNK = 9;
+        public static final short LOG = 10;
+        public static final short BACKUP = 11;
         public static final short CHUNK_INDEX = 12;
         public static final short NAMESERVICE = 13;
         public static final short JOB_WORK_STEALING = 14;
@@ -67,10 +67,10 @@ public final class DXRAMComponentOrder {
         public static final short MONITORING = -14;
         public static final short JOB_WORK_STEALING = -13;
         public static final short NAMESERVICE = -12;
-        public static final short CHUNK = -11;
-        public static final short CHUNK_INDEX = -10;
-        public static final short BACKUP = -9;
-        public static final short LOG = -8;
+        public static final short CHUNK_INDEX = -11;
+        public static final short BACKUP = -10;
+        public static final short LOG = -9;
+        public static final short CHUNK = -8;
         public static final short FAILURE = -7;
         public static final short LOOKUP = -6;
         public static final short NETWORK = -4;
