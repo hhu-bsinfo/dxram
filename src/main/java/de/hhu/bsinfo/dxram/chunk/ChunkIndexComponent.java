@@ -57,8 +57,6 @@ public class ChunkIndexComponent extends AbstractDXRAMComponent<ChunkIndexCompon
      *         Size of the index chunk.
      */
     public void registerIndexChunk(final long p_chunkID, final int p_size) {
-        // TODO backup lock like on chunk service
-
         if (p_chunkID != ChunkID.INVALID_ID) {
             m_backup.registerChunk(p_chunkID, p_size);
         }
@@ -72,8 +70,6 @@ public class ChunkIndexComponent extends AbstractDXRAMComponent<ChunkIndexCompon
      * @return True if successful, false otherwise
      */
     public boolean putIndexChunk(final AbstractChunk p_chunk) {
-        boolean ret;
-
         m_chunk.getMemory().put().put(p_chunk, ChunkLockOperation.ACQUIRE_OP_RELEASE, -1);
 
         if (!p_chunk.isStateOk()) {
@@ -88,12 +84,10 @@ public class ChunkIndexComponent extends AbstractDXRAMComponent<ChunkIndexCompon
                 for (BackupPeer peer : backupPeers) {
                     if (peer != null && peer.getNodeID() != m_boot.getNodeId()) {
 
-                        LOGGER.trace("Logging 0x%x to %s", p_chunk.getID(),
-                                NodeID.toHexString(peer.getNodeID()));
+                        LOGGER.trace("Logging 0x%x to %s", p_chunk.getID(), NodeID.toHexString(peer.getNodeID()));
 
                         try {
-                            m_network.sendMessage(
-                                    new LogMessage(peer.getNodeID(), backupRange.getRangeID(), p_chunk));
+                            m_network.sendMessage(new LogMessage(peer.getNodeID(), backupRange.getRangeID(), p_chunk));
                         } catch (final NetworkException ignore) {
 
                         }

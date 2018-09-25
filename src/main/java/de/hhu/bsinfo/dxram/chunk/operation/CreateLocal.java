@@ -62,10 +62,9 @@ public class CreateLocal extends AbstractOperation {
      * @param p_nameservice
      *         Instance of NameserviceComponent
      */
-    public CreateLocal(final Class<? extends AbstractDXRAMService> p_parentService,
-            final AbstractBootComponent p_boot, final BackupComponent p_backup, final ChunkComponent p_chunk,
-            final NetworkComponent p_network, final LookupComponent p_lookup,
-            final NameserviceComponent p_nameservice) {
+    public CreateLocal(final Class<? extends AbstractDXRAMService> p_parentService, final AbstractBootComponent p_boot,
+            final BackupComponent p_backup, final ChunkComponent p_chunk, final NetworkComponent p_network,
+            final LookupComponent p_lookup, final NameserviceComponent p_nameservice) {
         super(p_parentService, p_boot, p_backup, p_chunk, p_network, p_lookup, p_nameservice);
     }
 
@@ -87,10 +86,12 @@ public class CreateLocal extends AbstractOperation {
      */
     public int create(final long[] p_cids, final int p_offset, final int p_count, final int p_size,
             final boolean p_consecutive) {
-        m_logger.trace("create[cids.length %d, offset %d, size %d, count %d, consecutive %b]", p_cids.length,
-                p_offset, p_size, p_count, p_consecutive);
+        m_logger.trace("create[cids.length %d, offset %d, size %d, count %d, consecutive %b]", p_cids.length, p_offset,
+                p_size, p_count, p_consecutive);
 
         SOP_CREATE.start();
+
+        m_backup.blockCreation();
 
         int created = m_chunk.getMemory().create().create(p_cids, p_offset, p_count, p_size, p_consecutive);
 
@@ -101,8 +102,9 @@ public class CreateLocal extends AbstractOperation {
         }
 
         // Initialize a new backup range every e.g. 256 MB and inform superpeer
-        // TODO memory manager write lock does not exist anymore, how and where to lock?
         m_backup.registerChunks(p_cids, p_offset, created, p_size);
+
+        m_backup.unblockCreation();
 
         if (created < p_count) {
             SOP_CREATE_ERROR.add(p_count - created);
@@ -178,12 +180,13 @@ public class CreateLocal extends AbstractOperation {
      *         chunks to create
      * @return Number of chunks successfully created
      */
-    public int createSizes(final long[] p_cids, final int p_offset, final boolean p_consecutive,
-            final int... p_sizes) {
+    public int createSizes(final long[] p_cids, final int p_offset, final boolean p_consecutive, final int... p_sizes) {
         m_logger.trace("createSizes[cids.length %d, offset %d, consecutive %b, sizes (%d): %s]", p_cids.length,
                 p_offset, p_consecutive, p_sizes.length, Arrays.toString(p_sizes));
 
         SOP_CREATE_SIZES.start();
+
+        m_backup.blockCreation();
 
         int created = m_chunk.getMemory().create().create(p_cids, p_offset, p_consecutive, p_sizes);
 
@@ -194,8 +197,9 @@ public class CreateLocal extends AbstractOperation {
         }
 
         // Initialize a new backup range every e.g. 256 MB and inform superpeer
-        // TODO memory manager write lock does not exist anymore, how and where to lock?
         m_backup.registerChunks(p_cids, p_offset, created, p_sizes);
+
+        m_backup.unblockCreation();
 
         if (created < p_sizes.length) {
             SOP_CREATE_SIZES_ERROR.add(p_sizes.length - created);
@@ -275,11 +279,14 @@ public class CreateLocal extends AbstractOperation {
 
         SOP_CREATE_DS.start();
 
+        m_backup.blockCreation();
+
         int created = m_chunk.getMemory().create().create(p_offset, p_count, p_consecutive, p_chunks);
 
         // Initialize a new backup range every e.g. 256 MB and inform superpeer
-        // TODO memory manager write lock does not exist anymore, how and where to lock?
         m_backup.registerChunks(p_offset, created, p_chunks);
+
+        m_backup.unblockCreation();
 
         if (created != p_count) {
             SOP_CREATE_DS_ERROR.add(p_count - created);

@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.backup;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import de.hhu.bsinfo.dxlog.storage.recovery.RecoveryMetadata;
@@ -84,12 +85,31 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     private BackupRange m_currentBackupRange;
 
     private ReentrantReadWriteLock m_lock;
+    private ReentrantLock m_creationLock;
 
     /**
      * Creates the backup component
      */
     public BackupComponent() {
         super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP, BackupComponentConfig.class);
+    }
+
+    /**
+     * Block chunk creation until chunk ID is registered. Unblock must be called explicitly.
+     */
+    public void blockCreation() {
+        if (getConfig().isBackupActive()) {
+            m_creationLock.lock();
+        }
+    }
+
+    /**
+     * Unblock chunk creation after chunk ID has been registered.
+     */
+    public void unblockCreation() {
+        if (getConfig().isBackupActive()) {
+            m_creationLock.unlock();
+        }
     }
 
     /**
@@ -117,7 +137,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      *         the ChunkID
      * @param p_size
      *         the size
-     * @lock MemoryManager must be write locked
      */
     public BackupRange registerChunk(final long p_chunkID, final int p_size) {
         if (getConfig().isBackupActive() && p_chunkID != ChunkID.INVALID_ID) {
@@ -133,7 +152,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      * @param p_chunk
      *         the AbstractChunk
      * @return the corresponding backup range
-     * @lock MemoryManager must be write locked
      */
     public BackupRange registerChunk(final AbstractChunk p_chunk) {
         if (getConfig().isBackupActive() && p_chunk != null && p_chunk.getID() != ChunkID.INVALID_ID) {
@@ -152,7 +170,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      *         Start offset in ds array
      * @param p_count
      *         Number of elements of ds array to register
-     * @lock MemoryManager must be write locked
      */
     public void registerChunks(final int p_offset, final int p_count, final AbstractChunk... p_chunks) {
         if (getConfig().isBackupActive()) {
@@ -169,7 +186,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      *
      * @param p_chunks
      *         the data structures
-     * @lock MemoryManager must be write locked
      */
     public void registerChunks(final AbstractChunk... p_chunks) {
         registerChunks(0, p_chunks.length, p_chunks);
@@ -186,10 +202,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      *         Number of elements of cid array to register
      * @param p_chunkSize
      *         Size of a single chunk to register (same size for all chunks in array)
-     * @lock MemoryManager must be write locked
      */
     public void registerChunks(final long[] p_chunkIDs, final int p_offset, final int p_count, final int p_chunkSize) {
-        // TODO needs lock now that MemoryManager does not have the write lock anymore
         if (getConfig().isBackupActive()) {
             for (int i = p_offset; i < p_count; i++) {
                 if (p_chunkIDs[i] != ChunkID.INVALID_ID) {
@@ -206,7 +220,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      *         the ChunkIDs
      * @param p_size
      *         every chunks' size
-     * @lock MemoryManager must be write locked
      */
     public void registerChunks(final long[] p_chunkIDs, final int p_size) {
         registerChunks(p_chunkIDs, 0, p_chunkIDs.length, p_size);
@@ -219,7 +232,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
      *         the ChunkIDs
      * @param p_sizes
      *         the chunk sizes
-     * @lock MemoryManager must be write locked
      */
     public void registerChunks(final long[] p_chunkIDs, final int p_offset, final int p_count, final int[] p_sizes) {
         if (getConfig().isBackupActive()) {
@@ -560,6 +572,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
                                 new RandomPlacement(getConfig().getReplicationFactor(), true, false, false);
                         break;
                 }
+                m_creationLock = new ReentrantLock(false);
+
                 // TODO: initialize when needed
 
                 m_lock = new ReentrantReadWriteLock(false);

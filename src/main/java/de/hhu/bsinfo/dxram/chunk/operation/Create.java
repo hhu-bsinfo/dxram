@@ -67,10 +67,9 @@ public class Create extends AbstractOperation implements MessageReceiver {
      * @param p_nameservice
      *         Instance of NameserviceComponent
      */
-    public Create(final Class<? extends AbstractDXRAMService> p_parentService,
-            final AbstractBootComponent p_boot, final BackupComponent p_backup, final ChunkComponent p_chunk,
-            final NetworkComponent p_network, final LookupComponent p_lookup,
-            final NameserviceComponent p_nameservice) {
+    public Create(final Class<? extends AbstractDXRAMService> p_parentService, final AbstractBootComponent p_boot,
+            final BackupComponent p_backup, final ChunkComponent p_chunk, final NetworkComponent p_network,
+            final LookupComponent p_lookup, final NameserviceComponent p_nameservice) {
         super(p_parentService, p_boot, p_backup, p_chunk, p_network, p_lookup, p_nameservice);
 
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_CREATE_REQUEST,
@@ -106,14 +105,16 @@ public class Create extends AbstractOperation implements MessageReceiver {
         NodeRole role = m_boot.getNodeRole(p_targetNodeId);
 
         if (role == null || role != NodeRole.PEER) {
-            throw new InvalidNodeRoleException("Remote node " + NodeID.toHexString(p_targetNodeId) +
-                    " does not exist or is not a peer");
+            throw new InvalidNodeRoleException(
+                    "Remote node " + NodeID.toHexString(p_targetNodeId) + " does not exist or is not a peer");
         }
 
         int created;
 
         if (p_targetNodeId == m_boot.getNodeId()) {
             SOP_LOCAL.start(p_count);
+
+            m_backup.blockCreation();
 
             created = m_chunk.getMemory().create().create(p_cids, p_offset, p_count, p_size, p_consecutive);
 
@@ -124,8 +125,9 @@ public class Create extends AbstractOperation implements MessageReceiver {
             }
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
-            // TODO memory manager write lock does not exist anymore, how and where to lock?
             m_backup.registerChunks(p_cids, p_offset, created, p_size);
+
+            m_backup.unblockCreation();
 
             if (created < p_count) {
                 SOP_LOCAL_ERROR.add(p_count - created);
@@ -254,14 +256,16 @@ public class Create extends AbstractOperation implements MessageReceiver {
         NodeRole role = m_boot.getNodeRole(p_targetNodeId);
 
         if (role == null || role != NodeRole.PEER) {
-            throw new InvalidNodeRoleException("Remote node " + NodeID.toHexString(p_targetNodeId) +
-                    " does not exist or is not a peer");
+            throw new InvalidNodeRoleException(
+                    "Remote node " + NodeID.toHexString(p_targetNodeId) + " does not exist or is not a peer");
         }
 
         int created;
 
         if (p_targetNodeId == m_boot.getNodeId()) {
             SOP_LOCAL.start();
+
+            m_backup.blockCreation();
 
             created = m_chunk.getMemory().create().create(p_cids, p_offset, p_consecutive, p_sizes);
 
@@ -272,8 +276,9 @@ public class Create extends AbstractOperation implements MessageReceiver {
             }
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
-            // TODO memory manager write lock does not exist anymore, how and where to lock?
             m_backup.registerChunks(p_cids, p_offset, created, p_sizes);
+
+            m_backup.unblockCreation();
 
             if (created < p_sizes.length) {
                 SOP_LOCAL_ERROR.add(p_sizes.length - created);
@@ -390,14 +395,13 @@ public class Create extends AbstractOperation implements MessageReceiver {
     public int create(final short p_targetNodeId, final int p_offset, final int p_count, final boolean p_consecutive,
             final AbstractChunk... p_chunks) {
         m_logger.trace("create[nodeId %X, offset %d, count %d, consecutive %b, sizes (%d): %s]", p_targetNodeId,
-                p_offset, p_count, p_consecutive, p_chunks.length,
-                AbstractChunk.toSizeListString(p_chunks));
+                p_offset, p_count, p_consecutive, p_chunks.length, AbstractChunk.toSizeListString(p_chunks));
 
         NodeRole role = m_boot.getNodeRole(p_targetNodeId);
 
         if (role == null || role != NodeRole.PEER) {
-            throw new InvalidNodeRoleException("Remote node " + NodeID.toHexString(p_targetNodeId) +
-                    " does not exist or is not a peer");
+            throw new InvalidNodeRoleException(
+                    "Remote node " + NodeID.toHexString(p_targetNodeId) + " does not exist or is not a peer");
         }
 
         int created;
@@ -405,11 +409,14 @@ public class Create extends AbstractOperation implements MessageReceiver {
         if (p_targetNodeId == m_boot.getNodeId()) {
             SOP_LOCAL.start();
 
+            m_backup.blockCreation();
+
             created = m_chunk.getMemory().create().create(p_offset, p_count, p_consecutive, p_chunks);
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
-            // TODO memory manager write lock does not exist anymore, how and where to lock?
             m_backup.registerChunks(p_offset, created, p_chunks);
+
+            m_backup.unblockCreation();
 
             if (created != p_count) {
                 SOP_LOCAL_ERROR.add(p_count - created);
@@ -473,8 +480,7 @@ public class Create extends AbstractOperation implements MessageReceiver {
      *         and the state is set to OK.
      * @return Number of chunks successfully created. If less than expected, check the chunk objects states for errors.
      */
-    public int create(final short p_targetNodeId, final boolean p_consecutive,
-            final AbstractChunk... p_chunks) {
+    public int create(final short p_targetNodeId, final boolean p_consecutive, final AbstractChunk... p_chunks) {
         return create(p_targetNodeId, 0, p_chunks.length, p_consecutive, p_chunks);
     }
 
@@ -505,8 +511,7 @@ public class Create extends AbstractOperation implements MessageReceiver {
 
             long[] cids = new long[request.getSizes().length];
 
-            int created = m_chunk.getMemory().create().create(cids, 0, request.isConsecutive(),
-                    request.getSizes());
+            int created = m_chunk.getMemory().create().create(cids, 0, request.isConsecutive(), request.getSizes());
 
             // Initialize a new backup range every e.g. 256 MB and inform superpeer
             // TODO memory manager write lock does not exist anymore, how and where to lock?
