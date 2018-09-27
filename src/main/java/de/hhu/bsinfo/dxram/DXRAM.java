@@ -365,7 +365,7 @@ public final class DXRAM {
 
         @Override
         public void run() {
-            m_dxram.shutdown();
+            m_dxram.m_engine.shutdown();
         }
 
     }
