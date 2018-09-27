@@ -46,7 +46,10 @@ class ApplicationLoader {
                         .forEach(clazz -> m_applicationClasses.put(clazz.getName(), clazz));
             }
 
-            m_applicationClasses.keySet().forEach(clazz -> LOGGER.info("Found application %s", clazz));
+            // don't use closure because the pre-processor removes the log call on performance build type
+            for (String clazz : m_applicationClasses.keySet()) {
+                LOGGER.info("Found application %s", clazz);
+            }
         } else {
             LOGGER.warn("Can't scan for applications from %s, no such directory", p_path);
         }
