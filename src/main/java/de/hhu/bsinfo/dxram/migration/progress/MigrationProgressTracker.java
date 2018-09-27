@@ -4,6 +4,7 @@ import de.hhu.bsinfo.dxram.migration.LongRange;
 import de.hhu.bsinfo.dxram.migration.MigrationManager;
 import de.hhu.bsinfo.dxram.migration.MigrationStatus;
 import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Map;
@@ -36,11 +37,27 @@ public class MigrationProgressTracker {
      */
     public void setFinished(final MigrationIdentifier p_identifier, final Collection<LongRange> p_ranges) {
         MigrationProgress progress = m_progressMap.get(p_identifier);
+
+        if (progress == null) {
+            return;
+        }
+
         progress.setFinished(p_ranges);
 
         if (progress.isFinished()) {
             m_progressMap.remove(p_identifier);
         }
+    }
+
+    public void setError(final @NotNull MigrationIdentifier p_identifier) {
+        MigrationProgress progress = m_progressMap.get(p_identifier);
+
+        if (progress == null) {
+            return;
+        }
+
+        progress.onError();
+        m_progressMap.remove(p_identifier);
     }
 
     /**

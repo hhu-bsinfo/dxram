@@ -17,6 +17,9 @@
 package de.hhu.bsinfo.dxram.migration;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -45,6 +48,8 @@ import de.hhu.bsinfo.dxram.migration.messages.MigrationResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.NodeID;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Migration service providing migration of chunks.
@@ -168,8 +173,30 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
      * @param p_endChunkID The last chunk id
      * @param p_target The target node
      */
-    public MigrationTicket<MigrationStatus> migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
+    public MigrationTicket migrateRange(final long p_startChunkID, final long p_endChunkID, final short p_target) {
         return m_migrationManager.migrateRange(p_target, new LongRange(p_startChunkID, p_endChunkID));
+    }
+
+    /**
+     * Waits until the corresponding migration finishes.
+     *
+     * @param p_ticket The ticket associated with the migration.
+     * @return The migration's status or null if an exception occurred.
+     */
+    @Nullable
+    public MigrationStatus await(final @NotNull MigrationTicket p_ticket) {
+        return m_migrationManager.await(p_ticket);
+    }
+
+    /**
+     * Waits until the corresponding migration finishes or the specified timeout is reached.
+     *
+     * @param p_ticket The ticket associated with the migration.
+     * @return The migration's status or null if an exception occurred or the timeout was reached.
+     */
+    @Nullable
+    public MigrationStatus await(final long p_timeout, final @NotNull TimeUnit p_timeUnit, final @NotNull MigrationTicket p_ticket) {
+        return m_migrationManager.await(p_timeout, p_timeUnit, p_ticket);
     }
 
     /**
@@ -261,7 +288,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_migrationManager = new MigrationManager(1, p_componentAccessor);
+        m_migrationManager = new MigrationManager(16, p_componentAccessor);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);

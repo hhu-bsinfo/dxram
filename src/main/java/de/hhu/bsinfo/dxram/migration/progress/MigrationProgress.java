@@ -14,6 +14,8 @@ public class MigrationProgress implements Supplier<MigrationStatus> {
 
     private final Set<LongRange> m_pendingRanges = ConcurrentHashMap.newKeySet();
 
+    private boolean m_isError = false;
+
     public MigrationProgress(final Collection<LongRange> p_pendingRanges) {
         m_pendingRanges.addAll(p_pendingRanges);
         m_countDownLatch = new CountDownLatch(m_pendingRanges.size());
@@ -24,10 +26,21 @@ public class MigrationProgress implements Supplier<MigrationStatus> {
         try {
             m_countDownLatch.await();
         } catch (InterruptedException e) {
-            return MigrationStatus.ERROR;
+            // Ignored
         }
 
-        return MigrationStatus.OK;
+        return m_isError ? MigrationStatus.ERROR : MigrationStatus.OK;
+    }
+
+    /**
+     * Gets called whenever an error occurred.
+     */
+    void onError() {
+        m_isError = true;
+
+        while (m_countDownLatch.getCount() != 0) {
+            m_countDownLatch.countDown();
+        }
     }
 
     /**
@@ -35,7 +48,7 @@ public class MigrationProgress implements Supplier<MigrationStatus> {
      *
      * @param p_range The range to finish.
      */
-    public void setFinished(final LongRange p_range) {
+    void setFinished(final LongRange p_range) {
         if (m_pendingRanges.remove(p_range)) {
             m_countDownLatch.countDown();
         }
