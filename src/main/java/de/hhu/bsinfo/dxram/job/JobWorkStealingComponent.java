@@ -36,6 +36,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
     // component dependencies
     private AbstractBootComponent m_boot;
 
+    private boolean m_enabled;
     private Worker[] m_workers;
     private AtomicLong m_unfinishedJobs = new AtomicLong(0);
 
@@ -49,6 +50,11 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
 
     @Override
     public boolean pushJob(final AbstractJob p_job) {
+        if (!m_enabled) {
+            LOGGER.warn("Cannot push job, disabled");
+            return false;
+        }
+
         // cause we are using a work stealing approach, we do not need to
         // care about which worker to assign this job to
 
@@ -73,11 +79,19 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
 
     @Override
     public long getNumberOfUnfinishedJobs() {
+        if (!m_enabled) {
+            return 0;
+        }
+
         return m_unfinishedJobs.get();
     }
 
     @Override
     public boolean waitForSubmittedJobsToFinish() {
+        if (!m_enabled) {
+            return true;
+        }
+
         while (m_unfinishedJobs.get() > 0) {
             Thread.yield();
         }
@@ -102,21 +116,27 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
 
     @Override
     protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
-        m_workers = new Worker[getConfig().getNumWorkers()];
+        m_enabled = p_config.getComponentConfig(JobWorkStealingComponentConfig.class).isEnabled();
 
-        for (int i = 0; i < m_workers.length; i++) {
-            m_workers[i] = new Worker(i, this);
-        }
+        if (m_enabled) {
+            LOGGER.info("JobWorkStealing enabled");
 
-        // avoid race condition by first creating all workers, then starting them
-        for (Worker worker : m_workers) {
-            worker.start();
-        }
+            m_workers = new Worker[getConfig().getNumWorkers()];
 
-        // wait until all workers are running
-        for (Worker worker : m_workers) {
-            while (!worker.isRunning()) {
-                Thread.yield();
+            for (int i = 0; i < m_workers.length; i++) {
+                m_workers[i] = new Worker(i, this);
+            }
+
+            // avoid race condition by first creating all workers, then starting them
+            for (Worker worker : m_workers) {
+                worker.start();
+            }
+
+            // wait until all workers are running
+            for (Worker worker : m_workers) {
+                while (!worker.isRunning()) {
+                    Thread.yield();
+                }
             }
         }
 
@@ -125,21 +145,23 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
 
     @Override
     protected boolean shutdownComponent() {
-        LOGGER.debug("Waiting for unfinished jobs...");
+        if (m_enabled) {
+            LOGGER.debug("Waiting for unfinished jobs...");
 
-        while (m_unfinishedJobs.get() > 0) {
-            Thread.yield();
-        }
-
-        for (Worker worker : m_workers) {
-            worker.shutdown();
-        }
-
-        LOGGER.debug("Waiting for workers to shut down...");
-
-        for (Worker worker : m_workers) {
-            while (worker.isRunning()) {
+            while (m_unfinishedJobs.get() > 0) {
                 Thread.yield();
+            }
+
+            for (Worker worker : m_workers) {
+                worker.shutdown();
+            }
+
+            LOGGER.debug("Waiting for workers to shut down...");
+
+            for (Worker worker : m_workers) {
+                while (worker.isRunning()) {
+                    Thread.yield();
+                }
             }
         }
 

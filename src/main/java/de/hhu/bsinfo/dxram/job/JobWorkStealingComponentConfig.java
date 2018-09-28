@@ -23,6 +23,12 @@ public class JobWorkStealingComponentConfig extends DXRAMComponentConfig {
     private static final int NUM_WORKERS_MAX = 64;
 
     /**
+     * Enable the job component which runs the work stealing worker threads to dispatch jobs
+     */
+    @Expose
+    private boolean m_enabled = false;
+
+    /**
      * Number of worker threads to dispatch jobs to
      */
     @Expose
