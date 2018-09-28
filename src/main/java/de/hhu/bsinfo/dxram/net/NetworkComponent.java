@@ -308,7 +308,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
             }
 
             case INFINIBAND: {
-                if (p_jniManager.loadJNIModule("MsgrcJNIBinding")) {
+                if (!p_jniManager.loadJNIModule("MsgrcJNIBinding")) {
                     return false;
                 }
 
