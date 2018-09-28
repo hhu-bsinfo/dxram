@@ -72,7 +72,8 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
                 p_config.getComponentConfig(ChunkComponentConfig.class).getKeyValueStoreSize().getMB());
 
         m_memory = new DXMem(m_boot.getNodeId(),
-                p_config.getComponentConfig(ChunkComponentConfig.class).getKeyValueStoreSize().getBytes());
+                p_config.getComponentConfig(ChunkComponentConfig.class).getKeyValueStoreSize().getBytes(),
+                p_config.getComponentConfig(ChunkComponentConfig.class).isChunkLockDisabled());
 
         return true;
     }

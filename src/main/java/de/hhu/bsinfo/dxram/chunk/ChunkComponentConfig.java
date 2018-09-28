@@ -38,6 +38,16 @@ public class ChunkComponentConfig extends DXRAMComponentConfig {
     @Expose
     private String m_memDumpFolderOnError = "";
 
+    /**
+     * Disable the chunk lock mechanism which increases performance but blocks the remove
+     * and resize operations. All lock operation arguments provided on operation calls are
+     * ignored. DXMem cannot guarantee application data consistency on parallel writes to
+     * the same chunk. Useful for read only applications or if the application handles
+     * synchronization when writing to chunks.
+     */
+    @Expose
+    private boolean m_chunkLockDisabled = false;
+
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_keyValueStoreSize.getBytes() < KEY_VALUE_STORE_SIZE_MIN.getBytes()) {
