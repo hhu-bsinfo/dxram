@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.dxram.app;
 
+import java.util.Arrays;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -59,7 +61,7 @@ public abstract class AbstractApplication extends Thread {
 
         m_callbackHandler.started(this);
 
-        LOGGER.info("Started '%s'...", getName());
+        LOGGER.info("Starting '%s' with arguments (%d): ...", getName(), m_args.length, Arrays.toString(m_args));
 
         try {
             main(m_args);
