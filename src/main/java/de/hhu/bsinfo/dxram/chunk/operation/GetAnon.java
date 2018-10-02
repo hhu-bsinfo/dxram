@@ -38,7 +38,7 @@ public class GetAnon extends AbstractOperation implements MessageReceiver {
     private static final ThroughputPool SOP_GET =
             new ThroughputPool(GetAnon.class, "Get", Value.Base.B_10);
     private static final ThroughputPool SOP_INCOMING_GET =
-            new ThroughputPool(GetAnon.class, "Incoming", Value.Base.B_10);
+            new ThroughputPool(GetAnon.class, "GetIncoming", Value.Base.B_10);
 
     static {
         StatisticsManager.get().registerOperation(ChunkAnon.class, SOP_GET);

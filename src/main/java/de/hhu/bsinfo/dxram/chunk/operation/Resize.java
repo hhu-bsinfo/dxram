@@ -15,6 +15,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.ResizeRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.ResizeResponse;
@@ -30,11 +31,12 @@ import de.hhu.bsinfo.dxutils.stats.Value;
 import de.hhu.bsinfo.dxutils.stats.ValuePool;
 
 public class Resize extends AbstractOperation implements MessageReceiver {
-    private static final ThroughputPool SOP_DEFAULT = new ThroughputPool(Resize.class, "Default", Value.Base.B_10);
-    private static final ThroughputPool SOP_INCOMING = new ThroughputPool(Resize.class, "Incoming", Value.Base.B_10);
+    private static final ThroughputPool SOP_DEFAULT = new ThroughputPool(ChunkService.class, "Resize", Value.Base.B_10);
+    private static final ThroughputPool SOP_INCOMING =
+            new ThroughputPool(ChunkService.class, "ResizeIncoming", Value.Base.B_10);
 
-    private static final ValuePool SOP_ERROR = new ValuePool(Resize.class, "Error");
-    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(Resize.class, "IncomingError");
+    private static final ValuePool SOP_ERROR = new ValuePool(ChunkService.class, "ResizeError");
+    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(ChunkService.class, "ResizeIncomingError");
 
     static {
         StatisticsManager.get().registerOperation(Put.class, SOP_DEFAULT);

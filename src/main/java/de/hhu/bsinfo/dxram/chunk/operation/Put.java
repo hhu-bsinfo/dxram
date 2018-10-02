@@ -18,6 +18,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
@@ -38,11 +39,12 @@ import de.hhu.bsinfo.dxutils.stats.ValuePool;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
 public class Put extends AbstractOperation implements MessageReceiver {
-    private static final ThroughputPool SOP_DEFAULT = new ThroughputPool(Get.class, "Default", Value.Base.B_10);
-    private static final ThroughputPool SOP_INCOMING = new ThroughputPool(Get.class, "Incoming", Value.Base.B_10);
+    private static final ThroughputPool SOP_DEFAULT = new ThroughputPool(ChunkService.class, "Put", Value.Base.B_10);
+    private static final ThroughputPool SOP_INCOMING =
+            new ThroughputPool(ChunkService.class, "PutIncoming", Value.Base.B_10);
 
-    private static final ValuePool SOP_ERROR = new ValuePool(Get.class, "Error");
-    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(Get.class, "IncomingError");
+    private static final ValuePool SOP_ERROR = new ValuePool(ChunkService.class, "PutError");
+    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(ChunkService.class, "PutIncomingError");
 
     static {
         StatisticsManager.get().registerOperation(Put.class, SOP_DEFAULT);

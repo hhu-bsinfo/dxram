@@ -40,7 +40,7 @@ public class PutAnon extends AbstractOperation implements MessageReceiver {
     private static final ThroughputPool SOP_PUT =
             new ThroughputPool(PutAnon.class, "Put", Value.Base.B_10);
     private static final ThroughputPool SOP_INCOMING =
-            new ThroughputPool(PutAnon.class, "Incoming", Value.Base.B_10);
+            new ThroughputPool(PutAnon.class, "PutIncoming", Value.Base.B_10);
 
     static {
         StatisticsManager.get().registerOperation(PutAnon.class, SOP_PUT);

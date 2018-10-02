@@ -12,6 +12,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
@@ -33,12 +34,15 @@ import de.hhu.bsinfo.dxutils.stats.ValuePool;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
 public class Create extends AbstractOperation implements MessageReceiver {
-    private static final ThroughputPool SOP_LOCAL = new ThroughputPool(Create.class, "Local", Value.Base.B_10);
-    private static final ThroughputPool SOP_REMOTE = new ThroughputPool(Create.class, "Remote", Value.Base.B_10);
-    private static final ThroughputPool SOP_INCOMING = new ThroughputPool(Create.class, "Incoming", Value.Base.B_10);
-    private static final ValuePool SOP_LOCAL_ERROR = new ValuePool(Create.class, "LocalError");
-    private static final ValuePool SOP_REMOTE_ERROR = new ValuePool(Create.class, "RemoteError");
-    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(Create.class, "IncomingError");
+    private static final ThroughputPool SOP_LOCAL =
+            new ThroughputPool(ChunkService.class, "CreateLocal", Value.Base.B_10);
+    private static final ThroughputPool SOP_REMOTE =
+            new ThroughputPool(ChunkService.class, "CreateRemote", Value.Base.B_10);
+    private static final ThroughputPool SOP_INCOMING =
+            new ThroughputPool(ChunkService.class, "CreateIncoming", Value.Base.B_10);
+    private static final ValuePool SOP_LOCAL_ERROR = new ValuePool(ChunkService.class, "CreateLocalError");
+    private static final ValuePool SOP_REMOTE_ERROR = new ValuePool(ChunkService.class, "CreateRemoteError");
+    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(ChunkService.class, "CreateIncomingError");
 
     static {
         StatisticsManager.get().registerOperation(Create.class, SOP_LOCAL);

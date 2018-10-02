@@ -19,6 +19,7 @@ import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.chunk.messages.ReuseIDMessage;
@@ -39,10 +40,10 @@ import de.hhu.bsinfo.dxutils.stats.ValuePool;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
 public class Remove extends AbstractOperation implements MessageReceiver {
-    private static final TimePool SOP_REMOVE_TIME = new TimePool(Remove.class, "Remove");
-    private static final TimePool SOP_INCOMING_REMOVE_TIME = new TimePool(Remove.class, "RemoveIncoming");
-    private static final ValuePool SOP_REMOVE = new ValuePool(Remove.class, "Remove");
-    private static final ValuePool SOP_INCOMING_REMOVE = new ValuePool(Remove.class, "RemoveIncoming");
+    private static final TimePool SOP_REMOVE_TIME = new TimePool(ChunkService.class, "Remove");
+    private static final TimePool SOP_INCOMING_REMOVE_TIME = new TimePool(ChunkService.class, "RemoveIncoming");
+    private static final ValuePool SOP_REMOVE = new ValuePool(ChunkService.class, "Remove");
+    private static final ValuePool SOP_INCOMING_REMOVE = new ValuePool(ChunkService.class, "RemoveIncoming");
 
     static {
         StatisticsManager.get().registerOperation(Remove.class, SOP_REMOVE_TIME);
