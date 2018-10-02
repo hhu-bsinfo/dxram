@@ -31,15 +31,8 @@ documentation about the deployment process.
 However, you can also run dxram using the script *bin/dxram* from the *build/dist* output. Further instructions on how
 to run DXRAM manually are provided [here](ManualSetup.md).
 
-## Running terminal client
-Once deployment completed, you can start a terminal client to connect to a DXRAM peer running a terminal server
-using the *dxterm-client* script located in the DXRAM root folder:
-```
-dxterm-client localhost
-```
-
-Replace *localhost* with the hostname or IP address (IPV4) of a running DXRAM peer. Now you can start experimenting
-with the system by using [various terminal commands](Terminal.md).
+## Running applications on DXRAM
+To run applications on DXRAM, please refer to [this document](Applications.md).
 
 # InfiniBand
 If you want to use InfiniBand instead of Ethernet network:
