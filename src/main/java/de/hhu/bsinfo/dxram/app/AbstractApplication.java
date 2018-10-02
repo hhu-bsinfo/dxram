@@ -61,7 +61,7 @@ public abstract class AbstractApplication extends Thread {
 
         m_callbackHandler.started(this);
 
-        LOGGER.info("Starting '%s' with arguments (%d): ...", getName(), m_args.length, Arrays.toString(m_args));
+        LOGGER.info("Starting '%s' with arguments (%d): %s", getName(), m_args.length, Arrays.toString(m_args));
 
         try {
             main(m_args);
