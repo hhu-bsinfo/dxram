@@ -38,4 +38,8 @@ Either run our build system using the *build.sh* file in the root directory or b
 built in system.
 
 ## Debugging
-TODO
+Depending on the situation, you have different options to debug DXRAM and/or the application running on it:
+* Use the debugger of your IDE to either start a DXRAM process with the debugger attached or attach remotely to an
+already running DXRAM process.
+* Our [terminal](https://github.com/hhu-bsinfo/dxapps) allows sending built in commands to trigger certain actions
+or read various status information of the system.

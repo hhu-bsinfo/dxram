@@ -1,7 +1,7 @@
 DXRAM provides a framework to easily develop small and large applications. Your application runs on one or multiple
-DXRAM peers independently but you can connect and synchronize them using services provided by the DXRAM core. This
-document gives you a brief introduction on how to get started with writing and deploying your own DXRAM application
-(abbreviated: *dxapp*).
+DXRAM peers independently but you can connect and synchronize them using [services](Services.md) provided by the DXRAM
+core. This document gives you a brief introduction on how to get started with writing and deploying your own DXRAM
+application (abbreviated: *dxapp*).
 
 # Examples
 We provide examples to get you started with implementing your own dxapp. The
