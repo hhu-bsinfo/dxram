@@ -116,7 +116,7 @@ public class ApplicationStartRequest extends Request {
         size += Integer.BYTES;
 
         for (String str : m_args) {
-            size += Integer.BYTES + ObjectSizeUtil.sizeofString(str);
+            size += ObjectSizeUtil.sizeofString(str);
         }
 
         return size;
