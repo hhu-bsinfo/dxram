@@ -341,7 +341,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         int capabilities = 0;
 
-        if (chunkConfig.getKeyValueStoreSize().getBytes() > 0L) {
+        if (chunkConfig.isChunkStorageEnabled()) {
             capabilities |= NodeCapabilities.STORAGE;
         }
 

@@ -48,6 +48,12 @@ public class ChunkComponentConfig extends DXRAMComponentConfig {
     @Expose
     private boolean m_chunkLockDisabled = false;
 
+    /**
+     * Enable/disable the chunk storage. A peer with disabled chunk storage is no longer considered a storage peer.
+     */
+    @Expose
+    private boolean m_chunkStorageEnabled = true;
+
     @Override
     protected boolean verify(final DXRAMContext.Config p_config) {
         if (m_keyValueStoreSize.getBytes() < KEY_VALUE_STORE_SIZE_MIN.getBytes()) {
