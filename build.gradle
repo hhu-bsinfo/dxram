@@ -16,7 +16,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "de.hhu.bsinfo:dxbuild:0.2.0-SNAPSHOT"
+        classpath "de.hhu.bsinfo:dxbuild:0.2.0" + (Boolean.valueOf(System.getProperty('snapshot')) ? '-SNAPSHOT' : '')
     }
 }
 
@@ -85,11 +85,11 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.2'
 
     api 'commons-cli:commons-cli:1.4'
-    api 'de.hhu.bsinfo:dxmem:0.5.0-SNAPSHOT'
-    api 'de.hhu.bsinfo:dxnet:0.5.0-SNAPSHOT'
-    api 'de.hhu.bsinfo:dxlog:0.5.0-SNAPSHOT'
-    api 'de.hhu.bsinfo:dxmon:0.2.0-SNAPSHOT'
-    nativeApi 'de.hhu.bsinfo:dxutils:0.5.0-SNAPSHOT'
+    api 'de.hhu.bsinfo:dxmem:0.5.0' + (Boolean.valueOf(System.getProperty('snapshot')) ? '-SNAPSHOT' : '')
+    api 'de.hhu.bsinfo:dxnet:0.5.0' + (Boolean.valueOf(System.getProperty('snapshot')) ? '-SNAPSHOT' : '')
+    api 'de.hhu.bsinfo:dxlog:0.5.0' + (Boolean.valueOf(System.getProperty('snapshot')) ? '-SNAPSHOT' : '')
+    api 'de.hhu.bsinfo:dxmon:0.2.0' + (Boolean.valueOf(System.getProperty('snapshot')) ? '-SNAPSHOT' : '')
+    nativeApi 'de.hhu.bsinfo:dxutils:0.5.0' + (Boolean.valueOf(System.getProperty('snapshot')) ? '-SNAPSHOT' : '')
 
     implementation 'com.google.guava:guava:26.0-jre'
     implementation 'org.apache.zookeeper:zookeeper:3.4.13'
