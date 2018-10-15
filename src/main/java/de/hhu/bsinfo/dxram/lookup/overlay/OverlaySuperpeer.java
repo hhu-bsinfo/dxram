@@ -86,8 +86,7 @@ import de.hhu.bsinfo.dxram.lookup.messages.MigrateRangeResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.MigrateResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.NameserviceUpdatePeerCachesMessage;
-import de.hhu.bsinfo.dxram.lookup.messages.NodeJoinEventRequest;
-import de.hhu.bsinfo.dxram.lookup.messages.NodeJoinEventResponse;
+import de.hhu.bsinfo.dxram.lookup.messages.NodeJoinEventMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewPredecessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.NotifyAboutNewSuccessorMessage;
 import de.hhu.bsinfo.dxram.lookup.messages.PingSuperpeerMessage;
@@ -354,7 +353,7 @@ public class OverlaySuperpeer implements MessageReceiver {
                         incomingUpdateMetadataAfterRecoveryMessage((UpdateMetadataAfterRecoveryMessage) p_message);
                         break;
                     case LookupMessages.SUBTYPE_NODE_JOIN_EVENT_REQUEST:
-                        incomingPeerJoinEventRequest((NodeJoinEventRequest) p_message);
+                        incomingPeerJoinEventRequest((NodeJoinEventMessage) p_message);
                         break;
                     case LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST:
                         incomingBarrierAllocRequest((BarrierAllocRequest) p_message);
@@ -1165,8 +1164,7 @@ public class OverlaySuperpeer implements MessageReceiver {
             }
         } else {
             while (contactSuperpeer != NodeID.INVALID_ID) {
-
-                LOGGER.trace("Contacting 0x%X to join the ring, I am 0x%X", contactSuperpeer, m_nodeID);
+                LOGGER.debug("Contacting 0x%X to join the ring, I am 0x%X", contactSuperpeer, m_nodeID);
 
                 joinRequest = new JoinRequest(contactSuperpeer, m_boot.getDetails());
                 try {
@@ -1213,35 +1211,31 @@ public class OverlaySuperpeer implements MessageReceiver {
         NodeRegistry.NodeDetails details = m_boot.getDetails();
         for (short superpeer : m_superpeers) {
             InetSocketAddress socketAddress = details.getAddress();
-            NodeJoinEventRequest request =
-                    new NodeJoinEventRequest(superpeer, m_nodeID, NodeRole.SUPERPEER, NodeCapabilities.NONE,
+            NodeJoinEventMessage message =
+                    new NodeJoinEventMessage(superpeer, m_nodeID, NodeRole.SUPERPEER, NodeCapabilities.NONE,
                             details.getRack(), details.getSwitch(), false,
                             new IPV4Unit(socketAddress.getHostName(), socketAddress.getPort()));
             try {
-                m_network.sendSync(request);
+                m_network.sendMessage(message);
             } catch (final NetworkException e) {
                 // Ignore, failure is detected by network module
                 continue;
             }
-
-            request.getResponse(NodeJoinEventResponse.class);
         }
 
         // Inform own peers
         for (short peer : m_peers) {
             InetSocketAddress socketAddress = details.getAddress();
-            NodeJoinEventRequest request =
-                    new NodeJoinEventRequest(peer, m_nodeID, NodeRole.SUPERPEER, NodeCapabilities.NONE,
+            NodeJoinEventMessage message =
+                    new NodeJoinEventMessage(peer, m_nodeID, NodeRole.SUPERPEER, NodeCapabilities.NONE,
                             details.getRack(), details.getSwitch(), false,
                             new IPV4Unit(socketAddress.getHostName(), socketAddress.getPort()));
             try {
-                m_network.sendSync(request);
+                m_network.sendMessage(message);
             } catch (final NetworkException e) {
                 // Ignore, failure is detected by network module
                 continue;
             }
-
-            request.getResponse(NodeJoinEventResponse.class);
         }
         m_overlayLock.readLock().unlock();
 
@@ -1464,35 +1458,31 @@ public class OverlaySuperpeer implements MessageReceiver {
             m_overlayLock.readLock().lock();
             // Inform all superpeers
             for (short superpeer : m_superpeers) {
-                NodeJoinEventRequest request = new NodeJoinEventRequest(superpeer, newPeer, NodeRole.PEER,
+                NodeJoinEventMessage message = new NodeJoinEventMessage(superpeer, newPeer, NodeRole.PEER,
                         p_finishedStartupMessage.getCapabilities(), p_finishedStartupMessage.getRack(),
                         p_finishedStartupMessage.getSwitch(), p_finishedStartupMessage.isAvailableForBackup(),
                         p_finishedStartupMessage.getAddress());
                 try {
-                    m_network.sendSync(request);
+                    m_network.sendMessage(message);
                 } catch (final NetworkException e) {
                     // Ignore, failure is detected by network module
                     continue;
                 }
-
-                request.getResponse(NodeJoinEventResponse.class);
             }
 
             // Inform own peers
             for (short peer : m_peers) {
                 if (peer != newPeer) {
-                    NodeJoinEventRequest request = new NodeJoinEventRequest(peer, newPeer, NodeRole.PEER,
+                    NodeJoinEventMessage message = new NodeJoinEventMessage(peer, newPeer, NodeRole.PEER,
                             p_finishedStartupMessage.getCapabilities(), p_finishedStartupMessage.getRack(),
                             p_finishedStartupMessage.getSwitch(), p_finishedStartupMessage.isAvailableForBackup(),
                             p_finishedStartupMessage.getAddress());
                     try {
-                        m_network.sendSync(request);
+                        m_network.sendMessage(message);
                     } catch (final NetworkException e) {
                         // Ignore, failure is detected by network module
                         continue;
                     }
-
-                    request.getResponse(NodeJoinEventResponse.class);
                 }
             }
             m_overlayLock.readLock().unlock();
@@ -2019,42 +2009,29 @@ public class OverlaySuperpeer implements MessageReceiver {
     }
 
     /**
-     * Handles an incoming NodeJoinEventRequest
+     * Handles an incoming NodeJoinEventMessage
      *
      * @param p_peerJoinEventRequest
-     *         the NodeJoinEventRequest
+     *         the NodeJoinEventMessage
      */
-    private void incomingPeerJoinEventRequest(final NodeJoinEventRequest p_peerJoinEventRequest) {
+    private void incomingPeerJoinEventRequest(final NodeJoinEventMessage p_peerJoinEventRequest) {
+        LOGGER.trace("Got request: NodeJoinEventMessage 0x%X", p_peerJoinEventRequest.getSource());
 
-        LOGGER.trace("Got request: NodeJoinEventRequest 0x%X", p_peerJoinEventRequest.getSource());
-
-        // Outsource informing other peers to another thread to avoid blocking a message handler
-        Runnable task = () -> {
-            m_overlayLock.readLock().lock();
-            // Inform own peers
-            for (short p : m_peers) {
-                NodeJoinEventRequest request = new NodeJoinEventRequest(p, p_peerJoinEventRequest.getJoinedPeer(),
-                        p_peerJoinEventRequest.getRole(), p_peerJoinEventRequest.getCapabilities(),
-                        p_peerJoinEventRequest.getRack(), p_peerJoinEventRequest.getSwitch(),
-                        p_peerJoinEventRequest.isAvailableForBackup(), p_peerJoinEventRequest.getAddress());
-                try {
-                    m_network.sendSync(request);
-                } catch (final NetworkException e) {
-                    // Ignore, failure is detected by network module
-                    continue;
-                }
-
-                request.getResponse(NodeJoinEventResponse.class);
+        m_overlayLock.readLock().lock();
+        // Inform own peers
+        for (short p : m_peers) {
+            NodeJoinEventMessage message = new NodeJoinEventMessage(p, p_peerJoinEventRequest.getJoinedPeer(),
+                    p_peerJoinEventRequest.getRole(), p_peerJoinEventRequest.getCapabilities(),
+                    p_peerJoinEventRequest.getRack(), p_peerJoinEventRequest.getSwitch(),
+                    p_peerJoinEventRequest.isAvailableForBackup(), p_peerJoinEventRequest.getAddress());
+            try {
+                m_network.sendMessage(message);
+            } catch (final NetworkException e) {
+                // Ignore, failure is detected by network module
+                continue;
             }
-            m_overlayLock.readLock().unlock();
-        };
-        new Thread(task).start();
-
-        try {
-            m_network.sendMessage(new NodeJoinEventResponse(p_peerJoinEventRequest));
-        } catch (NetworkException ignore) {
-            // Superpeer is not available anymore, ignore it as stabilization will fix it
         }
+        m_overlayLock.readLock().unlock();
 
         // Notify other components/services
         m_event.fireEvent(new NodeJoinEvent(getClass().getSimpleName(), p_peerJoinEventRequest.getJoinedPeer(),
@@ -2733,9 +2710,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
                 LookupMessages.SUBTYPE_NOTIFY_ABOUT_NEW_SUCCESSOR_MESSAGE, NotifyAboutNewSuccessorMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
-                LookupMessages.SUBTYPE_NODE_JOIN_EVENT_REQUEST, NodeJoinEventRequest.class);
-        m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
-                LookupMessages.SUBTYPE_NODE_JOIN_EVENT_RESPONSE, NodeJoinEventResponse.class);
+                LookupMessages.SUBTYPE_NODE_JOIN_EVENT_REQUEST, NodeJoinEventMessage.class);
 
         m_network.registerMessageType(DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE,
                 LookupMessages.SUBTYPE_BARRIER_ALLOC_REQUEST, BarrierAllocRequest.class);

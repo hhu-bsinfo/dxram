@@ -15,6 +15,7 @@ package de.hhu.bsinfo.dxram.lookup.messages;
 
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -22,12 +23,12 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
- * Peer Join Event Request. Request to propagate a peer joining to all other peers (two-phase: 1. inform all superpeers 2. superpeers inform peers).
+ * Peer Join Event Message. Message to propagate a peer joining to all other peers (two-phase: 1. inform all superpeers 2. superpeers inform peers).
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 03.04.2017
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-public class NodeJoinEventRequest extends Request {
+public class NodeJoinEventMessage extends Message {
 
     // Attributes
     private short m_nodeID;
@@ -45,21 +46,21 @@ public class NodeJoinEventRequest extends Request {
     // Constructors
 
     /**
-     * Creates an instance of NodeJoinEventRequest
+     * Creates an instance of NodeJoinEventMessage
      */
-    public NodeJoinEventRequest() {
+    public NodeJoinEventMessage() {
         super();
     }
 
     /**
-     * Creates an instance of NodeJoinEventRequest
+     * Creates an instance of NodeJoinEventMessage
      *
      * @param p_destination
      *         the destination
      * @param p_nodeID
      * @param p_capabilities
      */
-    public NodeJoinEventRequest(final short p_destination, final short p_nodeID, final NodeRole p_role,
+    public NodeJoinEventMessage(final short p_destination, final short p_nodeID, final NodeRole p_role,
             int p_capabilities, final short p_rack, final short p_switch, final boolean p_availableForBackup,
             final IPV4Unit p_address) {
         super(p_destination, DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE, LookupMessages.SUBTYPE_NODE_JOIN_EVENT_REQUEST);
