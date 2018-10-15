@@ -83,8 +83,7 @@ dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 
     compileOnly 'org.projectlombok:lombok:1.18.2'
-
-    api 'commons-cli:commons-cli:1.4'
+    
     api 'de.hhu.bsinfo:dxmem:0.6.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
     api 'de.hhu.bsinfo:dxnet:0.6.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
     api 'de.hhu.bsinfo:dxlog:0.6.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
