@@ -22,3 +22,5 @@ out/*
 /stats/
 dxram/out
 zookeeper.out
+*.ipr
+*.iws
