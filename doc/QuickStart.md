@@ -1,6 +1,5 @@
 # Requirements
-DXRAM requires Java 1.8 to run on a Linux distribution of your choice (MacOSX might work as well but is not supported,
-officially). DXRAM uses [ZooKeeper](https://zookeeper.apache.org/) for bootstrapping.
+DXRAM requires Java 1.8 to run on a Linux distribution of your choice (MacOSX does not work for deploying). DXRAM uses [ZooKeeper](https://zookeeper.apache.org/) for bootstrapping.
 
 ## Dependencies
 
