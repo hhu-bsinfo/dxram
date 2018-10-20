@@ -86,6 +86,148 @@ public class Put extends AbstractOperation implements MessageReceiver {
     }
 
     /**
+     * Put the data for a single chunk. Avoids array allocation of variadic chunk parameter version for a single chunk
+     *
+     * @param p_chunk
+     *         Chunk to put
+     * @return True if successful, false on error (check the chunk object state for errors)
+     */
+    public boolean put(final AbstractChunk p_chunk) {
+        return put(p_chunk, ChunkLockOperation.NONE, -1);
+    }
+
+    /**
+     * Put the data for a single chunk. Avoids array allocation of variadic chunk parameter version for a single chunk
+     *
+     * @param p_chunk
+     *         Chunk to put
+     * @param p_lockOperation
+     *         Lock operation to execute
+     * @return True if successful, false on error (check the chunk object state for errors)
+     */
+    public boolean put(final AbstractChunk p_chunk, final ChunkLockOperation p_lockOperation) {
+        return put(p_chunk, p_lockOperation, -1);
+    }
+
+    /**
+     * Put the data for a single chunk. Avoids array allocation of variadic chunk parameter version for a single chunk
+     *
+     * @param p_chunk
+     *         Chunk to put
+     * @param p_lockOperation
+     *         Lock operation to execute
+     * @param p_lockOperationTimeoutMs
+     *         Timeout for lock operation in ms (-1 for unlimited. Be careful with remote chunks here! This might lead
+     *         to network timeouts instead)
+     * @return True if successful, false on error (check the chunk object state for errors)
+     */
+    public boolean put(final AbstractChunk p_chunk , final ChunkLockOperation p_lockOperation,
+            final int p_lockOperationTimeoutMs) {
+        m_logger.trace("put[chunk %s, lock op %s, lock timeout %d]", ChunkID.toHexString(p_chunk.getID()),
+                p_lockOperation, p_lockOperationTimeoutMs);
+
+        boolean result = false;
+
+        Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange = new TreeMap<>();
+
+        SOP_DEFAULT.start();
+
+        // filter null value
+        if (p_chunk != null) {
+            // filter by invalid ID
+            if (p_chunk.getID() == ChunkID.INVALID_ID) {
+                p_chunk.setState(ChunkState.INVALID_ID);
+            } else {
+                m_chunk.getMemory().put().put(p_chunk, p_lockOperation, p_lockOperationTimeoutMs);
+
+                if (p_chunk.getState() == ChunkState.OK) {
+                    result = true;
+
+                    // log changes to backup
+                    if (m_backup.isActive()) {
+                        // sort by backup peers
+                        BackupRange backupRange = m_backup.getBackupRange(p_chunk.getID());
+                        ArrayList<AbstractChunk> remoteChunksOfBackupRange =
+                                remoteChunksByBackupRange.computeIfAbsent(backupRange, a -> new ArrayList<>());
+                        remoteChunksOfBackupRange.add(p_chunk);
+                    }
+                } else if (p_chunk.getState() == ChunkState.DOES_NOT_EXIST) {
+                    // seems like it's not available locally, check remotes for remote chunk or migrated
+                    LookupRange location = m_lookup.getLookupRange(p_chunk.getID());
+
+                    while (location.getState() == LookupState.DATA_TEMPORARY_UNAVAILABLE) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (final InterruptedException ignore) {
+                        }
+
+                        location = m_lookup.getLookupRange(p_chunk.getID());
+                    }
+
+                    if (location.getState() == LookupState.OK) {
+                        // currently undefined because we still have to get it from remote
+                        p_chunk.setState(ChunkState.UNDEFINED);
+
+                        short peer = location.getPrimaryPeer();
+
+                        if (peer == m_boot.getNodeId()) {
+                            // local put, migrated data to current node
+                            result = m_chunk.getMemory().put().put(p_chunk, p_lockOperation, p_lockOperationTimeoutMs);
+                        } else {
+                            // Remote get from specified peer
+                            PutRequest request = new PutRequest(peer, p_lockOperation, p_lockOperationTimeoutMs,
+                                    p_chunk);
+
+                            try {
+                                m_network.sendSync(request);
+
+                                PutResponse response = request.getResponse(PutResponse.class);
+
+                                byte[] statusCodes = response.getStatusCodes();
+
+                                result = statusCodes[0] == ChunkState.OK.ordinal();
+
+                                if (!result) {
+                                    m_lookup.invalidateRange(p_chunk.getID());
+                                }
+                            } catch (final NetworkException e) {
+                                ChunkState errorState;
+
+                                // handle various error states and report to the user
+
+                                if (m_backup.isActive()) {
+                                    errorState = ChunkState.DATA_TEMPORARY_UNAVAILABLE;
+                                } else {
+                                    if (e instanceof NetworkResponseDelayedException) {
+                                        errorState = ChunkState.REMOTE_REQUEST_TIMEOUT;
+                                    } else {
+                                        errorState = ChunkState.DATA_LOST;
+                                    }
+                                }
+
+                                p_chunk.setState(errorState);
+                                m_lookup.invalidate(p_chunk.getID());
+                            }
+                        }
+                    } else if (location.getState() == LookupState.DOES_NOT_EXIST) {
+                        p_chunk.setState(ChunkState.DOES_NOT_EXIST);
+                    } else if (location.getState() == LookupState.DATA_LOST) {
+                        p_chunk.setState(ChunkState.DATA_LOST);
+                    }
+                }
+            }
+        }
+
+        if (!result) {
+            SOP_ERROR.inc();
+        }
+
+        SOP_DEFAULT.stop();
+
+        return result;
+    }
+
+    /**
      * Put the data of one or multiple chunks
      *
      * @param p_chunks
