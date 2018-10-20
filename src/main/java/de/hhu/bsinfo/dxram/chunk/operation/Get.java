@@ -52,6 +52,8 @@ public class Get extends AbstractOperation implements MessageReceiver {
         StatisticsManager.get().registerOperation(Get.class, SOP_INCOMING_ERROR);
     }
 
+    private final Map[] m_threadLocalRemoteChunksByPeers = new Map[4096];
+
     /**
      * Constructor
      *
@@ -268,7 +270,7 @@ public class Get extends AbstractOperation implements MessageReceiver {
         SOP_DEFAULT.start();
 
         // sort by local and remote data: process local first, remote further below
-        Map<Short, ArrayList<AbstractChunk>> remoteChunksByPeers = new TreeMap<>();
+        Map<Short, ArrayList<AbstractChunk>> remoteChunksByPeers = getThreadLocalRemoteChunksByPeersMap();
 
         for (int i = p_offset; i < p_count; i++) {
             // filter null values and skip
@@ -422,5 +424,24 @@ public class Get extends AbstractOperation implements MessageReceiver {
 
             SOP_INCOMING.stop();
         }
+    }
+
+    /**
+     * Get a thread local instance avoiding allocations
+     *
+     * @return Thread local instance
+     */
+    private Map<Short, ArrayList<AbstractChunk>> getThreadLocalRemoteChunksByPeersMap() {
+        Map<Short, ArrayList<AbstractChunk>> remoteChunksByPeers =
+                m_threadLocalRemoteChunksByPeers[(int) Thread.currentThread().getId()];
+
+        if (remoteChunksByPeers == null) {
+            remoteChunksByPeers = new TreeMap<>();
+            m_threadLocalRemoteChunksByPeers[(int) Thread.currentThread().getId()] = remoteChunksByPeers;
+        }
+
+        remoteChunksByPeers.clear();
+
+        return remoteChunksByPeers;
     }
 }

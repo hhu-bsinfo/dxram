@@ -53,6 +53,9 @@ public class Put extends AbstractOperation implements MessageReceiver {
         StatisticsManager.get().registerOperation(Put.class, SOP_INCOMING_ERROR);
     }
 
+    private final Map[] m_threadLocalRemoteChunksByPeers = new Map[4096];
+    private final Map[] m_threadLocalRemoteChunksByBackupRange = new Map[4096];
+
     /**
      * Constructor
      *
@@ -128,7 +131,7 @@ public class Put extends AbstractOperation implements MessageReceiver {
 
         boolean result = false;
 
-        Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange = new TreeMap<>();
+        Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange = getThreadLocalChunksByBackupRangeMap();
 
         SOP_DEFAULT.start();
 
@@ -282,8 +285,8 @@ public class Put extends AbstractOperation implements MessageReceiver {
         SOP_DEFAULT.start();
 
         // sort by local and remote data: process local first, remote further below
-        Map<Short, ArrayList<AbstractChunk>> remoteChunksByPeers = new TreeMap<>();
-        Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange = new TreeMap<>();
+        Map<Short, ArrayList<AbstractChunk>> remoteChunksByPeers = getThreadLocalRemoteChunksByPeersMap();
+        Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange = getThreadLocalChunksByBackupRangeMap();
 
         for (int i = p_offset; i < p_count; i++) {
             // filter null values and skip
@@ -434,7 +437,8 @@ public class Put extends AbstractOperation implements MessageReceiver {
             byte[] statusChunks = new byte[chunkIDs.length];
             int successfulPuts = 0;
 
-            Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange = new TreeMap<>();
+            Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange =
+                    getThreadLocalChunksByBackupRangeMap();
 
             for (int i = 0; i < chunkIDs.length; i++) {
                 ChunkState state = m_chunk.getMemory().put().put(request.getChunkIDs()[i], request.getChunkData()[i],
@@ -479,5 +483,43 @@ public class Put extends AbstractOperation implements MessageReceiver {
 
             SOP_INCOMING.stop();
         }
+    }
+
+    /**
+     * Get a thread local instance avoiding allocations
+     *
+     * @return Thread local instance
+     */
+    private Map<Short, ArrayList<AbstractChunk>> getThreadLocalRemoteChunksByPeersMap() {
+        Map<Short, ArrayList<AbstractChunk>> remoteChunksByPeers =
+                m_threadLocalRemoteChunksByPeers[(int) Thread.currentThread().getId()];
+
+        if (remoteChunksByPeers == null) {
+            remoteChunksByPeers = new TreeMap<>();
+            m_threadLocalRemoteChunksByPeers[(int) Thread.currentThread().getId()] = remoteChunksByPeers;
+        }
+
+        remoteChunksByPeers.clear();
+
+        return remoteChunksByPeers;
+    }
+
+    /**
+     * Get a thread local instance avoiding allocations
+     *
+     * @return Thread local instance
+     */
+    private Map<BackupRange, ArrayList<AbstractChunk>> getThreadLocalChunksByBackupRangeMap() {
+        Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange =
+                m_threadLocalRemoteChunksByBackupRange[(int) Thread.currentThread().getId()];
+
+        if (remoteChunksByBackupRange == null) {
+            remoteChunksByBackupRange = new TreeMap<>();
+            m_threadLocalRemoteChunksByBackupRange[(int) Thread.currentThread().getId()] = remoteChunksByBackupRange;
+        }
+
+        remoteChunksByBackupRange.clear();
+
+        return remoteChunksByBackupRange;
     }
 }
