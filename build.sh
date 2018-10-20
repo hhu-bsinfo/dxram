@@ -12,8 +12,10 @@ case "$build_type" in
     debug)
         ;;
     release)
+	TERM=dump ./gradlew clean
         ;;
     performance)
+	TERM=dump ./gradlew clean
         ;;
     clean)
         clean="1"        
