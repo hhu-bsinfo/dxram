@@ -123,8 +123,8 @@ public class Put extends AbstractOperation implements MessageReceiver {
      */
     public boolean put(final AbstractChunk p_chunk , final ChunkLockOperation p_lockOperation,
             final int p_lockOperationTimeoutMs) {
-        m_logger.trace("put[chunk %s, lock op %s, lock timeout %d]", ChunkID.toHexString(p_chunk.getID()),
-                p_lockOperation, p_lockOperationTimeoutMs);
+        m_logger.trace("put[chunk %X, lock op %s, lock timeout %d]", p_chunk.getID(), p_lockOperation,
+                p_lockOperationTimeoutMs);
 
         boolean result = false;
 
