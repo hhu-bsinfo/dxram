@@ -119,4 +119,30 @@ public class GetLocal extends AbstractOperation {
 
         return successful;
     }
+
+    /**
+     * Get the data for a single chunk. Avoids array allocation of variadic chunk parameter version for a single chunk
+     *
+     * @param p_chunk
+     *         Chunk to get
+     * @return True if successful, false on error (check the chunk object state for errors)
+     */
+    public boolean get(final AbstractChunk p_chunk) {
+        return get(p_chunk, ChunkLockOperation.NONE);
+    }
+
+    /**
+     * Get the data for a single chunk. Avoids array allocation of variadic chunk parameter version for a single chunk
+     *
+     * @param p_chunk
+     *         Chunk to get
+     * @param p_lockOperation
+     *         Lock operation to execute
+     * @return True if successful, false on error (check the chunk object state for errors)
+     */
+    public boolean get(final AbstractChunk p_chunk , final ChunkLockOperation p_lockOperation) {
+        m_chunk.getMemory().get().get(p_chunk, p_lockOperation, -1);
+
+        return p_chunk.isStateOk();
+    }
 }
