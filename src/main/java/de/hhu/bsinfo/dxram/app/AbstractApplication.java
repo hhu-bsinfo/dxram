@@ -91,6 +91,15 @@ public abstract class AbstractApplication extends Thread {
     }
 
     /**
+     * Returns this application's arguments.
+     *
+     * @return This application's arguments.
+     */
+    public String getArguments() {
+        return String.join(" ", m_args);
+    }
+
+    /**
      * Get a service from DXRAM.
      *
      * @param <T>

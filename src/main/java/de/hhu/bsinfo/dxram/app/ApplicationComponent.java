@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.app;
 
+import java.util.Collection;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
@@ -65,6 +66,10 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
      */
     public List<String> getApplicationsRunning() {
         return m_runner.getApplicationsRunning();
+    }
+
+    public Collection<ApplicationProcess> getRunningProcesses() {
+        return m_runner.getRunningProcesses();
     }
 
     @Override

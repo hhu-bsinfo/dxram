@@ -1,9 +1,9 @@
 package de.hhu.bsinfo.dxram.app;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,7 +23,11 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
     private final DXRAMVersion m_dxramVersion;
     private final DXRAMEngine m_dxramEngine;
 
-    private HashMap<String, AbstractApplication> m_runningApplications;
+    private HashMap<String, ApplicationProcess> m_runningProcesses;
+
+    private static final int MAX_PROCESSES = 1000;
+    private ConcurrentSkipListSet<Integer> m_processIds = new ConcurrentSkipListSet<>(
+            IntStream.range(0, MAX_PROCESSES).boxed().collect(Collectors.toList()));
 
     /**
      * Constructor
@@ -41,7 +45,7 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
         m_dxramVersion = p_dxramVersion;
         m_dxramEngine = p_dxramEngine;
 
-        m_runningApplications = new HashMap<>();
+        m_runningProcesses = new HashMap<>();
     }
 
     /**
@@ -58,7 +62,7 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
             return false;
         }
 
-        if (m_runningApplications.get(p_class) != null) {
+        if (m_runningProcesses.get(p_class) != null) {
             LOGGER.error("Cannot start application '%s', an instance is already running", p_class);
             return false;
         }
@@ -91,8 +95,6 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
         app.init(m_dxramEngine, this, p_args);
         app.start();
 
-        m_runningApplications.put(p_class, app);
-
         return true;
     }
 
@@ -104,16 +106,16 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
      *         Fully qualified class name of application to shut down
      */
     public boolean shutdownApplication(final String p_class) {
-        AbstractApplication app = m_runningApplications.get(p_class);
+        ApplicationProcess process = m_runningProcesses.get(p_class);
 
-        if (app == null) {
+        if (process == null) {
             LOGGER.warn("Shutting down application '%s' failed, no running instance found", p_class);
             return false;
         }
 
         LOGGER.debug("Signaling shutdown to application %s", p_class);
 
-        app.signalShutdown();
+        process.kill();
 
         return true;
     }
@@ -124,7 +126,11 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
      * @return List of currently running applications
      */
     public List<String> getApplicationsRunning() {
-        return new ArrayList<>(m_runningApplications.keySet());
+        return new ArrayList<>(m_runningProcesses.keySet());
+    }
+
+    public Collection<ApplicationProcess> getRunningProcesses() {
+        return m_runningProcesses.values();
     }
 
     /**
@@ -134,13 +140,13 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
     public void shutdown() {
         LOGGER.info("Shutting down runner, signaling shut down to all running applications first");
 
-        for (Map.Entry<String, AbstractApplication> entry : m_runningApplications.entrySet()) {
-            entry.getValue().signalShutdown();
+        for (Map.Entry<String, ApplicationProcess> entry : m_runningProcesses.entrySet()) {
+            entry.getValue().kill();
         }
 
         LOGGER.info("Waiting for applications to finish");
 
-        for (Map.Entry<String, AbstractApplication> entry : m_runningApplications.entrySet()) {
+        for (Map.Entry<String, ApplicationProcess> entry : m_runningProcesses.entrySet()) {
             LOGGER.debug("Waiting for %s...", entry.getKey());
 
             try {
@@ -154,12 +160,21 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
     @Override
     public void started(final AbstractApplication p_application) {
         LOGGER.debug("Application started: %s", p_application);
+
+        Integer processId = m_processIds.pollFirst();
+        if (processId == null) {
+            throw new IllegalStateException("Couldn't retrieve next process id");
+        }
+
+        ApplicationProcess process = new ApplicationProcess(processId, p_application);
+        m_runningProcesses.put(p_application.getClass().getName(), process);
     }
 
     @Override
     public void finished(final AbstractApplication p_application) {
         LOGGER.debug("Application finished: %s", p_application);
 
-        m_runningApplications.remove(p_application.getClass().getName());
+        ApplicationProcess process = m_runningProcesses.remove(p_application.getClass().getName());
+        m_processIds.add(process.getId());
     }
 }

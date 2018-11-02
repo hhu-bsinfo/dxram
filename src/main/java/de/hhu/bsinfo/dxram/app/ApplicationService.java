@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.app;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
@@ -105,6 +106,10 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
      */
     public List<String> geApplicationsRunning() {
         return m_appComponent.getApplicationsRunning();
+    }
+
+    public Collection<ApplicationProcess> getRunningProcesses() {
+        return m_appComponent.getRunningProcesses();
     }
 
     @Override
