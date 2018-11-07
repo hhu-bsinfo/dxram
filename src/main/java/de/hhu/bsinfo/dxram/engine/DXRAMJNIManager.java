@@ -17,7 +17,6 @@
 package de.hhu.bsinfo.dxram.engine;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,13 +36,19 @@ public final class DXRAMJNIManager {
     /**
      * Constructor
      *
-     * @param p_jniPath Path to root folder with jni libraries
+     * @param p_jniPath
+     *         Path to root folder with jni libraries
      */
-    DXRAMJNIManager(final String p_jniPath) throws FileNotFoundException {
+    DXRAMJNIManager(final String p_jniPath) {
         m_jniPath = new File(p_jniPath);
 
         if (!m_jniPath.exists()) {
-            throw new FileNotFoundException("JNI root directory " + m_jniPath.getAbsolutePath() + " does not exist");
+            LOGGER.warn("JNI root directory %s does not exist, creating...", m_jniPath.getAbsolutePath());
+
+            if (!m_jniPath.mkdir()) {
+                throw new DXRAMRuntimeException("Creating JNI root directory " + m_jniPath.getAbsolutePath() +
+                        " failed.");
+            }
         }
     }
 

@@ -16,7 +16,6 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -244,13 +243,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         LOGGER.info("Initializing engine (version %s)...", m_version);
 
-        try {
-            m_jniManager = new DXRAMJNIManager(m_context.getConfig().getEngineConfig().getJniPath());
-        } catch (final FileNotFoundException ignored) {
-            LOGGER.error("Path %s for JNI libraries does not exist",
-                    m_context.getConfig().getEngineConfig().getJniPath());
-            return false;
-        }
+        m_jniManager = new DXRAMJNIManager(m_context.getConfig().getEngineConfig().getJniPath());
 
         // init the short names for the services
         for (Entry<String, AbstractDXRAMService> service : m_context.getServices().entrySet()) {
