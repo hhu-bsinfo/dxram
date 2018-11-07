@@ -190,6 +190,10 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
 
         m_indexData = new NameServiceIndexData();
 
+        // this does not create the backup (if backup is turned on) because the backup
+        // service is not available at this point
+        // the flag m_indexDataRegistered ensures that a backup of the data is distributed
+        // later once the first name entry is registered
         m_indexData.setID(m_chunkIndex.createIndexChunk(m_indexData.sizeofObject()));
 
         if (m_indexData.getID() == ChunkID.INVALID_ID) {
