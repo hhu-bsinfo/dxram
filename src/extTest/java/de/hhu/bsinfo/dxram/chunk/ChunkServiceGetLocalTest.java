@@ -7,8 +7,8 @@ import org.junit.runner.RunWith;
 import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
 import de.hhu.bsinfo.dxram.ClientInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
+import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
@@ -32,9 +32,7 @@ public class ChunkServiceGetLocalTest {
         Assert.assertTrue(chunk.isIDValid());
         Assert.assertTrue(chunk.isStateOk());
 
-        ret = chunkLocalService.getLocal().get(chunk);
-
-        Assert.assertEquals(1, ret);
+        Assert.assertTrue(chunkLocalService.getLocal().get(chunk));
         Assert.assertTrue(chunk.isIDValid());
         Assert.assertTrue(chunk.isStateOk());
     }

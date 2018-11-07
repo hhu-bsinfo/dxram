@@ -8,8 +8,8 @@ import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.ClientInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
+import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
@@ -36,9 +36,7 @@ public class ChunkServiceGetPutTest {
         Assert.assertTrue(chunk.isStateOk());
         Assert.assertEquals(remotePeer, ChunkID.getCreatorID(chunk.getID()));
 
-        ret = chunkService.get().get(chunk);
-
-        Assert.assertEquals(1, ret);
+        Assert.assertTrue(chunkService.get().get(chunk));
         Assert.assertTrue(chunk.isIDValid());
         Assert.assertTrue(chunk.isStateOk());
     }
@@ -58,15 +56,11 @@ public class ChunkServiceGetPutTest {
 
         chunk.getData()[0] = (byte) 0xAA;
 
-        ret = chunkService.put().put(chunk);
-
-        Assert.assertEquals(1, ret);
+        Assert.assertTrue(chunkService.put().put(chunk));
         Assert.assertTrue(chunk.isIDValid());
         Assert.assertTrue(chunk.isStateOk());
 
-        ret = chunkService.get().get(chunk);
-
-        Assert.assertEquals(1, ret);
+        Assert.assertTrue(chunkService.get().get(chunk));
         Assert.assertTrue(chunk.isIDValid());
         Assert.assertTrue(chunk.isStateOk());
         Assert.assertEquals((byte) 0xAA, chunk.getData()[0]);
