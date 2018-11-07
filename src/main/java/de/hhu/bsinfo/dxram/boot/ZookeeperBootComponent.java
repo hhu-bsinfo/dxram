@@ -409,7 +409,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     @Override
     public List<BackupPeer> getAvailableBackupPeers() {
         return m_nodeRegistry.getAll().stream()
-                .filter(node -> node.getRole().equals(NodeRole.PEER) && node.isOnline() && node.isAvailableForBackup())
+                .filter(node -> node.getRole() == NodeRole.PEER && node.isOnline() &&
+                        NodeCapabilities.supports(node.getCapabilities(), NodeCapabilities.BACKUP_DST))
                 .map(node -> new BackupPeer(node.getId(), node.getRack(), node.getSwitch()))
                 .collect(Collectors.toList());
     }

@@ -396,11 +396,6 @@ public class NodeRegistry implements ServiceCacheListener {
         private final boolean m_online;
 
         /**
-         * Indicates whether this node is able to store backups.
-         */
-        private final boolean m_availableForBackup;
-
-        /**
          * The node's capabilities.
          */
         private final int m_capabilities;
@@ -421,8 +416,6 @@ public class NodeRegistry implements ServiceCacheListener {
                         NodeRole p_role,
                 @JsonProperty("online")
                         boolean p_online,
-                @JsonProperty("availableForBackup")
-                        boolean p_availableForBackup,
                 @JsonProperty("capabilities")
                         int p_capabilities) {
             m_id = p_id;
@@ -432,7 +425,6 @@ public class NodeRegistry implements ServiceCacheListener {
             m_switch = p_switch;
             m_role = p_role;
             m_online = p_online;
-            m_availableForBackup = p_availableForBackup;
             m_capabilities = p_capabilities;
         }
 
@@ -468,10 +460,6 @@ public class NodeRegistry implements ServiceCacheListener {
             return m_online;
         }
 
-        public boolean isAvailableForBackup() {
-            return m_availableForBackup;
-        }
-
         public int getCapabilities() {
             return m_capabilities;
         }
@@ -481,13 +469,11 @@ public class NodeRegistry implements ServiceCacheListener {
         }
 
         public NodeDetails withCapabilities(int p_capabilities) {
-            return new NodeDetails(m_id, m_ip, m_port, m_rack, m_switch, m_role, m_online, m_availableForBackup,
-                    p_capabilities);
+            return new NodeDetails(m_id, m_ip, m_port, m_rack, m_switch, m_role, m_online, p_capabilities);
         }
 
         public NodeDetails withOnline(boolean p_isOnline) {
-            return new NodeDetails(m_id, m_ip, m_port, m_rack, m_switch, m_role, p_isOnline, m_availableForBackup,
-                    m_capabilities);
+            return new NodeDetails(m_id, m_ip, m_port, m_rack, m_switch, m_role, p_isOnline, m_capabilities);
         }
 
         @Override
@@ -504,7 +490,6 @@ public class NodeRegistry implements ServiceCacheListener {
                     m_rack == details.m_rack &&
                     m_switch == details.m_switch &&
                     m_online == details.m_online &&
-                    m_availableForBackup == details.m_availableForBackup &&
                     m_capabilities == details.m_capabilities &&
                     Objects.equals(m_ip, details.m_ip) &&
                     m_role == details.m_role;
@@ -537,7 +522,6 @@ public class NodeRegistry implements ServiceCacheListener {
             exporter.writeShort(m_switch);
             exporter.writeChar(m_role.getAcronym());
             exporter.writeBoolean(m_online);
-            exporter.writeBoolean(m_availableForBackup);
             exporter.writeInt(m_capabilities);
 
             return buffer.array();
@@ -554,7 +538,6 @@ public class NodeRegistry implements ServiceCacheListener {
             short tmpSwitch = 0;
             char tmpRole = '0';
             boolean tmpOnline;
-            boolean tmpBackup;
             int tmpCapabilites = 0;
 
             tmpId = importer.readShort(tmpId);
@@ -564,11 +547,10 @@ public class NodeRegistry implements ServiceCacheListener {
             tmpSwitch = importer.readShort(tmpSwitch);
             tmpRole = importer.readChar(tmpRole);
             tmpOnline = importer.readBoolean(false);
-            tmpBackup = importer.readBoolean(false);
             tmpCapabilites = importer.readInt(tmpCapabilites);
 
             return new NodeDetails(tmpId, tmpIp, tmpPort, tmpRack, tmpSwitch,
-                    NodeRole.getRoleByAcronym(tmpRole), tmpOnline, tmpBackup, tmpCapabilites);
+                    NodeRole.getRoleByAcronym(tmpRole), tmpOnline, tmpCapabilites);
         }
 
         public static class Builder {
@@ -610,19 +592,13 @@ public class NodeRegistry implements ServiceCacheListener {
                 return this;
             }
 
-            public Builder withAvailableForBackup(boolean p_availableForBackup) {
-                m_availableForBackup = p_availableForBackup;
-                return this;
-            }
-
             public Builder withCapabilities(int p_capabilities) {
                 m_capabilities = p_capabilities;
                 return this;
             }
 
             public NodeDetails build() {
-                return new NodeDetails(m_id, m_ip, m_port, m_rack, m_switch, m_role, m_online,
-                        m_availableForBackup, m_capabilities);
+                return new NodeDetails(m_id, m_ip, m_port, m_rack, m_switch, m_role, m_online, m_capabilities);
             }
         }
     }
