@@ -45,7 +45,15 @@ public class ChunkIndexComponent extends AbstractDXRAMComponent<ChunkIndexCompon
      * @return Chunkid of the index chunk.
      */
     public long createIndexChunk(final int p_size) {
-        return m_chunk.getMemory().create().create(p_size);
+        m_backup.blockCreation();
+
+        long cid = m_chunk.getMemory().create().create(p_size);
+
+        m_backup.registerChunk(cid, p_size);
+
+        m_backup.unblockCreation();
+
+        return cid;
     }
 
     /**
