@@ -629,7 +629,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
 
         // First chunk to register -> initialize backup range
         if (m_currentBackupRange == null) {
-            System.out.println("Initializing first backup range!");
+            LOGGER.debug("Initializing first backup range!");
+
             List<BackupPeer> availablePeers = m_boot.getAvailableBackupPeers();
             if (m_placementStrategy instanceof CopysetPlacement &&
                     availablePeers.size() < m_placementStrategy.getReplicationFactor() * 5) {
