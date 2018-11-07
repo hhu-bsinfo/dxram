@@ -238,6 +238,9 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         // -----------------------------
 
+        // log final config for debugging
+        LOGGER.debug("Configuration for this instance: %s", m_context.getConfig());
+
         final List<AbstractDXRAMComponent> list;
         final Comparator<AbstractDXRAMComponent> comp;
 
