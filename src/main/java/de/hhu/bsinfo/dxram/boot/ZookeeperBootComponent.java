@@ -211,7 +211,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return false;
         }
 
-        LOGGER.info("Finished bootstrap process");
+        LOGGER.info("Finished bootstrap process, node ID of this instance: %X", getDetails().getId());
 
         return true;
     }
@@ -252,6 +252,8 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             LOGGER.error("Starting node registry failed");
             return false;
         }
+
+        LOGGER.info("Finished initialization, node ID of this instance: %X", getDetails().getId());
 
         return true;
     }
