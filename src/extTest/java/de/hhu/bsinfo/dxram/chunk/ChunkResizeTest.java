@@ -11,6 +11,8 @@ import de.hhu.bsinfo.dxram.ClientInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
+import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
@@ -62,5 +64,23 @@ public class ChunkResizeTest {
 
         ChunkIDRanges range = chunkService.cidStatus().getAllLocalChunkIDRanges(remotePeer);
         Assert.assertFalse(range.isInRange(chunk.getID()));
+    }
+
+    @Test
+    public void test() {
+        NameserviceService nameService = m_instance.getService(NameserviceService.class);
+        BootService bootService = m_instance.getService(BootService.class);
+        ChunkService chunkService = m_instance.getService(ChunkService.class);
+        ChunkLocalService chunkLocalService = m_instance.getService(ChunkLocalService.class);
+
+        TestStrChunk t1 = new TestStrChunk();
+        chunkLocalService.createLocal().create(t1);
+        chunkService.put().put(t1);
+
+        t1.setAbc("123123");
+        chunkService.resize().resize(t1);
+
+        TestStrChunk t3 = new TestStrChunk();
+        chunkLocalService.createLocal().create(t3);
     }
 }
