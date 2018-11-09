@@ -31,12 +31,10 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
 public class GetResponse extends Response {
-    // total field used for reading, only
-    private int m_total;
-    // The data of the chunk objects here is used when sending the response only
-    // when the response is received, the chunk objects from the request are
-    // used to directly write the data to them to avoid further copying
-    private ChunkByteArray[] m_dataChunks;
+    // The data of the chunk object here is used when sending the response only
+    // when the response is received, the chunk object from the request is
+    // used to directly write the data to it to avoid further copying
+    private ChunkByteArray m_dataChunk;
 
     /**
      * Creates an instance of GetResponse.
@@ -54,13 +52,13 @@ public class GetResponse extends Response {
      *
      * @param p_request
      *         the corresponding GetRequest
-     * @param p_chunks
-     *         Chunks read from the memory.
+     * @param p_chunk
+     *         Chunk read from memory.
      */
-    public GetResponse(final GetRequest p_request, final ChunkByteArray[] p_chunks) {
+    public GetResponse(final GetRequest p_request, final ChunkByteArray p_chunk) {
         super(p_request, ChunkMessages.SUBTYPE_GET_RESPONSE);
 
-        m_dataChunks = p_chunks;
+        m_dataChunk = p_chunk;
     }
 
     @Override
@@ -68,29 +66,21 @@ public class GetResponse extends Response {
         int size = 0;
 
         // when writing payload
-        if (m_dataChunks != null) {
-            size += ObjectSizeUtil.sizeofCompactedNumber(m_dataChunks.length);
+        if (m_dataChunk != null) {
+            size += Byte.BYTES;
 
-            size += m_dataChunks.length * Byte.BYTES;
-
-            for (ChunkByteArray dataChunk : m_dataChunks) {
-                if (dataChunk.getData() != null) {
-                    size += dataChunk.getSize();
-                }
+            if (m_dataChunk.getData() != null) {
+                size += m_dataChunk.getSize();
             }
         } else {
-            size += ObjectSizeUtil.sizeofCompactedNumber(m_total);
-
-            // after reading message payload to request data structures
+            // after reading message payload to request chunk
             GetRequest request = (GetRequest) getCorrespondingRequest();
 
-            // chunk states
-            size += request.getChunks().length * Byte.BYTES;
+            // chunk state
+            size += Byte.BYTES;
 
-            for (int i = 0; i < request.getChunks().length; i++) {
-                if (request.getChunks()[i] != null && request.getChunks()[i].getState() == ChunkState.OK) {
-                    size += request.getChunks()[i].sizeofObject();
-                }
+            if (request.getChunk().getState() == ChunkState.OK) {
+                size += request.getChunk().sizeofObject();
             }
         }
 
@@ -99,34 +89,25 @@ public class GetResponse extends Response {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        // write total count once
-        p_exporter.writeCompactNumber(m_dataChunks.length);
+        p_exporter.writeByte((byte) m_dataChunk.getState().ordinal());
 
-        for (int i = 0; i < m_dataChunks.length; i++) {
-            p_exporter.writeByte((byte) m_dataChunks[i].getState().ordinal());
-
-            if (m_dataChunks[i].isStateOk()) {
-                p_exporter.writeBytes(m_dataChunks[i].getData());
-            }
+        if (m_dataChunk.isStateOk()) {
+            p_exporter.writeBytes(m_dataChunk.getData());
         }
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_total = p_importer.readCompactNumber(m_total);
-
         // read the payload from the buffer and write it directly into
         // the chunk objects provided by the request to avoid further copying of data
         GetRequest request = (GetRequest) getCorrespondingRequest();
 
-        for (int i = 0; i < m_total; i++) {
-            AbstractChunk chunk = request.getChunks()[i];
+        AbstractChunk chunk = request.getChunk();
 
-            chunk.setState(ChunkState.values()[p_importer.readByte((byte) chunk.getState().ordinal())]);
+        chunk.setState(ChunkState.values()[p_importer.readByte((byte) chunk.getState().ordinal())]);
 
-            if (chunk.getState() == ChunkState.OK) {
-                p_importer.importObject(chunk);
-            }
+        if (chunk.getState() == ChunkState.OK) {
+            p_importer.importObject(chunk);
         }
     }
 }

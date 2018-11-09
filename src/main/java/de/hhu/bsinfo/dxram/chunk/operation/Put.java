@@ -190,6 +190,8 @@ public class Put extends AbstractOperation implements MessageReceiver {
 
                                 result = statusCodes[0] == ChunkState.OK.ordinal();
 
+                                p_chunk.setState(ChunkState.values()[statusCodes[0]]);
+
                                 if (!result) {
                                     m_lookup.invalidateRange(p_chunk.getID());
                                 }

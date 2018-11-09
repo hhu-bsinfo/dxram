@@ -31,21 +31,26 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
-public class GetRequest extends Request {
+public class GetMultiRequest extends Request {
     private ChunkLockOperation m_lockOperation = ChunkLockOperation.NONE;
     private int m_lockOperationTimeoutMs = -1;
     // the chunk is stored for the sender of the request
     // to write the incoming data of the response to it
     // the requesting IDs are taken from the chunk
-    private AbstractChunk m_chunk;
+    private AbstractChunk[] m_chunks;
+    private int m_chunksStartOffset;
+    private ArrayListShort m_locationIndexBuffer;
+    private short m_targetRemoteLocation;
+    private int m_chunkCount;
+
     // this is only used when receiving the request
-    private long m_chunkID;
+    private long[] m_chunkIDs;
 
     /**
      * Creates an instance of GetRequest.
      * This constructor is used when receiving this message.
      */
-    public GetRequest() {
+    public GetMultiRequest() {
         super();
     }
 
@@ -59,16 +64,27 @@ public class GetRequest extends Request {
      *         Lock operation to execute with get operation
      * @param p_lockOperationTimeoutMs
      *         Timeout for lock operation. -1 for inifinte, 0 for one shot, > 0 timeout in ms
-     * @param p_chunk
-     *         Chunk with the ID of the chunk data to get.
+     * @param p_chunks
+     *         Chunks with the ID of the chunk data to get.
      */
-    public GetRequest(final short p_destination, final ChunkLockOperation p_lockOperation,
-            final int p_lockOperationTimeoutMs, final AbstractChunk p_chunk) {
-        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_REQUEST);
+    public GetMultiRequest(final short p_destination, final ChunkLockOperation p_lockOperation,
+            final int p_lockOperationTimeoutMs, final ArrayListShort p_locationIndexBuffer,
+            final short p_targetRemoteLocation, final int p_chunksStartOffset, final AbstractChunk... p_chunks) {
+        super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_GET_MULTI_REQUEST);
 
         m_lockOperation = p_lockOperation;
         m_lockOperationTimeoutMs = p_lockOperationTimeoutMs;
-        m_chunk = p_chunk;
+        m_locationIndexBuffer = p_locationIndexBuffer;
+        m_targetRemoteLocation = p_targetRemoteLocation;
+        m_chunksStartOffset = p_chunksStartOffset;
+        m_chunks = p_chunks;
+
+        // count chunks to be sent for size calculation and writing
+        for (int i = 0; i < m_locationIndexBuffer.getSize(); i++) {
+            if (m_locationIndexBuffer.get(i) == m_targetRemoteLocation) {
+                m_chunkCount++;
+            }
+        }
     }
 
     /**
@@ -90,23 +106,39 @@ public class GetRequest extends Request {
     }
 
     /**
-     * Get the chunk IDsof this request (when receiving it).
+     * Get the chunk IDs of this request (when receiving it).
      *
      * @return Chunk ID.
      */
-    public long getChunkID() {
-        return m_chunkID;
+    public long[] getChunkIDs() {
+        return m_chunkIDs;
     }
 
     /**
-     * Get the chunk stored with this request.
+     * Get the chunks stored with this request.
      * This is used to write the received data to the provided object to avoid
      * using multiple buffers.
      *
-     * @return Chunk to store data to when the response arrived.
+     * @return Chunks to store data to when the response arrived.
      */
-    public AbstractChunk getChunk() {
-        return m_chunk;
+    public AbstractChunk[] getChunks() {
+        return m_chunks;
+    }
+
+    public int getChunksStartOffset() {
+        return m_chunksStartOffset;
+    }
+
+    public ArrayListShort getLocationIndexBuffer() {
+        return m_locationIndexBuffer;
+    }
+
+    public short getTargetRemoteLocation() {
+        return m_targetRemoteLocation;
+    }
+
+    public int getChunkCount() {
+        return m_chunkCount;
     }
 
     @Override
@@ -120,7 +152,11 @@ public class GetRequest extends Request {
             size += Integer.BYTES;
         }
 
-        size += Long.BYTES;
+        if (m_chunks != null) {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkCount) + Long.BYTES * m_chunkCount;
+        } else {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length) + Long.BYTES * m_chunkIDs.length;
+        }
 
         return size;
     }
@@ -133,7 +169,13 @@ public class GetRequest extends Request {
             p_exporter.writeInt(m_lockOperationTimeoutMs);
         }
 
-        p_exporter.writeLong(m_chunk.getID());
+        p_exporter.writeCompactNumber(m_chunkCount);
+
+        for (int i = 0; i < m_locationIndexBuffer.getSize(); i++) {
+            if (m_locationIndexBuffer.get(i) == m_targetRemoteLocation) {
+                p_exporter.writeLong(m_chunks[m_chunksStartOffset + i].getID());
+            }
+        }
     }
 
     @Override
@@ -144,6 +186,6 @@ public class GetRequest extends Request {
             m_lockOperationTimeoutMs = p_importer.readInt(m_lockOperationTimeoutMs);
         }
 
-        m_chunkID = p_importer.readLong(m_chunkID);
+        m_chunkIDs = p_importer.readLongArray(m_chunkIDs);
     }
 }
