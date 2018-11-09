@@ -36,11 +36,12 @@ public class PutRequest extends Request {
     private int m_lockOperationTimeoutMs = -1;
 
     // used when sending the request
-    private AbstractChunk[] m_chunks;
+    private AbstractChunk m_chunk;
 
     // used when receiving the request
-    private long[] m_chunkIDs;
-    private byte[][] m_data;
+    private long m_chunkID;
+    private int m_dataLength;
+    private byte[] m_data;
 
     /**
      * Creates an instance of PutRequest.
@@ -59,16 +60,16 @@ public class PutRequest extends Request {
      *         Lock operation to execute with put operation
      * @param p_lockOperationTimeoutMs
      *         Timeout for lock operation. -1 for infinite, 0 for one shot, > 0 timeout in ms
-     * @param p_chunks
-     *         Chunks with the ID of the chunk data to put.
+     * @param p_chunk
+     *         Chunk with the ID of the chunk data to put.
      */
     public PutRequest(final short p_destination, final ChunkLockOperation p_lockOperation,
-            final int p_lockOperationTimeoutMs, final AbstractChunk... p_chunks) {
+            final int p_lockOperationTimeoutMs, final AbstractChunk p_chunk) {
         super(p_destination, DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST);
 
         m_lockOperation = p_lockOperation;
         m_lockOperationTimeoutMs = p_lockOperationTimeoutMs;
-        m_chunks = p_chunks;
+        m_chunk = p_chunk;
     }
 
     /**
@@ -90,20 +91,29 @@ public class PutRequest extends Request {
     }
 
     /**
-     * Get the chunk IDs of the data to put when this request is received.
+     * Get the chunk to put (available on sender side, only)
      *
-     * @return the IDs of the chunks to put
+     * @return Chunk to put
      */
-    public long[] getChunkIDs() {
-        return m_chunkIDs;
+    public AbstractChunk getChunk() {
+        return m_chunk;
     }
 
     /**
-     * Get the data of the chunks to put when this request is received
+     * Get the chunk ID of the data to put when this request is received.
      *
-     * @return Array of byte[] of chunk data to put
+     * @return the ID of the chunk to put
      */
-    public byte[][] getChunkData() {
+    public long getChunkID() {
+        return m_chunkID;
+    }
+
+    /**
+     * Get the data of the chunk to put when this request is received
+     *
+     * @return Binary data of chunk data to put
+     */
+    public byte[] getChunkData() {
         return m_data;
     }
 
@@ -118,29 +128,18 @@ public class PutRequest extends Request {
             size += Integer.BYTES;
         }
 
-        if (m_chunks != null) {
-            // sending request with chunk objects
-            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunks.length);
-            // chunk IDs
-            size += m_chunks.length * Long.BYTES;
+        // chunk ID
+        size += Long.BYTES;
 
-            for (AbstractChunk chunk : m_chunks) {
-                int tmp = chunk.sizeofObject();
+        if (m_chunk != null) {
+            int tmp = m_chunk.sizeofObject();
 
-                // length field for for data
-                size += ObjectSizeUtil.sizeofCompactedNumber(tmp);
-                // data size
-                size += tmp;
-            }
+            // length field for for data
+            size += ObjectSizeUtil.sizeofCompactedNumber(tmp);
+            // data size
+            size += tmp;
         } else {
-            // receiving request. chunk data as byte array only, no type information
-            // chunk IDs
-            size += ObjectSizeUtil.sizeofCompactedNumber(m_chunkIDs.length);
-            size += m_chunkIDs.length * Long.BYTES;
-
-            for (byte[] data : m_data) {
-                size += ObjectSizeUtil.sizeofByteArray(data);
-            }
+            size += ObjectSizeUtil.sizeofByteArray(m_data);
         }
 
         return size;
@@ -155,15 +154,11 @@ public class PutRequest extends Request {
             p_exporter.writeInt(m_lockOperationTimeoutMs);
         }
 
-        p_exporter.writeCompactNumber(m_chunks.length);
+        int size = m_chunk.sizeofObject();
 
-        for (AbstractChunk chunk : m_chunks) {
-            int size = chunk.sizeofObject();
-
-            p_exporter.writeLong(chunk.getID());
-            p_exporter.writeCompactNumber(size);
-            p_exporter.exportObject(chunk);
-        }
+        p_exporter.writeLong(m_chunk.getID());
+        p_exporter.writeCompactNumber(size);
+        p_exporter.exportObject(m_chunk);
     }
 
     @Override
@@ -174,17 +169,7 @@ public class PutRequest extends Request {
             m_lockOperationTimeoutMs = p_importer.readInt(m_lockOperationTimeoutMs);
         }
 
-        int length = p_importer.readCompactNumber(0);
-
-        if (m_chunkIDs == null) {
-            // Do not overwrite existing arrays
-            m_chunkIDs = new long[length];
-            m_data = new byte[length][];
-        }
-
-        for (int i = 0; i < m_chunkIDs.length; i++) {
-            m_chunkIDs[i] = p_importer.readLong(m_chunkIDs[i]);
-            m_data[i] = p_importer.readByteArray(m_data[i]);
-        }
+        m_chunkID = p_importer.readLong(m_chunkID);
+        m_data = p_importer.readByteArray(m_data);
     }
 }

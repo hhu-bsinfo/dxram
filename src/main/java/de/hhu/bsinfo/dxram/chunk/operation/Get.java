@@ -517,8 +517,6 @@ public class Get extends AbstractOperation implements MessageReceiver {
                 SOP_MULTI_INCOMING.stop();
             }
         }
-
-
     }
 
     /**

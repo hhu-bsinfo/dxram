@@ -16,6 +16,7 @@
 
 package de.hhu.bsinfo.dxram.chunk.messages;
 
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkState;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
@@ -23,52 +24,69 @@ import de.hhu.bsinfo.dxnet.core.Response;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
- * Response to a PutRequest
+ * Response to a PutMultiRequest
  *
  * @author Florian Klein, florian.klein@hhu.de, 09.03.2012
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 11.12.2015
  */
-public class PutResponse extends Response {
-    private byte m_chunkStatusCode;
+public class PutMultiResponse extends Response {
+    // sender only
+    private byte[] m_chunkStatusCodes;
+
+    // receiver only
+    private int m_totalStatusCodeCount;
 
     /**
-     * Creates an instance of PutResponse.
+     * Creates an instance of PutMultiResponse.
      * This constructor is used when receiving this message.
      */
-    public PutResponse() {
+    public PutMultiResponse() {
         super();
     }
 
     /**
-     * Creates an instance of PutResponse.
+     * Creates an instance of PutMultiResponse.
      * This constructor is used when sending this message.
      *
      * @param p_request
      *         the request
-     * @param p_statusCode
-     *         Status code of the chunk
+     * @param p_statusCodes
+     *         Status code for every single chunk put.
      */
-    public PutResponse(final PutRequest p_request, final byte p_statusCode) {
-        super(p_request, ChunkMessages.SUBTYPE_PUT_RESPONSE);
-        m_chunkStatusCode = p_statusCode;
+    public PutMultiResponse(final PutMultiRequest p_request, final byte... p_statusCodes) {
+        super(p_request, ChunkMessages.SUBTYPE_PUT_MULTI_RESPONSE);
+        m_chunkStatusCodes = p_statusCodes;
     }
 
     @Override
     protected final int getPayloadLength() {
-        return Byte.BYTES;
+        if (m_chunkStatusCodes != null) {
+            // sender side
+            return Byte.BYTES * m_chunkStatusCodes.length;
+        } else {
+            // receiver side
+            return Byte.BYTES * m_totalStatusCodeCount;
+        }
     }
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeByte(m_chunkStatusCode);
+        p_exporter.writeBytes(m_chunkStatusCodes);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        PutRequest request = (PutRequest) getCorrespondingRequest();
+        PutMultiRequest request = (PutMultiRequest) getCorrespondingRequest();
 
-        request.getChunk().setState(
-                ChunkState.values()[p_importer.readByte((byte) request.getChunk().getState().ordinal())]);
+        for (int i = 0; i < request.getLocationIndexBuffer().getSize(); i++) {
+            if (request.getLocationIndexBuffer().get(i) == request.getTargetRemoteLocation()) {
+                AbstractChunk chunk = request.getChunks()[i];
+
+                chunk.setState(ChunkState.values()[p_importer.readByte((byte) chunk.getState().ordinal())]);
+
+                m_totalStatusCodeCount++;
+            }
+        }
     }
 
 }

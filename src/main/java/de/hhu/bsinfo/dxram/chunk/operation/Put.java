@@ -20,6 +20,10 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
+import de.hhu.bsinfo.dxram.chunk.messages.GetMultiRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.GetMultiResponse;
+import de.hhu.bsinfo.dxram.chunk.messages.PutMultiRequest;
+import de.hhu.bsinfo.dxram.chunk.messages.PutMultiResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.PutResponse;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -28,6 +32,9 @@ import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxutils.ArrayListShort;
+import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.NodeIDBitfield;
 import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 import de.hhu.bsinfo.dxutils.stats.ThroughputPool;
 import de.hhu.bsinfo.dxutils.stats.Value;
@@ -39,22 +46,35 @@ import de.hhu.bsinfo.dxutils.stats.ValuePool;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
 public class Put extends AbstractOperation implements MessageReceiver {
-    private static final ThroughputPool SOP_DEFAULT = new ThroughputPool(ChunkService.class, "Put", Value.Base.B_10);
+    private static final ThroughputPool SOP_DEFAULT = new ThroughputPool(ChunkService.class, "Get", Value.Base.B_10);
+    private static final ThroughputPool SOP_MULTI =
+            new ThroughputPool(ChunkService.class, "GetMulti", Value.Base.B_10);
     private static final ThroughputPool SOP_INCOMING =
-            new ThroughputPool(ChunkService.class, "PutIncoming", Value.Base.B_10);
-
-    private static final ValuePool SOP_ERROR = new ValuePool(ChunkService.class, "PutError");
-    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(ChunkService.class, "PutIncomingError");
+            new ThroughputPool(ChunkService.class, "GetIncoming", Value.Base.B_10);
+    private static final ThroughputPool SOP_MULTI_INCOMING =
+            new ThroughputPool(ChunkService.class, "GetMultiIncoming", Value.Base.B_10);
+    private static final ValuePool SOP_ERROR = new ValuePool(ChunkService.class, "GetError");
+    private static final ValuePool SOP_MULTI_ERROR = new ValuePool(ChunkService.class, "GetMultiError");
+    private static final ValuePool SOP_INCOMING_ERROR = new ValuePool(ChunkService.class, "GetIncomingError");
+    private static final ValuePool SOP_MULTI_INCOMING_ERROR =
+            new ValuePool(ChunkService.class, "GetMultiIncomingError");
 
     static {
-        StatisticsManager.get().registerOperation(Put.class, SOP_DEFAULT);
-        StatisticsManager.get().registerOperation(Put.class, SOP_INCOMING);
-        StatisticsManager.get().registerOperation(Put.class, SOP_ERROR);
-        StatisticsManager.get().registerOperation(Put.class, SOP_INCOMING_ERROR);
+        StatisticsManager.get().registerOperation(Get.class, SOP_DEFAULT);
+        StatisticsManager.get().registerOperation(Get.class, SOP_MULTI);
+        StatisticsManager.get().registerOperation(Get.class, SOP_INCOMING);
+        StatisticsManager.get().registerOperation(Get.class, SOP_MULTI_INCOMING);
+        StatisticsManager.get().registerOperation(Get.class, SOP_ERROR);
+        StatisticsManager.get().registerOperation(Get.class, SOP_MULTI_ERROR);
+        StatisticsManager.get().registerOperation(Get.class, SOP_INCOMING_ERROR);
+        StatisticsManager.get().registerOperation(Get.class, SOP_MULTI_INCOMING_ERROR);
     }
 
-    private final Map[] m_threadLocalRemoteChunksByPeers = new Map[4096];
-    private final Map[] m_threadLocalRemoteChunksByBackupRange = new Map[4096];
+    // TODO have a max number of threads configuration parameter somewhere in engine settings?
+    private final ArrayListShort[] m_threadLocalLocationIndexBuffer = new ArrayListShort[4096];
+    private final ArrayListShort[] m_threadLocalRemotesBuffer = new ArrayListShort[4096];
+    private final NodeIDBitfield[] m_threadLocalNodeIDBitfield = new NodeIDBitfield[4096];
+    private final ArrayList<PutMultiRequest>[] m_threadLocalPendingRequests = new ArrayList[4096];
 
     /**
      * Constructor
@@ -84,8 +104,13 @@ public class Put extends AbstractOperation implements MessageReceiver {
                 PutRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_RESPONSE,
                 PutResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_MULTI_REQUEST,
+                PutMultiRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_MULTI_RESPONSE,
+                PutMultiResponse.class);
 
         m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.CHUNK_MESSAGES_TYPE, ChunkMessages.SUBTYPE_PUT_MULTI_REQUEST, this);
     }
 
     /**
@@ -131,29 +156,19 @@ public class Put extends AbstractOperation implements MessageReceiver {
 
         boolean result = false;
 
-        Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange = getThreadLocalChunksByBackupRangeMap();
-
         SOP_DEFAULT.start();
 
-        // filter null value
+        // filter null values
         if (p_chunk != null) {
             // filter by invalid ID
             if (p_chunk.getID() == ChunkID.INVALID_ID) {
                 p_chunk.setState(ChunkState.INVALID_ID);
             } else {
+                // try to get locally, will check first if it exists
                 m_chunk.getMemory().put().put(p_chunk, p_lockOperation, p_lockOperationTimeoutMs);
 
                 if (p_chunk.getState() == ChunkState.OK) {
                     result = true;
-
-                    // log changes to backup
-                    if (m_backup.isActive()) {
-                        // sort by backup peers
-                        BackupRange backupRange = m_backup.getBackupRange(p_chunk.getID());
-                        ArrayList<AbstractChunk> remoteChunksOfBackupRange =
-                                remoteChunksByBackupRange.computeIfAbsent(backupRange, a -> new ArrayList<>());
-                        remoteChunksOfBackupRange.add(p_chunk);
-                    }
                 } else if (p_chunk.getState() == ChunkState.DOES_NOT_EXIST) {
                     // seems like it's not available locally, check remotes for remote chunk or migrated
                     LookupRange location = m_lookup.getLookupRange(p_chunk.getID());
@@ -174,8 +189,7 @@ public class Put extends AbstractOperation implements MessageReceiver {
                         short peer = location.getPrimaryPeer();
 
                         if (peer == m_boot.getNodeId()) {
-                            // local put, migrated data to current node
-                            result = m_chunk.getMemory().put().put(p_chunk, p_lockOperation, p_lockOperationTimeoutMs);
+                            result = m_chunk.getMemory().get().get(p_chunk, p_lockOperation, p_lockOperationTimeoutMs);
                         } else {
                             // Remote get from specified peer
                             PutRequest request = new PutRequest(peer, p_lockOperation, p_lockOperationTimeoutMs,
@@ -184,17 +198,15 @@ public class Put extends AbstractOperation implements MessageReceiver {
                             try {
                                 m_network.sendSync(request);
 
-                                PutResponse response = request.getResponse(PutResponse.class);
+                                // received data is stored to chunk in request instead of copied from response
 
-                                byte[] statusCodes = response.getStatusCodes();
-
-                                result = statusCodes[0] == ChunkState.OK.ordinal();
-
-                                p_chunk.setState(ChunkState.values()[statusCodes[0]]);
+                                result = p_chunk.isStateOk();
 
                                 if (!result) {
                                     m_lookup.invalidateRange(p_chunk.getID());
                                 }
+
+                                // Chunk data is written directly to the provided data structure on receive
                             } catch (final NetworkException e) {
                                 ChunkState errorState;
 
@@ -278,17 +290,17 @@ public class Put extends AbstractOperation implements MessageReceiver {
      */
     public int put(final int p_offset, final int p_count, final ChunkLockOperation p_lockOperation,
             final int p_lockOperationTimeoutMs, final AbstractChunk... p_chunks) {
-        m_logger.trace("put[offset %d, count %d, lock op %s, lock timeout %d, chunks (%d): %s]", p_offset,
+        m_logger.trace("get[offset %d, count %d, lock op %s, lock timeout %d, chunks (%d): %s]", p_offset,
                 p_count, p_lockOperation, p_lockOperationTimeoutMs, p_chunks.length,
                 AbstractChunk.toChunkIDListString(p_chunks));
 
-        int totalChunksPut = 0;
+        int totalChunksGot = 0;
 
-        SOP_DEFAULT.start();
+        SOP_MULTI.start();
 
-        // sort by local and remote data: process local first, remote further below
-        Map<Short, ArrayList<AbstractChunk>> remoteChunksByPeers = getThreadLocalRemoteChunksByPeersMap();
-        Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange = getThreadLocalChunksByBackupRangeMap();
+        ArrayListShort remoteLocIndexBuffer = getThreadLocalLocationIndexBuffer();
+        ArrayListShort remotes = getThreadLocalRemotesBuffer();
+        NodeIDBitfield nodeIDBitfield = getThreadLocalNodeIDBitfield();
 
         for (int i = p_offset; i < p_count; i++) {
             // filter null values and skip
@@ -302,19 +314,14 @@ public class Put extends AbstractOperation implements MessageReceiver {
                 continue;
             }
 
+            // try to put locally, will check first if it exists
             m_chunk.getMemory().put().put(p_chunks[i], p_lockOperation, p_lockOperationTimeoutMs);
 
             if (p_chunks[i].getState() == ChunkState.OK) {
-                totalChunksPut++;
+                totalChunksGot++;
 
-                // log changes to backup
-                if (m_backup.isActive()) {
-                    // sort by backup peers
-                    BackupRange backupRange = m_backup.getBackupRange(p_chunks[i + p_offset].getID());
-                    ArrayList<AbstractChunk> remoteChunksOfBackupRange =
-                            remoteChunksByBackupRange.computeIfAbsent(backupRange, a -> new ArrayList<>());
-                    remoteChunksOfBackupRange.add(p_chunks[i + p_offset]);
-                }
+                // start at index 0 for location buffer, remote invalid because local
+                remoteLocIndexBuffer.add(i - p_offset, NodeID.INVALID_ID);
             } else if (p_chunks[i].getState() == ChunkState.DOES_NOT_EXIST) {
                 // seems like it's not available locally, check remotes for remote chunk or migrated
                 LookupRange location = m_lookup.getLookupRange(p_chunks[i].getID());
@@ -328,162 +335,208 @@ public class Put extends AbstractOperation implements MessageReceiver {
                     location = m_lookup.getLookupRange(p_chunks[i].getID());
                 }
 
+                short remotePeer;
+
                 if (location.getState() == LookupState.OK) {
                     // currently undefined because we still have to get it from remote
                     p_chunks[i].setState(ChunkState.UNDEFINED);
 
-                    short peer = location.getPrimaryPeer();
+                    remotePeer = location.getPrimaryPeer();
 
-                    ArrayList<AbstractChunk> remoteChunksOfPeer =
-                            remoteChunksByPeers.computeIfAbsent(peer, a -> new ArrayList<>());
-                    remoteChunksOfPeer.add(p_chunks[i]);
+                    if (!nodeIDBitfield.set(remotePeer, true)) {
+                        remotes.add(remotePeer);
+                    }
                 } else if (location.getState() == LookupState.DOES_NOT_EXIST) {
                     p_chunks[i].setState(ChunkState.DOES_NOT_EXIST);
+                    remotePeer = NodeID.INVALID_ID;
                 } else if (location.getState() == LookupState.DATA_LOST) {
                     p_chunks[i].setState(ChunkState.DATA_LOST);
+                    remotePeer = NodeID.INVALID_ID;
+                } else {
+                    throw new IllegalStateException("Unhandled state, location state: " + location.getState());
                 }
-            }
-        }
 
-        // go for remote ones by each peer
-        for (final Map.Entry<Short, ArrayList<AbstractChunk>> peerWithChunks : remoteChunksByPeers.entrySet()) {
-            short peer = peerWithChunks.getKey();
-            ArrayList<AbstractChunk> remoteChunks = peerWithChunks.getValue();
-
-            if (peer == m_boot.getNodeId()) {
-                // local put, migrated data to current node
-                for (AbstractChunk chunk : remoteChunks) {
-                    m_chunk.getMemory().put().put(chunk, p_lockOperation, p_lockOperationTimeoutMs);
-
-                    if (chunk.isStateOk()) {
-                        totalChunksPut++;
-                    }
-                }
+                // start at index 0 for location buffer
+                remoteLocIndexBuffer.add(i - p_offset, remotePeer);
             } else {
-                // Remote get from specified peer
-                PutRequest request = new PutRequest(peer, p_lockOperation, p_lockOperationTimeoutMs,
-                        remoteChunks.toArray(new AbstractChunk[remoteChunks.size()]));
+                throw new IllegalStateException("Unhandled chunk state: " + p_chunks[i].getState());
+            }
+        }
 
+        ArrayList<PutMultiRequest> pendingRequests = getThreadLocalPendingReqArray();
+
+        // generate requests
+        for (int i = 0; i < remotes.getSize(); i++) {
+            short remote = remotes.get(i);
+            nodeIDBitfield.set(remote, false);
+
+            PutMultiRequest req = new PutMultiRequest(remote, p_lockOperation, p_lockOperationTimeoutMs,
+                    remoteLocIndexBuffer, remote, p_offset, p_chunks);
+
+            pendingRequests.add(req);
+        }
+
+        // count failures instead of success
+        int failures = 0;
+
+        // send requests
+        for (int i = 0; i < pendingRequests.size(); i++) {
+            PutMultiRequest request = pendingRequests.get(i);
+
+            try {
+                m_network.sendSync(request, false);
+            } catch (final NetworkException e) {
+                ChunkState errorState;
+
+                if (m_backup.isActive()) {
+                    errorState = ChunkState.DATA_TEMPORARY_UNAVAILABLE;
+                } else {
+                    errorState = ChunkState.DATA_LOST;
+                }
+
+                AbstractChunk[] chunks = request.getChunks();
+                int startOffset = request.getChunksStartOffset();
+                ArrayListShort locaIndexBuf = request.getLocationIndexBuffer();
+
+                for (int j = 0; j < locaIndexBuf.getSize(); j++) {
+                    if (locaIndexBuf.get(j) == request.getTargetRemoteLocation()) {
+                        chunks[startOffset + j].setState(errorState);
+                        m_lookup.invalidateRange(chunks[startOffset + j].getID());
+                    }
+                }
+
+                failures += request.getChunkCount();
+                pendingRequests.set(i, null);
+            }
+        }
+
+        // collect responses
+        for (int i = 0; i < pendingRequests.size(); i++) {
+            PutMultiRequest request = pendingRequests.get(i);
+
+            if (request != null) {
                 try {
-                    m_network.sendSync(request);
-
-                    PutResponse response = request.getResponse(PutResponse.class);
-
-                    byte[] statusCodes = response.getStatusCodes();
-
-                    // try short cut, i.e. all puts successful
-                    if (statusCodes.length == 1 && statusCodes[0] == ChunkState.OK.ordinal()) {
-                        totalChunksPut += remoteChunks.size();
-
-                        for (AbstractChunk ds : remoteChunks) {
-                            ds.setState(ChunkState.OK);
-                        }
-                    } else {
-                        for (int i = 0; i < statusCodes.length; i++) {
-                            remoteChunks.get(i).setState(ChunkState.values()[statusCodes[i]]);
-
-                            if (statusCodes[i] == ChunkState.OK.ordinal()) {
-                                totalChunksPut++;
-                            } else {
-                                m_lookup.invalidateRange(remoteChunks.get(i).getID());
-                            }
-                        }
-                    }
+                    request.waitForResponse(10000);
                 } catch (final NetworkException e) {
-                    ChunkState errorState;
+                    m_network.cancelRequest(request);
 
-                    // handle various error states and report to the user
+                    ChunkState errorState = ChunkState.REMOTE_REQUEST_TIMEOUT;
 
-                    if (m_backup.isActive()) {
-                        errorState = ChunkState.DATA_TEMPORARY_UNAVAILABLE;
-                    } else {
-                        if (e instanceof NetworkResponseDelayedException) {
-                            errorState = ChunkState.REMOTE_REQUEST_TIMEOUT;
-                        } else {
-                            errorState = ChunkState.DATA_LOST;
+                    AbstractChunk[] chunks = request.getChunks();
+                    int startOffset = request.getChunksStartOffset();
+                    ArrayListShort locaIndexBuf = request.getLocationIndexBuffer();
+
+                    for (int j = 0; j < locaIndexBuf.getSize(); j++) {
+                        if (locaIndexBuf.get(j) == request.getTargetRemoteLocation()) {
+                            chunks[startOffset + j].setState(errorState);
                         }
                     }
 
-                    for (AbstractChunk chunk : remoteChunks) {
-                        chunk.setState(errorState);
-                        m_lookup.invalidate(chunk.getID());
-                    }
+                    failures += request.getChunkCount();
                 }
             }
         }
 
-        if (totalChunksPut < p_count) {
-            SOP_ERROR.add(p_count - totalChunksPut);
+        pendingRequests.clear();
+        remotes.clear();
+        remoteLocIndexBuffer.clear();
+
+        totalChunksGot = p_count - failures;
+
+        if (totalChunksGot < p_count) {
+            SOP_MULTI_ERROR.add(p_count - totalChunksGot);
         }
 
-        SOP_DEFAULT.stop();
+        SOP_MULTI.stop(totalChunksGot);
 
-        return totalChunksPut;
+        return totalChunksGot;
     }
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-        if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE &&
-                p_message.getSubtype() == ChunkMessages.SUBTYPE_PUT_REQUEST) {
-            PutRequest request = (PutRequest) p_message;
+        if (p_message.getType() == DXRAMMessageTypes.CHUNK_MESSAGES_TYPE) {
+            if (p_message.getSubtype() == ChunkMessages.SUBTYPE_PUT_REQUEST) {
+                PutRequest request = (PutRequest) p_message;
 
-            m_logger.trace("incoming put[lock op %s, lock timeout %d, chunks (%d): %s]", request.getLockOperation(),
-                    request.getLockOperationTimeoutMs(), request.getChunkIDs().length,
-                    ChunkID.chunkIDArrayToString(request.getChunkIDs()));
+                m_logger.trace("incoming put[lock op %s, lock timeout %d, chunk: %s]", request.getLockOperation(),
+                        request.getLockOperationTimeoutMs(), ChunkID.toHexString(request.getChunkID()));
 
-            SOP_INCOMING.start(request.getChunkIDs().length);
+                SOP_INCOMING.start();
 
-            long[] chunkIDs = request.getChunkIDs();
-            byte[][] data = request.getChunkData();
+                long chunkID = request.getChunkID();
+                byte[] data = request.getChunkData();
 
-            byte[] statusChunks = new byte[chunkIDs.length];
-            int successfulPuts = 0;
+                byte statusChunks;
+                boolean successful;
 
-            Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange =
-                    getThreadLocalChunksByBackupRangeMap();
+                ChunkState state = m_chunk.getMemory().put().put(chunkID, data, request.getLockOperation(),
+                        request.getLockOperationTimeoutMs());
+                statusChunks = (byte) state.ordinal();
+                successful = state == ChunkState.OK;
 
-            for (int i = 0; i < chunkIDs.length; i++) {
-                ChunkState state = m_chunk.getMemory().put().put(request.getChunkIDs()[i], request.getChunkData()[i],
-                        request.getLockOperation(), request.getLockOperationTimeoutMs());
-                statusChunks[i] = (byte) state.ordinal();
-
-                if (state == ChunkState.OK) {
+                if (successful) {
                     if (m_backup.isActive()) {
                         // sort by backup peers
-                        BackupRange backupRange = m_backup.getBackupRange(chunkIDs[i]);
-                        ArrayList<AbstractChunk> remoteChunksOfBackupRange =
-                                remoteChunksByBackupRange.computeIfAbsent(backupRange, k -> new ArrayList<>());
-                        remoteChunksOfBackupRange.add(new ChunkByteArray(chunkIDs[i], data[i]));
+                        BackupRange backupRange = m_backup.getBackupRange(chunkID);
+                        // TODO backup?
                     }
-
-                    successfulPuts++;
                 }
+
+                // send response to remote
+                PutResponse response = new PutResponse(request, statusChunks);
+
+                try {
+                    m_network.sendMessage(response);
+                } catch (final NetworkException e) {
+                    m_logger.error("Sending PutResponse to request %s failed: %s", request, e);
+
+                    successful = false;
+                }
+
+                if (!successful) {
+                    SOP_INCOMING_ERROR.inc();
+                }
+
+                SOP_INCOMING.stop();
+            } else if (p_message.getSubtype() == ChunkMessages.SUBTYPE_PUT_MULTI_REQUEST) {
+                PutMultiRequest request = (PutMultiRequest) p_message;
+
+                m_logger.trace("incoming putMulti[lock op %s, lock timeout %d, chunks (%d): %s]",
+                        request.getLockOperation(), request.getLockOperationTimeoutMs(), request.getChunkIDs().length,
+                        ChunkID.chunkIDArrayToString(request.getChunkIDs()));
+
+                SOP_MULTI_INCOMING.start(request.getChunkIDs().length);
+
+                byte[] chunkStates = new byte[request.getChunkIDs().length];
+                int successfulPuts = 0;
+
+                for (int i = 0; i < chunkStates.length; i++) {
+                    ChunkState state = m_chunk.getMemory().put().put(request.getChunkIDs()[i], request.getChunkData()[i],
+                            request.getLockOperation(), request.getLockOperationTimeoutMs());
+
+                    chunkStates[i] = (byte) state.ordinal();
+
+                    if (state == ChunkState.OK) {
+                        successfulPuts++;
+                    }
+                }
+
+                PutMultiResponse response = new PutMultiResponse(request, chunkStates);
+
+                try {
+                    m_network.sendMessage(response);
+                } catch (final NetworkException e) {
+                    m_logger.error("Sending PutMultiResponse for %d chunks failed: %s", chunkStates.length, e);
+
+                    successfulPuts = 0;
+                }
+
+                if (successfulPuts < chunkStates.length) {
+                    SOP_MULTI_INCOMING_ERROR.add(chunkStates.length - successfulPuts);
+                }
+
+                SOP_MULTI_INCOMING.stop();
             }
-
-            // send response to remote
-            PutResponse response;
-
-            // cut message length if all were successful
-            if (successfulPuts == chunkIDs.length) {
-                response = new PutResponse(request, (byte) ChunkState.OK.ordinal());
-            } else {
-                // we got errors, default message
-                response = new PutResponse(request, statusChunks);
-            }
-
-            try {
-                m_network.sendMessage(response);
-            } catch (final NetworkException e) {
-                m_logger.error("Sending PutResponse to request %s failed: %s", request, e);
-
-                successfulPuts = 0;
-            }
-
-            if (successfulPuts < chunkIDs.length) {
-                SOP_INCOMING_ERROR.add(chunkIDs.length - successfulPuts);
-            }
-
-            SOP_INCOMING.stop();
         }
     }
 
@@ -492,36 +545,48 @@ public class Put extends AbstractOperation implements MessageReceiver {
      *
      * @return Thread local instance
      */
-    private Map<Short, ArrayList<AbstractChunk>> getThreadLocalRemoteChunksByPeersMap() {
-        Map<Short, ArrayList<AbstractChunk>> remoteChunksByPeers =
-                m_threadLocalRemoteChunksByPeers[(int) Thread.currentThread().getId()];
+    private ArrayListShort getThreadLocalLocationIndexBuffer() {
+        ArrayListShort locationIndexBuffer =
+                m_threadLocalLocationIndexBuffer[(int) Thread.currentThread().getId()];
 
-        if (remoteChunksByPeers == null) {
-            remoteChunksByPeers = new TreeMap<>();
-            m_threadLocalRemoteChunksByPeers[(int) Thread.currentThread().getId()] = remoteChunksByPeers;
+        if (locationIndexBuffer == null) {
+            locationIndexBuffer = new ArrayListShort(100);
+            m_threadLocalLocationIndexBuffer[(int) Thread.currentThread().getId()] = locationIndexBuffer;
         }
 
-        remoteChunksByPeers.clear();
-
-        return remoteChunksByPeers;
+        return locationIndexBuffer;
     }
 
-    /**
-     * Get a thread local instance avoiding allocations
-     *
-     * @return Thread local instance
-     */
-    private Map<BackupRange, ArrayList<AbstractChunk>> getThreadLocalChunksByBackupRangeMap() {
-        Map<BackupRange, ArrayList<AbstractChunk>> remoteChunksByBackupRange =
-                m_threadLocalRemoteChunksByBackupRange[(int) Thread.currentThread().getId()];
+    private ArrayListShort getThreadLocalRemotesBuffer() {
+        ArrayListShort remotesBuffer = m_threadLocalRemotesBuffer[(int) Thread.currentThread().getId()];
 
-        if (remoteChunksByBackupRange == null) {
-            remoteChunksByBackupRange = new TreeMap<>();
-            m_threadLocalRemoteChunksByBackupRange[(int) Thread.currentThread().getId()] = remoteChunksByBackupRange;
+        if (remotesBuffer == null) {
+            remotesBuffer = new ArrayListShort(10);
+            m_threadLocalRemotesBuffer[(int) Thread.currentThread().getId()] = remotesBuffer;
         }
 
-        remoteChunksByBackupRange.clear();
+        return remotesBuffer;
+    }
 
-        return remoteChunksByBackupRange;
+    private NodeIDBitfield getThreadLocalNodeIDBitfield() {
+        NodeIDBitfield bitfield = m_threadLocalNodeIDBitfield[(int) Thread.currentThread().getId()];
+
+        if (bitfield == null) {
+            bitfield = new NodeIDBitfield();
+            m_threadLocalNodeIDBitfield[(int) Thread.currentThread().getId()] = bitfield;
+        }
+
+        return bitfield;
+    }
+
+    private ArrayList<PutMultiRequest> getThreadLocalPendingReqArray() {
+        ArrayList<PutMultiRequest> requests = m_threadLocalPendingRequests[(int) Thread.currentThread().getId()];
+
+        if (requests == null) {
+            requests = new ArrayList<>(10);
+            m_threadLocalPendingRequests[(int) Thread.currentThread().getId()] = requests;
+        }
+
+        return requests;
     }
 }
