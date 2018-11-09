@@ -46,6 +46,8 @@ public final class ChunkMessages {
     public static final byte SUBTYPE_RESET_MEMORY_MESSAGE = 22;
     public static final byte SUBTYPE_RESIZE_REQUEST = 23;
     public static final byte SUBTYPE_RESIZE_RESPONSE = 24;
+    public static final byte SUBTYPE_LOCK_REQUEST = 25;
+    public static final byte SUBTYPE_LOCK_RESPONSE = 26;
 
     /**
      * Static class
