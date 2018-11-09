@@ -64,10 +64,11 @@ public class ChunkTestUtils {
         for (long cid : p_ranges) {
             chunk.setID(cid);
             chunk.fillContents();
-            Assert.assertEquals(1, chunkService.put().put(chunk));
+            Assert.assertTrue(chunkService.put().put(chunk));
+
             Assert.assertTrue(chunk.isStateOk());
 
-            Assert.assertEquals(1, chunkService.get().get(chunk));
+            Assert.assertTrue(chunkService.get().get(chunk));
             Assert.assertTrue(chunk.isStateOk());
             Assert.assertTrue(chunk.verifyContents());
         }
