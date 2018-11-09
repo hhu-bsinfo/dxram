@@ -118,6 +118,15 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     }
 
     /**
+     * The configured timeout in ms for requests
+     *
+     * @return Timeout in ms
+     */
+    public int getRequestTimeoutMs() {
+        return m_dxnet.getRequestTimeoutMs();
+    }
+
+    /**
      * Send a message.
      *
      * @param p_message
@@ -202,6 +211,16 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
 
             throw e;
         }
+    }
+
+    /**
+     * Cancel a pending request. This deletes the request from the request map to ensure
+     * that any delayed incoming responses are automatically dropped
+     *
+     * @param p_request Request to cancel
+     */
+    public void cancelRequest(final Request p_request) {
+        m_dxnet.cancelRequest(p_request);
     }
 
     /**
