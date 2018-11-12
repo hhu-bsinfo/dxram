@@ -33,7 +33,7 @@ version = '0.6.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNA
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
-mainClassName = 'de.hhu.bsinfo.dxram.DXRAM'
+mainClassName = 'de.hhu.bsinfo.dxram.DXRAMMain'
 
 applicationDefaultJvmArgs = [
         '-Dlog4j.configurationFile=file:DXRAM_HOME/config/log4j2.xml'
