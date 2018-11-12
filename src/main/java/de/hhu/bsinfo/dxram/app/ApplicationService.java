@@ -12,9 +12,10 @@ import de.hhu.bsinfo.dxram.app.messages.ApplicationMessages;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationStartRequest;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationStartResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 /**
@@ -23,6 +24,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  * @author Filip Krakowski, Filip.Krakowski@Uni-Duesseldorf.de, 22.08.2018
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class ApplicationService extends AbstractDXRAMService<ApplicationServiceConfig> implements MessageReceiver {
     // component dependencies
     private ApplicationComponent m_appComponent;
@@ -30,13 +32,6 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     private NetworkComponent m_networkComponent;
 
     private static final String ARG_SEPERATOR = "@";
-
-    /**
-     * Constructor
-     */
-    public ApplicationService() {
-        super("app", ApplicationServiceConfig.class);
-    }
 
     /**
      * Start an application
@@ -132,16 +127,6 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_appComponent = p_componentAccessor.getComponent(ApplicationComponent.class);
         m_bootComponent = p_componentAccessor.getComponent(AbstractBootComponent.class);
@@ -149,7 +134,7 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         m_networkComponent.registerMessageType(DXRAMMessageTypes.APPLICATION_MESSAGE_TYPE,
                 ApplicationMessages.SUBTYPE_START_APPLICATION_REQUEST, ApplicationStartRequest.class);
         m_networkComponent.registerMessageType(DXRAMMessageTypes.APPLICATION_MESSAGE_TYPE,

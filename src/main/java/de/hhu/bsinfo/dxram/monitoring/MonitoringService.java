@@ -21,9 +21,11 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.monitoring.messages.*;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -33,29 +35,13 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
-public class MonitoringService extends AbstractDXRAMService<MonitoringServiceConfig> implements MessageReceiver {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+public class MonitoringService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
     private boolean m_peerIsSuperpeer;
 
     private AbstractBootComponent m_boot;
     private MonitoringComponent m_monitor;
     private NetworkComponent m_network;
-
-    /**
-     * Constructor
-     */
-    public MonitoringService() {
-        super("monitoring", MonitoringServiceConfig.class);
-    }
-
-    @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
@@ -65,7 +51,7 @@ public class MonitoringService extends AbstractDXRAMService<MonitoringServiceCon
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         m_peerIsSuperpeer = m_boot.getNodeRole() == NodeRole.SUPERPEER;
 
         registerMessageReceiver();

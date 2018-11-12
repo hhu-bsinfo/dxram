@@ -38,6 +38,7 @@ import org.junit.runner.Runner;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
@@ -142,8 +143,10 @@ public class DXRAMJunitRunner extends Runner {
             final int p_nodeIdx, final int p_nodePort) {
         DXRAM instance = new DXRAM();
 
-        if (!instance.initialize(new DXRAMTestContextCreator(p_zookeeperConnection, p_config, p_nodeIdx, p_nodePort),
-                true)) {
+        DXRAMConfig config = new DXRAMConfigBuilderTest(p_zookeeperConnection, p_config, p_nodeIdx, p_nodePort)
+                .build(instance.createDefaultConfigInstance());
+
+        if (!instance.initialize(config, true)) {
             System.out.println("Creating instance failed");
             System.exit(-1);
         }

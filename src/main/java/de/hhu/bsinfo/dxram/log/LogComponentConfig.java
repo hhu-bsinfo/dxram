@@ -7,9 +7,10 @@ import lombok.experimental.Accessors;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxlog.DXLogConfig;
+import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
  * Config for the LogComponent
@@ -19,19 +20,24 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = LogComponent.class, supportsSuperpeer = false, supportsPeer = true)
-public class LogComponentConfig extends DXRAMComponentConfig {
-
+public class LogComponentConfig extends DXRAMModuleConfig {
     /**
      * Get the dxlog configuration values
      */
     @Expose
     private DXLogConfig m_dxlogConfig = new DXLogConfig();
 
+    /**
+     * Constructor
+     */
+    public LogComponentConfig() {
+        super(LogComponent.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
-        return m_dxlogConfig
-                .verify((int) p_config.getComponentConfig(BackupComponentConfig.class).getBackupRangeSize().getBytes() *
-                        2);
+    protected boolean verify(final DXRAMConfig p_config) {
+        BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponent.class);
+
+        return m_dxlogConfig.verify((int) backupConfig.getBackupRangeSize().getBytes() * 2);
     }
 }

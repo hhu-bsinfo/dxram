@@ -32,8 +32,9 @@ import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.RandomPlacement;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -56,9 +57,11 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.BACKUP,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.BACKUP)
 public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfig>
         implements EventListener<AbstractEvent> {
-
     private static final boolean REREPLICATION_ACTIVE = true;
 
     // component dependencies
@@ -86,13 +89,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
 
     private ReentrantReadWriteLock m_lock;
     private ReentrantLock m_creationLock;
-
-    /**
-     * Creates the backup component
-     */
-    public BackupComponent() {
-        super(DXRAMComponentOrder.Init.BACKUP, DXRAMComponentOrder.Shutdown.BACKUP, BackupComponentConfig.class);
-    }
 
     /**
      * Block chunk creation until chunk ID is registered. Unblock must be called explicitly.
@@ -506,16 +502,6 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_chunkBackup = p_componentAccessor.getComponent(ChunkBackupComponent.class);
@@ -526,7 +512,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         m_nodeID = m_boot.getNodeId();
 
         if (m_boot.getNodeRole() == NodeRole.PEER) {

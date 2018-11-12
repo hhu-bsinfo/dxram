@@ -33,8 +33,9 @@ import de.hhu.bsinfo.dxnet.core.messages.Messages;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
@@ -48,6 +49,9 @@ import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.NETWORK,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.NETWORK)
 public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentConfig>
         implements EventListener<NodeFailureEvent>, ConnectionManagerListener {
     // component dependencies
@@ -56,13 +60,6 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
 
     // Attributes
     private DXNet m_dxnet;
-
-    /**
-     * Constructor
-     */
-    public NetworkComponent() {
-        super(DXRAMComponentOrder.Init.NETWORK, DXRAMComponentOrder.Shutdown.NETWORK, NetworkComponentConfig.class);
-    }
 
     // --------------------------------------------------------------------------------------
 
@@ -271,23 +268,13 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         // node id is not loaded from config
         getConfig().getCoreConfig().setOwnNodeId(m_boot.getNodeId());
 

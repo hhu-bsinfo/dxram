@@ -18,9 +18,10 @@ package de.hhu.bsinfo.dxram.tmp;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
 import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
@@ -35,19 +36,13 @@ import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.05.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class TemporaryStorageService extends AbstractDXRAMService<TemporaryStorageServiceConfig> {
 
     // component dependencies
     private LookupComponent m_lookup;
 
     private NameServiceStringConverter m_idConverter = new NameServiceStringConverter("NAME");
-
-    /**
-     * Constructor
-     */
-    public TemporaryStorageService() {
-        super("tmpstore", TemporaryStorageServiceConfig.class);
-    }
 
     /**
      * Get the status of the superpeer storage.
@@ -161,22 +156,12 @@ public class TemporaryStorageService extends AbstractDXRAMService<TemporaryStora
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         return true;
     }
 

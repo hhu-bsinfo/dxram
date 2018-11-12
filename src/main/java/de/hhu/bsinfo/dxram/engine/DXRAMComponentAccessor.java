@@ -30,10 +30,8 @@ public interface DXRAMComponentAccessor {
      *         Type of the component class.
      * @param p_class
      *         Class of the component to get. If the component has different implementations, use the common
-     *         interface
-     *         or abstract class to get the registered instance.
-     * @return Reference to the component if available and enabled, null otherwise or if the engine is not
-     * initialized.
+     *         interface or abstract class to get the registered instance.
+     * @return Reference to the component if available, null otherwise
      */
     <T extends AbstractDXRAMComponent> T getComponent(Class<T> p_class);
 }

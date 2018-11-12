@@ -26,11 +26,11 @@ import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
-import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -44,9 +44,12 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.LookupTree;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponentConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
+import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.ArrayListLong;
@@ -59,6 +62,9 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.LOOKUP,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.LOOKUP)
 public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfig>
         implements EventListener<AbstractEvent> {
     private static final short ORDER = 10;
@@ -66,7 +72,6 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
-    private ChunkComponent m_chunk;
     private EventComponent m_event;
     private NetworkComponent m_network;
 
@@ -75,13 +80,6 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
     private CacheTree m_chunkIDCacheTree;
     private Cache<Integer, Long> m_applicationIDCache;
-
-    /**
-     * Creates the lookup component
-     */
-    public LookupComponent() {
-        super(DXRAMComponentOrder.Init.LOOKUP, DXRAMComponentOrder.Shutdown.LOOKUP, LookupComponentConfig.class);
-    }
 
     /**
      * Get the number of entries in name service
@@ -682,7 +680,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     }
 
     @Override
-    public boolean finishInitComponent() {
+    public void engineInitFinished() {
         if (m_boot.getNodeRole() == NodeRole.PEER) {
             NodeRegistry.NodeDetails details = m_boot.getDetails();
 
@@ -690,33 +688,24 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
             m_peer.finishStartup(m_boot.getRack(), m_boot.getSwitch(), m_backup.isActiveAndAvailableForBackup(),
                     details.getCapabilities(), new IPV4Unit(details.getIp(), details.getPort()));
         }
-
-        return true;
-    }
-
-    @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
     }
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         // Set static values for backup range (cannot be set in BackupComponent as superpeers do not initialize it)
-        BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponentConfig.class);
+        BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponent.class);
+        NameserviceComponentConfig nameserviceConfig = p_config.getComponentConfig(NameserviceComponent.class);
+        SynchronizationServiceConfig synchronizationConfig = p_config.getServiceConfig(SynchronizationService.class);
+        TemporaryStorageServiceConfig temporaryStorageConfig = p_config.getServiceConfig(TemporaryStorageService.class);
+
         BackupRange.setReplicationFactor(backupConfig.getReplicationFactor());
         BackupRange.setBackupRangeSize(backupConfig.getBackupRangeSize().getBytes());
 
@@ -725,8 +714,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
                     getConfig().getMaxCacheEntries());
 
             // TODO: Check cache! If number of entries is smaller than number of entries in nameservice, bg won't terminate.
-            m_applicationIDCache = new Cache<>(
-                    p_config.getComponentConfig(NameserviceComponentConfig.class).getNameserviceCacheEntries());
+            m_applicationIDCache = new Cache<>(nameserviceConfig.getNameserviceCacheEntries());
             // m_aidCache.enableTTL();
 
             m_event.registerListener(this, NodeFailureEvent.class);
@@ -734,13 +722,11 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
 
         if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
             m_superpeer = new OverlaySuperpeer(m_boot.getNodeId(), m_boot.getBootstrapId(),
-                    m_boot.getNumberOfAvailableSuperpeers(),
-                    (int) getConfig().getStabilizationBreakTime().getMs(),
-                    p_config.getServiceConfig(SynchronizationServiceConfig.class).getMaxBarriersPerSuperpeer(),
-                    p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxNumEntries(),
-                    (int) p_config.getServiceConfig(TemporaryStorageServiceConfig.class).getStorageMaxSize().getBytes(),
-                    p_config.getComponentConfig(BackupComponentConfig.class).isBackupActive(), m_boot, m_network,
-                    m_event);
+                    m_boot.getNumberOfAvailableSuperpeers(), (int) getConfig().getStabilizationBreakTime().getMs(),
+                    synchronizationConfig.getMaxBarriersPerSuperpeer(),
+                    temporaryStorageConfig.getStorageMaxNumEntries(),
+                    (int) temporaryStorageConfig.getStorageMaxSize().getBytes(), backupConfig.isBackupActive(),
+                    m_boot, m_network, m_event);
         } else {
             m_peer = new OverlayPeer(m_boot.getNodeId(), m_boot.getBootstrapId(),
                     m_boot.getNumberOfAvailableSuperpeers(), m_boot, m_network, m_event);

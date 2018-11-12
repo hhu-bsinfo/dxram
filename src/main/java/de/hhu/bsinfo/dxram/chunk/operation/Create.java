@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
+import de.hhu.bsinfo.dxram.util.InvalidNodeRoleException;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;

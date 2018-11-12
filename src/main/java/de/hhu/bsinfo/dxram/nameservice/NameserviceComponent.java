@@ -25,8 +25,9 @@ import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.chunk.ChunkIndexComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
@@ -38,6 +39,9 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.NAMESERVICE,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.NAMESERVICE)
 public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComponentConfig> {
     // component dependencies
     private LookupComponent m_lookup;
@@ -48,14 +52,6 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
     private NameServiceIndexData m_indexData;
     private boolean m_indexDataRegistered;
     private Lock m_indexDataLock;
-
-    /**
-     * Constructor
-     */
-    public NameserviceComponent() {
-        super(DXRAMComponentOrder.Init.NAMESERVICE, DXRAMComponentOrder.Shutdown.NAMESERVICE,
-                NameserviceComponentConfig.class);
-    }
 
     /**
      * Register a AbstractChunk for a specific name.
@@ -127,23 +123,13 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_chunkIndex = p_componentAccessor.getComponent(ChunkIndexComponent.class);
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         return initName();
     }
 

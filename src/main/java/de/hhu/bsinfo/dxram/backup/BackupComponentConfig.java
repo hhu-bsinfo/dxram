@@ -6,8 +6,8 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
 /**
@@ -18,8 +18,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = BackupComponent.class, supportsSuperpeer = false, supportsPeer = true)
-public class BackupComponentConfig extends DXRAMComponentConfig {
+public class BackupComponentConfig extends DXRAMModuleConfig {
     /**
      * Activate/Disable the backup. This parameter should be either active for all nodes or inactive for all nodes
      */
@@ -80,8 +79,15 @@ public class BackupComponentConfig extends DXRAMComponentConfig {
     @Expose
     private boolean m_switchAware = false;
 
+    /**
+     * Constructor
+     */
+    public BackupComponentConfig() {
+        super(BackupComponent.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
+    protected boolean verify(final DXRAMConfig p_config) {
         if (m_replicationFactor < 1 || m_replicationFactor > 4) {
             LOGGER.error("Replication factor must be in [1, 4]!");
 

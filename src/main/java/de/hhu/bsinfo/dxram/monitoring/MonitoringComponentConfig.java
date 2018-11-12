@@ -26,8 +26,8 @@ import java.io.IOException;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxutils.OSValidator;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
@@ -39,8 +39,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = MonitoringComponent.class, supportsSuperpeer = true, supportsPeer = true)
-public class MonitoringComponentConfig extends DXRAMComponentConfig {
+public class MonitoringComponentConfig extends DXRAMModuleConfig {
     /**
      * Returns true if monitoring is active.
      */
@@ -83,8 +82,15 @@ public class MonitoringComponentConfig extends DXRAMComponentConfig {
     @Expose
     private TimeUnit m_csvTimeWindow = new TimeUnit(m_timeWindow.getSec() * 8, "sec");
 
+    /**
+     * Constructor
+     */
+    public MonitoringComponentConfig() {
+        super(MonitoringComponent.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
+    protected boolean verify(final DXRAMConfig p_config) {
         if (!OSValidator.isUnix()) {
             LOGGER.error("Monitoring is only supported for unix operating systems.");
             return false;

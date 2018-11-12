@@ -23,9 +23,11 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryRequest;
@@ -39,18 +41,12 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Mike Birkhoff, michael.birkhoff@hhu.de, 15.07.2016
  */
-public class LookupService extends AbstractDXRAMService<LookupServiceConfig> implements MessageReceiver {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+public class LookupService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
     // component dependencies
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
-
-    /**
-     * Constructor
-     */
-    public LookupService() {
-        super("lookup", LookupServiceConfig.class);
-    }
 
     /**
      * Returns all known superpeers
@@ -63,7 +59,6 @@ public class LookupService extends AbstractDXRAMService<LookupServiceConfig> imp
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.LOOKUP_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
@@ -168,16 +163,6 @@ public class LookupService extends AbstractDXRAMService<LookupServiceConfig> imp
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
@@ -185,7 +170,7 @@ public class LookupService extends AbstractDXRAMService<LookupServiceConfig> imp
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 

@@ -16,58 +16,71 @@
 
 package de.hhu.bsinfo.dxram;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.net.InetSocketAddress;
-import java.util.List;
 import java.util.Locale;
 
 import de.hhu.bsinfo.dxmonitor.info.InstanceInfo;
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
+import de.hhu.bsinfo.dxram.app.ApplicationComponentConfig;
 import de.hhu.bsinfo.dxram.app.ApplicationService;
+import de.hhu.bsinfo.dxram.app.ApplicationServiceConfig;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
+import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkAnonService;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkDebugService;
 import de.hhu.bsinfo.dxram.chunk.ChunkIndexComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkLocalService;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
+import de.hhu.bsinfo.dxram.chunk.ChunkServiceConfig;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMContextCreator;
-import de.hhu.bsinfo.dxram.engine.DXRAMContextCreatorFile;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.engine.NullComponent;
 import de.hhu.bsinfo.dxram.engine.NullService;
 import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.event.EventComponentConfig;
 import de.hhu.bsinfo.dxram.failure.FailureComponent;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.job.JobWorkStealingComponent;
+import de.hhu.bsinfo.dxram.job.JobWorkStealingComponentConfig;
 import de.hhu.bsinfo.dxram.log.LogComponent;
+import de.hhu.bsinfo.dxram.log.LogComponentConfig;
 import de.hhu.bsinfo.dxram.log.LogService;
 import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
+import de.hhu.bsinfo.dxram.lookup.LookupComponentConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupService;
 import de.hhu.bsinfo.dxram.migration.MigrationService;
 import de.hhu.bsinfo.dxram.monitoring.MonitoringService;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
+import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeServiceConfig;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceComponentConfig;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.net.NetworkComponentConfig;
 import de.hhu.bsinfo.dxram.net.NetworkService;
 import de.hhu.bsinfo.dxram.recovery.RecoveryService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
+import de.hhu.bsinfo.dxram.stats.StatisticsServiceConfig;
 import de.hhu.bsinfo.dxram.sync.SynchronizationService;
+import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
+import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
- * Main class/entry point for DXRAM.
+ * DXRAM main class (for main entry point, refer to DXRAMMain)
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
@@ -92,33 +105,6 @@ public final class DXRAM {
     }
 
     /**
-     * Main entry point
-     *
-     * @param p_args
-     *         Program arguments.
-     */
-    public static void main(final String[] p_args) {
-        printJVMArgs();
-        printCmdArgs(p_args);
-        System.out.println();
-
-        DXRAM dxram = new DXRAM();
-
-        System.out.println("Starting DXRAM, version " + dxram.getVersion());
-
-        if (!dxram.initialize(new DXRAMContextCreatorFile(), true)) {
-            System.out.println("Initializing DXRAM failed.");
-            System.exit(-1);
-        }
-
-        while (dxram.update()) {
-            // run
-        }
-
-        System.exit(0);
-    }
-
-    /**
      * Get the version of DXRAM
      *
      * @return DXRAM version
@@ -128,17 +114,26 @@ public final class DXRAM {
     }
 
     /**
+     * Create a configuration instance with default values
+     *
+     * @return Configuration instance
+     */
+    public DXRAMConfig createDefaultConfigInstance() {
+        return m_engine.createConfigInstance();
+    }
+
+    /**
      * Initialize the instance.
      *
-     * @param p_contextCreator
-     *         Context creator to use
+     * @param p_config
+     *         Configuration to use for instance
      * @param p_autoShutdown
      *         True to have DXRAM shut down automatically when the application quits.
      *         If false, the caller has to take care of shutting down the instance by calling shutdown when done.
      * @return True if initializing was successful, false otherwise.
      */
-    public boolean initialize(final DXRAMContextCreator p_contextCreator, final boolean p_autoShutdown) {
-        boolean ret = m_engine.init(p_contextCreator);
+    public boolean initialize(final DXRAMConfig p_config, final boolean p_autoShutdown) {
+        boolean ret = m_engine.init(p_config);
         if (!ret) {
             return false;
         }
@@ -192,58 +187,56 @@ public final class DXRAM {
     }
 
     /**
-     * Register all default DXRAM components. If you want to register further components,
-     * override this method but make sure to call it using super
+     * Register all DXRAM components.
      *
      * @param p_engine
      *         DXRAM engine instance to register components at
      */
     private static void registerComponents(final DXRAMEngine p_engine) {
-        p_engine.registerComponent(ApplicationComponent.class);
-        p_engine.registerComponent(BackupComponent.class);
-        p_engine.registerComponent(ChunkBackupComponent.class);
-        p_engine.registerComponent(ChunkComponent.class);
-        p_engine.registerComponent(ChunkIndexComponent.class);
-        p_engine.registerComponent(ChunkMigrationComponent.class);
-        p_engine.registerComponent(EventComponent.class);
-        p_engine.registerComponent(FailureComponent.class);
-        p_engine.registerComponent(JobWorkStealingComponent.class);
-        p_engine.registerComponent(LogComponent.class);
-        p_engine.registerComponent(LookupComponent.class);
-        p_engine.registerComponent(NameserviceComponent.class);
-        p_engine.registerComponent(NetworkComponent.class);
-        p_engine.registerComponent(NullComponent.class);
-        p_engine.registerComponent(ZookeeperBootComponent.class);
+        p_engine.registerComponent(ApplicationComponent.class, ApplicationComponentConfig.class);
+        p_engine.registerComponent(BackupComponent.class, BackupComponentConfig.class);
+        p_engine.registerComponent(ChunkBackupComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(ChunkComponent.class, ChunkComponentConfig.class);
+        p_engine.registerComponent(ChunkIndexComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(ChunkMigrationComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(EventComponent.class, EventComponentConfig.class);
+        p_engine.registerComponent(FailureComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(JobWorkStealingComponent.class, JobWorkStealingComponentConfig.class);
+        p_engine.registerComponent(LogComponent.class, LogComponentConfig.class);
+        p_engine.registerComponent(LookupComponent.class, LookupComponentConfig.class);
+        p_engine.registerComponent(NameserviceComponent.class, NameserviceComponentConfig.class);
+        p_engine.registerComponent(NetworkComponent.class, NetworkComponentConfig.class);
+        p_engine.registerComponent(NullComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(ZookeeperBootComponent.class, ZookeeperBootComponentConfig.class);
     }
 
     /**
-     * Register all default DXRAM services. If you want to register further services,
-     * override this method but make sure to call it using super
+     * Register all DXRAM services.
      *
      * @param p_engine
      *         DXRAM engine instance to register services at
      */
     private static void registerServices(final DXRAMEngine p_engine) {
-        p_engine.registerService(ApplicationService.class);
-        p_engine.registerService(BootService.class);
-        p_engine.registerService(ChunkAnonService.class);
-        p_engine.registerService(ChunkDebugService.class);
-        p_engine.registerService(ChunkLocalService.class);
-        p_engine.registerService(ChunkService.class);
-        p_engine.registerService(JobService.class);
-        p_engine.registerService(LogService.class);
-        p_engine.registerService(LoggerService.class);
-        p_engine.registerService(LookupService.class);
-        p_engine.registerService(MasterSlaveComputeService.class);
-        p_engine.registerService(MigrationService.class);
-        p_engine.registerService(MonitoringService.class);
-        p_engine.registerService(NameserviceService.class);
-        p_engine.registerService(NetworkService.class);
-        p_engine.registerService(NullService.class);
-        p_engine.registerService(RecoveryService.class);
-        p_engine.registerService(StatisticsService.class);
-        p_engine.registerService(SynchronizationService.class);
-        p_engine.registerService(TemporaryStorageService.class);
+        p_engine.registerService(ApplicationService.class, ApplicationServiceConfig.class);
+        p_engine.registerService(BootService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(ChunkAnonService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(ChunkDebugService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(ChunkLocalService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(ChunkService.class, ChunkServiceConfig.class);
+        p_engine.registerService(JobService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(LogService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(LoggerService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(LookupService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(MasterSlaveComputeService.class, MasterSlaveComputeServiceConfig.class);
+        p_engine.registerService(MigrationService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(MonitoringService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(NameserviceService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(NetworkService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(NullService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(RecoveryService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(StatisticsService.class, StatisticsServiceConfig.class);
+        p_engine.registerService(SynchronizationService.class, SynchronizationServiceConfig.class);
+        p_engine.registerService(TemporaryStorageService.class, TemporaryStorageServiceConfig.class);
     }
 
     /**
@@ -306,50 +299,11 @@ public final class DXRAM {
     }
 
     /**
-     * Print all cmd args specified on startup
-     *
-     * @param p_args
-     *         Main arguments
-     */
-    private static void printCmdArgs(final String[] p_args) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("Cmd arguments: ");
-
-        for (String arg : p_args) {
-            builder.append(arg);
-            builder.append(' ');
-        }
-
-        System.out.println(builder);
-        System.out.println();
-    }
-
-    /**
-     * Print all JVM args specified on startup
-     */
-    private static void printJVMArgs() {
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        List<String> args = runtimeMxBean.getInputArguments();
-
-        StringBuilder builder = new StringBuilder();
-        builder.append("JVM arguments: ");
-
-        for (String arg : args) {
-            builder.append(arg);
-            builder.append(' ');
-        }
-
-        System.out.println(builder);
-        System.out.println();
-    }
-
-    /**
      * Shuts down DXRAM in case of the system exits
      *
      * @author Florian Klein 03.09.2013
      */
     private static final class ShutdownThread extends Thread {
-
         private DXRAM m_dxram;
 
         /**

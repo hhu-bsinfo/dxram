@@ -31,9 +31,11 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeRequest;
@@ -46,7 +48,10 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfig> {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.LOG,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.LOG)
+public final class LogComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
 
     // component dependencies
     private NetworkComponent m_network;
@@ -57,13 +62,6 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
     // private state
     private DXLog m_dxlog;
     private boolean m_loggingIsActive;
-
-    /**
-     * Creates the log component
-     */
-    public LogComponent() {
-        super(DXRAMComponentOrder.Init.LOG, DXRAMComponentOrder.Shutdown.LOG, LogComponentConfig.class);
-    }
 
     /**
      * Returns the header size
@@ -228,16 +226,6 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
@@ -246,11 +234,13 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
-
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup();
+
+        LogComponentConfig logConfig = p_config.getComponentConfig(LogComponent.class);
+
         if (m_loggingIsActive) {
-            m_dxlog = new DXLog(getConfig().getDxlogConfig(), p_config.getEngineConfig().getJniPath(),
+            m_dxlog = new DXLog(logConfig.getDxlogConfig(), p_config.getEngineConfig().getJniPath(),
                     m_boot.getNodeId(), m_backup.getConfig().getBackupDirectory(),
                     (int) m_backup.getConfig().getBackupRangeSize().getBytes() * 2, m_chunk.getMemory().recovery());
         }

@@ -6,8 +6,8 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
  * Config for the EventComponent
@@ -17,8 +17,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = EventComponent.class, supportsSuperpeer = true, supportsPeer = true)
-public class EventComponentConfig extends DXRAMComponentConfig {
+public class EventComponentConfig extends DXRAMModuleConfig {
     private static final int THREAD_COUNT_MAX = 10;
 
     /**
@@ -27,8 +26,12 @@ public class EventComponentConfig extends DXRAMComponentConfig {
     @Expose
     private int m_threadCount = 1;
 
+    public EventComponentConfig() {
+        super(EventComponent.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
+    protected boolean verify(final DXRAMConfig p_config) {
         if (m_threadCount < 1) {
             LOGGER.error("Invalid value (%d) for m_threadCount", m_threadCount);
             return false;

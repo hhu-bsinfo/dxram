@@ -7,8 +7,8 @@ import lombok.experimental.Accessors;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxmem.core.Address;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
 /**
@@ -19,8 +19,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = ChunkComponent.class, supportsSuperpeer = false, supportsPeer = true)
-public class ChunkComponentConfig extends DXRAMComponentConfig {
+public class ChunkComponentConfig extends DXRAMModuleConfig {
     private static final StorageUnit KEY_VALUE_STORE_SIZE_MIN = new StorageUnit(1L, StorageUnit.MB);
     private static final StorageUnit KEY_VALUE_STORE_SIZE_MAX = new StorageUnit((long) Math.pow(2, Address.WIDTH_BITS),
             StorageUnit.BYTE);
@@ -54,8 +53,15 @@ public class ChunkComponentConfig extends DXRAMComponentConfig {
     @Expose
     private boolean m_chunkStorageEnabled = true;
 
+    /**
+     * Constructor
+     */
+    public ChunkComponentConfig() {
+        super(ChunkComponent.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
+    protected boolean verify(final DXRAMConfig p_config) {
         if (m_keyValueStoreSize.getBytes() < KEY_VALUE_STORE_SIZE_MIN.getBytes()) {
             LOGGER.error("Min m_keyValueStoreSize: %s", KEY_VALUE_STORE_SIZE_MIN);
 

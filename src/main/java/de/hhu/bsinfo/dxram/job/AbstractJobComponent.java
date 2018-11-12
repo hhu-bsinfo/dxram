@@ -17,27 +17,13 @@
 package de.hhu.bsinfo.dxram.job;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 
 /**
  * Component handling jobs to be executed (local only).
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public abstract class AbstractJobComponent<T extends DXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
-    /**
-     * Constructor
-     *
-     * @param p_priorityInit
-     *         Default init priority for this component
-     * @param p_priorityShutdown
-     *         Default shutdown priority for this component
-     */
-    public AbstractJobComponent(final short p_priorityInit, final short p_priorityShutdown,
-            final Class<T> p_configClass) {
-        super(p_priorityInit, p_priorityShutdown, p_configClass);
-    }
-
+public abstract class AbstractJobComponent<T> extends AbstractDXRAMComponent<T> {
     /**
      * Schedule a job for execution.
      *

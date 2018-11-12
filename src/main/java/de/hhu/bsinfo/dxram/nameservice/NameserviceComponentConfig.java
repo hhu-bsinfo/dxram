@@ -6,7 +6,7 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
  * Config for the NameserviceComponent
@@ -16,8 +16,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = NameserviceComponent.class, supportsSuperpeer = false, supportsPeer = true)
-public class NameserviceComponentConfig extends DXRAMComponentConfig {
+public class NameserviceComponentConfig extends DXRAMModuleConfig {
     /**
      * Type of name service string converter to use to convert name service keys (available: NAME and INT)
      */
@@ -29,4 +28,11 @@ public class NameserviceComponentConfig extends DXRAMComponentConfig {
      */
     @Expose
     private int m_nameserviceCacheEntries = 1000000;
+
+    /**
+     * Constructor
+     */
+    public NameserviceComponentConfig() {
+        super(NameserviceComponent.class);
+    }
 }

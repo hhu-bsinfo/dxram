@@ -26,9 +26,11 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.event.AbstractEvent;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
@@ -48,7 +50,10 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
-public class FailureComponent extends AbstractDXRAMComponent<FailureComponentConfig>
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.FAILURE,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.FAILURE)
+public class FailureComponent extends AbstractDXRAMComponent<DXRAMModuleConfig>
         implements MessageReceiver, EventListener<AbstractEvent> {
 
     private static final int EVENT_TIMEOUT = 1000;
@@ -59,24 +64,11 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
     private EventComponent m_event;
     private NetworkComponent m_network;
 
-    private byte[] m_nodeStatus;
-    private long[] m_nodeTimestamps;
-    private ReentrantLock m_failureLock;
+    private final byte[] m_nodeStatus = new byte[Short.MAX_VALUE * 2 / 8];
+    private final long[] m_nodeTimestamps = new long[Short.MAX_VALUE * 2];
+    private final ReentrantLock m_failureLock = new ReentrantLock(false);
 
-    private volatile boolean m_isActive;
-
-    /**
-     * Creates the failure component
-     */
-    public FailureComponent() {
-        super(DXRAMComponentOrder.Init.FAILURE, DXRAMComponentOrder.Shutdown.FAILURE, FailureComponentConfig.class);
-
-        m_nodeStatus = new byte[Short.MAX_VALUE * 2 / 8];
-        m_nodeTimestamps = new long[Short.MAX_VALUE * 2];
-        m_failureLock = new ReentrantLock(false);
-
-        m_isActive = true;
-    }
+    private volatile boolean m_isActive = true;
 
     @Override
     public void eventTriggered(final AbstractEvent p_event) {
@@ -188,16 +180,6 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
@@ -206,7 +188,7 @@ public class FailureComponent extends AbstractDXRAMComponent<FailureComponentCon
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_REQUEST,
                 FailureRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.FAILURE_MESSAGES_TYPE, FailureMessages.SUBTYPE_FAILURE_RESPONSE,

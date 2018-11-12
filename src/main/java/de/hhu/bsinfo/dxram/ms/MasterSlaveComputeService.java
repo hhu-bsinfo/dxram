@@ -33,9 +33,10 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.ms.messages.GetMasterStatusRequest;
 import de.hhu.bsinfo.dxram.ms.messages.GetMasterStatusResponse;
@@ -57,6 +58,7 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveComputeServiceConfig>
         implements MessageReceiver, TaskListener {
     // component dependencies
@@ -69,13 +71,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
 
     private ConcurrentMap<Integer, TaskScriptState> m_remoteTasks = new ConcurrentHashMap<>();
     private AtomicInteger m_taskIdCounter = new AtomicInteger(0);
-
-    /**
-     * Constructor
-     */
-    public MasterSlaveComputeService() {
-        super("mscomp", MasterSlaveComputeServiceConfig.class);
-    }
 
     /**
      * Create an instance of a task denoted by its task (command) name
@@ -380,16 +375,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
@@ -398,7 +383,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
                 MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST, SubmitTaskRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,

@@ -22,9 +22,11 @@ import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.log.messages.GetUtilizationRequest;
 import de.hhu.bsinfo.dxram.log.messages.GetUtilizationResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
@@ -43,18 +45,12 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public final class LogService extends AbstractDXRAMService<LogServiceConfig> implements SpecialMessageReceiver {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public final class LogService extends AbstractDXRAMService<DXRAMModuleConfig> implements SpecialMessageReceiver {
     // component dependencies
     private NetworkComponent m_network;
     private LogComponent m_log;
     private ZookeeperBootComponent m_boot;
-
-    /**
-     * Constructor
-     */
-    public LogService() {
-        super("log", LogServiceConfig.class);
-    }
 
     /**
      * Returns the current utilization of primary log and all secondary logs
@@ -128,16 +124,6 @@ public final class LogService extends AbstractDXRAMService<LogServiceConfig> imp
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_log = p_componentAccessor.getComponent(LogComponent.class);
@@ -145,7 +131,7 @@ public final class LogService extends AbstractDXRAMService<LogServiceConfig> imp
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 

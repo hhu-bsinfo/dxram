@@ -6,8 +6,8 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
  * Config for the SynchronizationService
@@ -17,8 +17,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMServiceConfig.Settings(service = SynchronizationService.class, supportsSuperpeer = false, supportsPeer = true)
-public class SynchronizationServiceConfig extends DXRAMServiceConfig {
+public class SynchronizationServiceConfig extends DXRAMModuleConfig {
     private static final int MAX_BARRIERS_PER_SUPERPEER_MAX = 100000;
 
     /**
@@ -27,8 +26,15 @@ public class SynchronizationServiceConfig extends DXRAMServiceConfig {
     @Expose
     private int m_maxBarriersPerSuperpeer = 1000;
 
+    /**
+     * Constructor
+     */
+    public SynchronizationServiceConfig() {
+        super(SynchronizationService.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
+    protected boolean verify(final DXRAMConfig p_config) {
         if (m_maxBarriersPerSuperpeer < 0) {
             LOGGER.error("Invalid value m_maxBarriersPerSuperpeer: %d", m_maxBarriersPerSuperpeer);
             return false;

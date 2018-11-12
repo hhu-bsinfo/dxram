@@ -20,8 +20,9 @@ import de.hhu.bsinfo.dxmem.DXMem;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 
 /**
@@ -29,18 +30,14 @@ import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.CHUNK,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.CHUNK)
 public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig> {
     // component dependencies
     private AbstractBootComponent m_boot;
 
     private DXMem m_memory;
-
-    /**
-     * Constructor
-     */
-    public ChunkComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, ChunkComponentConfig.class);
-    }
 
     /**
      * Get the local key-value memory instance
@@ -52,28 +49,19 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
-        LOGGER.info("Allocating native memory (%d mb). This may take a while...",
-                p_config.getComponentConfig(ChunkComponentConfig.class).getKeyValueStoreSize().getMB());
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
+        ChunkComponentConfig chunkConfig = p_config.getComponentConfig(ChunkComponent.class);
 
-        m_memory = new DXMem(m_boot.getNodeId(),
-                p_config.getComponentConfig(ChunkComponentConfig.class).getKeyValueStoreSize().getBytes(),
-                p_config.getComponentConfig(ChunkComponentConfig.class).isChunkLockDisabled());
+        LOGGER.info("Allocating native memory (%d mb). This may take a while...",
+                chunkConfig.getKeyValueStoreSize().getMB());
+
+        m_memory = new DXMem(m_boot.getNodeId(), chunkConfig.getKeyValueStoreSize().getBytes(),
+                chunkConfig.isChunkLockDisabled());
 
         return true;
     }

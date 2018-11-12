@@ -20,8 +20,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.job.ws.Worker;
 import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
@@ -31,6 +33,9 @@ import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.JOB_WORK_STEALING,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING)
 public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkStealingComponentConfig>
         implements WorkerDelegate {
     // component dependencies
@@ -39,14 +44,6 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
     private boolean m_enabled;
     private Worker[] m_workers;
     private AtomicLong m_unfinishedJobs = new AtomicLong(0);
-
-    /**
-     * Constructor
-     */
-    public JobWorkStealingComponent() {
-        super(DXRAMComponentOrder.Init.JOB_WORK_STEALING, DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING,
-                JobWorkStealingComponentConfig.class);
-    }
 
     @Override
     public boolean pushJob(final AbstractJob p_job) {
@@ -100,23 +97,15 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
-        m_enabled = p_config.getComponentConfig(JobWorkStealingComponentConfig.class).isEnabled();
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
+        JobWorkStealingComponentConfig config = p_config.getComponentConfig(JobWorkStealingComponent.class);
+
+        m_enabled = config.isEnabled();
 
         if (m_enabled) {
             LOGGER.info("JobWorkStealing enabled");

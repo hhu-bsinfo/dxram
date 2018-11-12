@@ -21,31 +21,15 @@ package de.hhu.bsinfo.dxram.engine;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NullService extends AbstractDXRAMService<NullServiceConfig> {
-    /**
-     * Constructor
-     */
-    public NullService() {
-        super("null", NullServiceConfig.class);
-    }
-
-    @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+public class NullService extends AbstractDXRAMService<DXRAMModuleConfig> {
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         // no dependencies
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         return true;
     }
 

@@ -6,7 +6,7 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
  * Config for the StatisticsService
@@ -16,11 +16,17 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMServiceConfig.Settings(service = StatisticsService.class, supportsSuperpeer = true, supportsPeer = true)
-public class StatisticsServiceConfig extends DXRAMServiceConfig {
+public class StatisticsServiceConfig extends DXRAMModuleConfig {
     /**
      * If non zero, enables a dedicated thread that prints the statistics periodically.
      */
     @Expose
     private int m_printStatsPeriodMs = 0;
+
+    /**
+     * Constructor
+     */
+    public StatisticsServiceConfig() {
+        super(StatisticsService.class);
+    }
 }

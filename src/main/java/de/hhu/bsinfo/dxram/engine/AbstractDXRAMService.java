@@ -16,126 +16,44 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 /**
  * Base class for all services in DXRAM. All services in DXRAM form the API for the user.
  * Furthermore, different services allow splitting functionality that can be turned on/off
- * for different applications, create a clearer structure and higher flexibility. Services
- * use components to implement their functionality. A service is not allowed to depend on
- * another service and services can not interact with each other.
+ * for different applications and higher flexibility. Services use components to implement
+ * their functionality. A service is not allowed to depend on another service and services
+ * can not interact with each other.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2016
  */
-public abstract class AbstractDXRAMService<T extends DXRAMServiceConfig> {
-    protected final Logger LOGGER;
-
-    private T m_config;
-
-    private final String m_shortName;
-    private DXRAMEngine m_parentEngine;
-    private boolean m_isStarted;
-
+public abstract class AbstractDXRAMService<T> extends AbstractDXRAMModule<T> {
     /**
      * Constructor
-     *
-     * @param p_shortName
-     *         Short name of the service (used for terminal)
      */
-    protected AbstractDXRAMService(final String p_shortName, final Class<T> p_configClass) {
-        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
-        m_shortName = p_shortName;
-
-        // create default configuration
-        try {
-            m_config = p_configClass.newInstance();
-        } catch (final InstantiationException | IllegalAccessException e) {
-            throw new DXRAMRuntimeException(e);
-        }
+    protected AbstractDXRAMService() {
+        super();
     }
 
-    /**
-     * Get the configuration of the service
-     *
-     * @return Configuration of the service
-     */
-    public T getConfig() {
-        return m_config;
-    }
-
-    /**
-     * Start this service.
-     *
-     * @param p_engine
-     *         Engine this service is part of (parent).
-     * @return True if initializing was successful, false otherwise.
-     */
-    public boolean start(final DXRAMEngine p_engine) {
+    @Override
+    protected boolean moduleInit(final DXRAMEngine p_engine) {
         boolean ret;
-
-        m_parentEngine = p_engine;
-
-        LOGGER.info("Starting service...");
 
         resolveComponentDependencies(p_engine);
 
         try {
-            ret = startService(m_parentEngine.getConfig());
+            ret = startService(p_engine.getConfig());
         } catch (final Exception e) {
             LOGGER.error("Starting service failed", e);
 
             return false;
         }
 
-        if (!ret) {
-            LOGGER.error("Starting service failed");
-        } else {
-            LOGGER.info("Starting service successful");
-
-            m_isStarted = true;
-        }
-
         return ret;
     }
 
-    /**
-     * Shut down this service.
-     *
-     * @return True if shutting down was successful, false otherwise.
-     */
-    public boolean shutdown() {
-        boolean ret = true;
-
-        if (m_isStarted) {
-            LOGGER.info("Shutting down service...");
-
-            ret = shutdownService();
-            if (!ret) {
-                LOGGER.warn("Shutting down service failed");
-            } else {
-                LOGGER.info("Shutting down service successful");
-            }
-
-            m_isStarted = false;
-        }
-
-        return ret;
+    @Override
+    protected boolean moduleShutdown() {
+        return shutdownService();
     }
-
-    /**
-     * Check if the component supports the superpeer node role
-     *
-     * @return True if supporting, false otherwise
-     */
-    protected abstract boolean supportsSuperpeer();
-
-    /**
-     * Check if the component supports the peer node role
-     *
-     * @return True if supporting, false otherwise
-     */
-    protected abstract boolean supportsPeer();
 
     /**
      * Called before the service is initialized. Get all the components your service depends on.
@@ -146,13 +64,13 @@ public abstract class AbstractDXRAMService<T extends DXRAMServiceConfig> {
     protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
 
     /**
-     * Called when the service is initialized. Setup data structures, get components for operation, read settings etc.
+     * Called when the service is initialized. Setup data structures, read settings etc.
      *
      * @param p_config
      *         Config instance provided by the engine.
      * @return True if initialing was successful, false otherwise.
      */
-    protected abstract boolean startService(final DXRAMContext.Config p_config);
+    protected abstract boolean startService(final DXRAMConfig p_config);
 
     /**
      * Called when the service gets shut down. Cleanup your service in here.
@@ -160,13 +78,6 @@ public abstract class AbstractDXRAMService<T extends DXRAMServiceConfig> {
      * @return True if shutdown was successful, false otherwise.
      */
     protected abstract boolean shutdownService();
-
-    /**
-     * Called when the engine finished initialization and all services and components are started
-     */
-    protected void engineInitFinished() {
-        // empty
-    }
 
     /**
      * Check if this class is a service accessor i.e. breaking the rules of
@@ -196,52 +107,9 @@ public abstract class AbstractDXRAMService<T extends DXRAMServiceConfig> {
      */
     protected DXRAMServiceAccessor getServiceAccessor() {
         if (isServiceAccessor()) {
-            return m_parentEngine;
+            return getParentEngine();
         } else {
             return null;
         }
-    }
-
-    /**
-     * Get the engine within the service.
-     * If you don't know what you are doing, do not use this.
-     * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
-     *
-     * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
-     */
-    protected DXRAMEngine getParentEngine() {
-        if (isEngineAccessor()) {
-            return m_parentEngine;
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * Get the short name/identifier for this service.
-     *
-     * @return Identifier/name for this service.
-     */
-    String getShortName() {
-        return m_shortName;
-    }
-
-    /**
-     * Get the name of this service.
-     *
-     * @return Name of this service.
-     */
-    String getServiceName() {
-        return getClass().getSimpleName();
-    }
-
-    /**
-     * Set the configuration read from file
-     *
-     * @param p_config
-     *         Config to set
-     */
-    void setConfig(final T p_config) {
-        m_config = p_config;
     }
 }

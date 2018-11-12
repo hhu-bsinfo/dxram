@@ -6,8 +6,8 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
@@ -21,8 +21,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = ZookeeperBootComponent.class, supportsSuperpeer = true, supportsPeer = true)
-public class ZookeeperBootComponentConfig extends DXRAMComponentConfig {
+public class ZookeeperBootComponentConfig extends DXRAMModuleConfig {
     /**
      * Path for zookeeper entry
      */
@@ -59,8 +58,15 @@ public class ZookeeperBootComponentConfig extends DXRAMComponentConfig {
     @Expose
     private boolean m_isClient = false;
 
+    /**
+     * Constructor
+     */
+    public ZookeeperBootComponentConfig() {
+        super(ZookeeperBootComponent.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
+    protected boolean verify(final DXRAMConfig p_config) {
         if (m_bitfieldSize.getBytes() < 2048 * 1024) {
             LOGGER.warn("Bitfield size is rather small. Not all node IDs may be addressable because of high " +
                     "false positives rate!");

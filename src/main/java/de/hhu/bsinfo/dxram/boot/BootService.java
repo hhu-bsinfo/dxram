@@ -28,10 +28,12 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.boot.messages.RebootMessage;
 import de.hhu.bsinfo.dxram.boot.messages.ShutdownMessage;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
@@ -43,17 +45,11 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-public class BootService extends AbstractDXRAMService<BootServiceConfig> implements MessageReceiver {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+public class BootService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
     // component dependencies
     private AbstractBootComponent m_boot;
     private NetworkComponent m_network;
-
-    /**
-     * Constructor
-     */
-    public BootService() {
-        super("boot", BootServiceConfig.class);
-    }
 
     /**
      * Handler an incoming ShutdownMessage.
@@ -323,23 +319,13 @@ public class BootService extends AbstractDXRAMService<BootServiceConfig> impleme
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE,
                 RebootMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE,

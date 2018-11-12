@@ -6,8 +6,8 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
@@ -18,8 +18,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = LookupComponent.class, supportsSuperpeer = true, supportsPeer = true)
-public class LookupComponentConfig extends DXRAMComponentConfig {
+public class LookupComponentConfig extends DXRAMModuleConfig {
     /**
      * Set to enable client-side lookup caching.
      */
@@ -44,8 +43,15 @@ public class LookupComponentConfig extends DXRAMComponentConfig {
     @Expose
     private TimeUnit m_stabilizationBreakTime = new TimeUnit(1, TimeUnit.SEC);
 
+    /**
+     * Constructor
+     */
+    public LookupComponentConfig() {
+        super(LookupComponent.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
+    protected boolean verify(final DXRAMConfig p_config) {
         if (m_cacheTtl.getMs() < 1000L) {
             LOGGER.warn("A high effort is needed to satisfy TTL!");
         }

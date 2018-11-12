@@ -16,7 +16,6 @@
 
 package de.hhu.bsinfo.dxram.util;
 
-import de.hhu.bsinfo.dxram.engine.InvalidNodeRoleException;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonValue;
 

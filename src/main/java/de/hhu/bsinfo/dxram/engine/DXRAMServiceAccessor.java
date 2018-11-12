@@ -16,8 +16,6 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
-import java.util.List;
-
 /**
  * Usually the concept does not allow a DXRAMService to use or even know
  * other DXRAMServices to keep things properly modularized. But there
@@ -31,13 +29,6 @@ import java.util.List;
  */
 public interface DXRAMServiceAccessor {
     /**
-     * Get a list of short names of all available services.
-     *
-     * @return List of (short) service names.
-     */
-    List<String> getServiceShortNames();
-
-    /**
      * Get a service from DXRAM.
      *
      * @param p_class
@@ -50,31 +41,12 @@ public interface DXRAMServiceAccessor {
     <T extends AbstractDXRAMService> T getService(final Class<T> p_class);
 
     /**
-     * Get a service by its short name/identifier.
-     *
-     * @param p_shortName
-     *         Short name of the service.
-     * @return Service or null if no service exists for that name.
-     */
-    AbstractDXRAMService getService(final String p_shortName);
-
-    /**
-     * Check if a service is available/enabled
+     * Check if a service is available
      *
      * @param p_class
-     *         Class of the service to check
-     * @param <T>
-     *         Class extending DXRAMService
-     * @return True if service available/enabled, false otherwise
+     *         Class of the service to check. If the service has different implementations, use the common interface
+     *         or abstract class to get the registered instance.
+     * @return True if available, false otherwise
      */
-    <T extends AbstractDXRAMService> boolean isServiceAvailable(final Class<T> p_class);
-
-    /**
-     * Check if a service is available by its short name
-     *
-     * @param p_shortName
-     *         Short name of service
-     * @return True if service available/enabled, false otherwise
-     */
-    boolean isServiceAvailable(final String p_shortName);
+    boolean isServiceAvailable(final Class<? extends AbstractDXRAMService> p_class);
 }

@@ -14,23 +14,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.log;
+package de.hhu.bsinfo.dxram.util;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
-
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMRuntimeException;
+import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
- * Config for the LogService
+ * Exception for incorrect node role on current instance
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
-@Data
-@Accessors(prefix = "m_")
-@EqualsAndHashCode(callSuper = false)
-@DXRAMServiceConfig.Settings(service = LogService.class, supportsSuperpeer = false, supportsPeer = true)
-public final class LogServiceConfig extends DXRAMServiceConfig {
+public class InvalidNodeRoleException extends DXRAMRuntimeException {
+    /**
+     * Constructor
+     *
+     * @param p_role
+     *         The invalid node role
+     */
+    public InvalidNodeRoleException(final NodeRole p_role) {
+        super("Invalid node role " + p_role);
+    }
 
+    /**
+     * Constructor
+     *
+     * @param p_msg
+     *         Exception message
+     */
+    public InvalidNodeRoleException(final String p_msg) {
+        super(p_msg);
+    }
 }

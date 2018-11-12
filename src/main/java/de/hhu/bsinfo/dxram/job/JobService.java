@@ -27,9 +27,11 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.job.event.JobEventListener;
 import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.dxram.job.messages.JobEventTriggeredMessage;
@@ -52,7 +54,8 @@ import de.hhu.bsinfo.dxutils.stats.TimePool;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class JobService extends AbstractDXRAMService<JobServiceConfig> implements MessageReceiver, JobEventListener {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver, JobEventListener {
     private static final TimePool SOP_CREATE = new TimePool(JobService.class, "Submit");
     private static final TimePool SOP_REMOTE_SUBMIT = new TimePool(JobService.class, "RemoteSubmit");
     private static final TimePool SOP_INCOMING_SUBMIT = new TimePool(JobService.class, "IncomingSubmit");
@@ -68,20 +71,11 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
     private AbstractJobComponent m_job;
     private NetworkComponent m_network;
 
-    private final JobMap m_jobMap;
+    private final JobMap m_jobMap = new JobMap();
 
     private final AtomicLong m_jobIDCounter = new AtomicLong(0);
 
     private final Map<Long, JobEventEntry> m_remoteJobCallbackMap = new HashMap<>();
-
-    /**
-     * Constructor
-     */
-    public JobService() {
-        super("job", JobServiceConfig.class);
-
-        m_jobMap = new JobMap();
-    }
 
     /**
      * Register a new implementation/type of Job class.
@@ -312,16 +306,6 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
     // --------------------------------------------------------------------------------------------
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_job = p_componentAccessor.getComponent(AbstractJobComponent.class);
@@ -329,7 +313,7 @@ public class JobService extends AbstractDXRAMService<JobServiceConfig> implement
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 

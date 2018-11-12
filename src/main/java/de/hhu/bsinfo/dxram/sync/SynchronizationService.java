@@ -16,9 +16,10 @@
 
 package de.hhu.bsinfo.dxram.sync;
 
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 
@@ -27,17 +28,11 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 06.05.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class SynchronizationService extends AbstractDXRAMService<SynchronizationServiceConfig> {
 
     // component dependencies
     private LookupComponent m_lookup;
-
-    /**
-     * Constructor
-     */
-    public SynchronizationService() {
-        super("sync", SynchronizationServiceConfig.class);
-    }
 
     /**
      * Allocate a barrier for synchronizing multiple peers.
@@ -115,22 +110,12 @@ public class SynchronizationService extends AbstractDXRAMService<Synchronization
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         return true;
     }
 

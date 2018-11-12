@@ -9,8 +9,8 @@ import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxnet.core.CoreConfig;
 import de.hhu.bsinfo.dxnet.ib.IBConfig;
 import de.hhu.bsinfo.dxnet.nio.NIOConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
  * Config for the NetworkComponent
@@ -20,8 +20,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = NetworkComponent.class, supportsSuperpeer = true, supportsPeer = true)
-public class NetworkComponentConfig extends DXRAMComponentConfig {
+public class NetworkComponentConfig extends DXRAMModuleConfig {
     /**
      * Get the core configuration values
      */
@@ -40,8 +39,15 @@ public class NetworkComponentConfig extends DXRAMComponentConfig {
     @Expose
     private IBConfig m_ibConfig = new IBConfig();
 
+    /**
+     * Constructor
+     */
+    public NetworkComponentConfig() {
+        super(NetworkComponent.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
+    protected boolean verify(final DXRAMConfig p_config) {
         return m_coreConfig.verify() && m_nioConfig.verify() && m_ibConfig.verify();
     }
 }

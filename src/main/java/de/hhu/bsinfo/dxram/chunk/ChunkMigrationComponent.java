@@ -26,9 +26,11 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
@@ -37,18 +39,14 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrationComponentConfig> {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.CHUNK,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.CHUNK)
+public class ChunkMigrationComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
     // component dependencies
     private BackupComponent m_backup;
     private ChunkComponent m_chunk;
     private NetworkComponent m_network;
-
-    /**
-     * Constructor
-     */
-    public ChunkMigrationComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, ChunkMigrationComponentConfig.class);
-    }
 
     /**
      * Puts migrated Chunks
@@ -94,16 +92,6 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
@@ -111,7 +99,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<ChunkMigrati
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         return true;
     }
 

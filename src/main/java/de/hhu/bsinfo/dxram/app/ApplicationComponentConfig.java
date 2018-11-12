@@ -6,7 +6,7 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
  * Config for the ApplicationComponent
@@ -16,11 +16,17 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMComponentConfig.Settings(component = ApplicationComponent.class, supportsSuperpeer = false, supportsPeer = true)
-public class ApplicationComponentConfig extends DXRAMComponentConfig {
+public class ApplicationComponentConfig extends DXRAMModuleConfig {
     /**
      * Path to scan for application jar files
      */
     @Expose
     private String m_applicationPath = "dxapp";
+
+    /**
+     * Constructor
+     */
+    public ApplicationComponentConfig() {
+        super(ApplicationComponent.class);
+    }
 }

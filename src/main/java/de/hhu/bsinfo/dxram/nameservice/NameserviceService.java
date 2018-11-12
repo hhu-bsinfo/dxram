@@ -19,9 +19,11 @@ package de.hhu.bsinfo.dxram.nameservice;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
  * Nameservice service providing mappings of string identifiers to chunkIDs.
@@ -30,16 +32,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMContext;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class NameserviceService extends AbstractDXRAMService<NameserviceServiceConfig> {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class NameserviceService extends AbstractDXRAMService<DXRAMModuleConfig> {
     // component dependencies
     private NameserviceComponent m_nameservice;
-
-    /**
-     * Constructor
-     */
-    public NameserviceService() {
-        super("name", NameserviceServiceConfig.class);
-    }
 
     /**
      * Get the nameservice mode (NAME or ID)
@@ -107,22 +103,12 @@ public class NameserviceService extends AbstractDXRAMService<NameserviceServiceC
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         return true;
     }
 

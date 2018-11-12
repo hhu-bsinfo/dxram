@@ -32,9 +32,11 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -51,7 +53,8 @@ import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 31.03.16
  */
-public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig> implements MessageReceiver {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class RecoveryService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
     // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
@@ -65,13 +68,6 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
 
     private ArrayList<FinishedRecovery> m_finishedRecoveries;
     private ReentrantLock m_replicationLock;
-
-    /**
-     * Constructor
-     */
-    public RecoveryService() {
-        super("recovery", RecoveryServiceConfig.class);
-    }
 
     @Override
     public void onIncomingMessage(final Message p_message) {
@@ -92,16 +88,6 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
@@ -112,7 +98,7 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
 
@@ -143,9 +129,8 @@ public class RecoveryService extends AbstractDXRAMService<RecoveryServiceConfig>
      */
     private void recoverLocallyFromFile(final short p_owner) {
 
-        // FIXME: Very old, not functional code
 
-        HarddriveAccessMode mode = HarddriveAccessMode.convert(m_log.getConfig().getDxlogConfig().getHarddriveAccess());
+        HarddriveAccessMode mode = HarddriveAccessMode.RANDOM_ACCESS_FILE;
         if (mode != HarddriveAccessMode.RAW_DEVICE) {
             String fileName;
             File folderToScan;

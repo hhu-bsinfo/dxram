@@ -16,14 +16,10 @@
 
 package de.hhu.bsinfo.dxram.migration;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxmem.data.ChunkIDRanges;
@@ -36,9 +32,11 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationMessages;
@@ -57,7 +55,8 @@ import org.jetbrains.annotations.Nullable;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  * @author Filip Krakowski, Filip.Krakowski@Uni-Duesseldorf.de, 12.06.2018
  */
-public class MigrationService extends AbstractDXRAMService<MigrationServiceConfig> implements MessageReceiver {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class MigrationService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
     // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
@@ -69,13 +68,6 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
     private Lock m_migrationLock;
 
     private MigrationManager m_migrationManager = null;
-
-    /**
-     * Creates an instance of MigrationService
-     */
-    public MigrationService() {
-        super("migrate", MigrationServiceConfig.class);
-    }
 
     /**
      * Migrates a single chunk to another node.
@@ -277,16 +269,6 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_migrationManager = new MigrationManager(16, p_componentAccessor);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
@@ -298,7 +280,7 @@ public class MigrationService extends AbstractDXRAMService<MigrationServiceConfi
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         m_migrationLock = new ReentrantLock(false);
 
         registerNetworkMessages();

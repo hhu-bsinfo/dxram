@@ -22,11 +22,13 @@ import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
+import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.LogComponentConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.monitoring.util.MonitoringSysDxramWrapper;
@@ -39,6 +41,9 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.MONITORING,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.MONITORING)
 public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringComponentConfig> {
     private PeerMonitoringHandler m_peerHandler;
     private PeerDXRAMMonitoringHandler m_dxramPeerHandler;
@@ -48,11 +53,6 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
     private EventComponent m_event;
-
-    public MonitoringComponent() {
-        super(DXRAMComponentOrder.Init.MONITORING, DXRAMComponentOrder.Shutdown.MONITORING,
-                MonitoringComponentConfig.class);
-    }
 
     /**
      * Returns true if monitoring is activated.
@@ -70,8 +70,9 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
-        MonitoringComponentConfig componentConfig = p_config.getComponentConfig(MonitoringComponentConfig.class);
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
+        LogComponentConfig logConfig = p_config.getComponentConfig(LogComponent.class);
+        MonitoringComponentConfig componentConfig = p_config.getComponentConfig(MonitoringComponent.class);
 
         if (componentConfig.isMonitoringActive()) {
             String diskIdentifier = componentConfig.getDisk();
@@ -106,8 +107,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
 
             // check if kernel buffer is in use
             boolean isPageCacheInUse = false;
-            String hardwareAccessMode =
-                    p_config.getComponentConfig(LogComponentConfig.class).getDxlogConfig().getHarddriveAccess();
+            String hardwareAccessMode =logConfig.getDxlogConfig().getHarddriveAccess();
 
             if (hardwareAccessMode.equals("raf")) {
                 isPageCacheInUse = true;
@@ -213,15 +213,5 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
      */
     void addMonitoringSysInfoToWriter(final short p_nid, final MonitoringSysDxramWrapper p_wrapper) {
         m_superpeerHandler.addSysInfoToList(p_nid, p_wrapper);
-    }
-
-    @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
     }
 }

@@ -9,7 +9,7 @@ import java.util.List;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
  * Config for the ApplicationService
@@ -19,8 +19,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMServiceConfig.Settings(service = ApplicationService.class, supportsSuperpeer = false, supportsPeer = true)
-public class ApplicationServiceConfig extends DXRAMServiceConfig {
+public class ApplicationServiceConfig extends DXRAMModuleConfig {
     @Data
     @Accessors(prefix = "m_")
     public static class ApplicationEntry {
@@ -48,4 +47,11 @@ public class ApplicationServiceConfig extends DXRAMServiceConfig {
      */
     @Expose
     private List<ApplicationEntry> m_autoStart = Collections.emptyList();
+
+    /**
+     * Constructor
+     */
+    public ApplicationServiceConfig() {
+        super(ApplicationService.class);
+    }
 }

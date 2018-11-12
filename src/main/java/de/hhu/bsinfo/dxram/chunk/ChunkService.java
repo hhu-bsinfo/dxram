@@ -26,9 +26,10 @@ import de.hhu.bsinfo.dxram.chunk.operation.Put;
 import de.hhu.bsinfo.dxram.chunk.operation.Remove;
 import de.hhu.bsinfo.dxram.chunk.operation.Resize;
 import de.hhu.bsinfo.dxram.chunk.operation.Status;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -38,6 +39,7 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> {
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -56,13 +58,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> {
     private Remove m_remove;
     private Resize m_resize;
     private Lock m_lock;
-
-    /**
-     * Constructor
-     */
-    public ChunkService() {
-        super("chunk", ChunkServiceConfig.class);
-    }
 
     /**
      * Get the status operation
@@ -137,16 +132,6 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> {
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
@@ -157,14 +142,16 @@ public class ChunkService extends AbstractDXRAMService<ChunkServiceConfig> {
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
+        ChunkServiceConfig chunkConfig = p_config.getServiceConfig(ChunkService.class);
+
         m_status = new Status(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_cidStatus = new CIDStatus(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_create = new Create(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_get = new Get(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_put = new Put(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_remove = new Remove(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice,
-                p_config.getServiceConfig(ChunkServiceConfig.class).getRemoverQueueSize());
+                chunkConfig.getRemoverQueueSize());
         m_resize = new Resize(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_lock = new Lock(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
 

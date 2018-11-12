@@ -8,8 +8,8 @@ import java.util.Objects;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
@@ -20,8 +20,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-@DXRAMServiceConfig.Settings(service = MasterSlaveComputeService.class, supportsSuperpeer = false, supportsPeer = true)
-public class MasterSlaveComputeServiceConfig extends DXRAMServiceConfig {
+public class MasterSlaveComputeServiceConfig extends DXRAMModuleConfig {
     private static final TimeUnit PING_INTERVAL_MIN = new TimeUnit(100, TimeUnit.MS);
     private static final TimeUnit PING_INTERVAL_MAX = new TimeUnit(10, TimeUnit.SEC);
 
@@ -43,8 +42,15 @@ public class MasterSlaveComputeServiceConfig extends DXRAMServiceConfig {
     @Expose
     private TimeUnit m_pingInterval = new TimeUnit(1, TimeUnit.SEC);
 
+    /**
+     * Constructor
+     */
+    public MasterSlaveComputeServiceConfig() {
+        super(MasterSlaveComputeService.class);
+    }
+
     @Override
-    protected boolean verify(final DXRAMContext.Config p_config) {
+    protected boolean verify(final DXRAMConfig p_config) {
         if (!Objects.equals(m_role.toLowerCase(), ComputeRole.NONE_STR) && !Objects.equals(m_role.toLowerCase(),
                 ComputeRole.MASTER_STR) && !Objects.equals(m_role.toLowerCase(), ComputeRole.SLAVE_STR)) {
             LOGGER.error("Invalid role string for m_role: %s", m_role);

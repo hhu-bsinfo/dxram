@@ -21,7 +21,6 @@ import java.util.List;
 
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
@@ -33,20 +32,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-public abstract class AbstractBootComponent<T extends DXRAMComponentConfig> extends AbstractDXRAMComponent<T> {
-    /**
-     * Constructor
-     *
-     * @param p_priorityInit
-     *         Default init priority for this component
-     * @param p_priorityShutdown
-     *         Default shutdown priority for this component
-     */
-    protected AbstractBootComponent(final short p_priorityInit, final short p_priorityShutdown,
-            final Class<T> p_configClass) {
-        super(p_priorityInit, p_priorityShutdown, p_configClass);
-    }
-
+public abstract class AbstractBootComponent<T> extends AbstractDXRAMComponent<T> {
     /**
      * Register a node registry listener
      *

@@ -29,10 +29,14 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.jetbrains.annotations.Nullable;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
+import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -46,14 +50,15 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 @SuppressWarnings("WeakerAccess")
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.BOOT,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.BOOT)
 public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> {
-
-    private DXRAMContext.Config m_contextConfig;
-
     private short m_id = NodeID.INVALID_ID;
     private String m_address;
     private int m_port;
     private NodeRole m_role;
+    private int m_capabilities;
 
     private NodeRegistry.NodeDetails m_details;
 
@@ -76,31 +81,17 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
     private DistributedAtomicInteger m_counter;
 
-    /**
-     * Constructor
-     */
-    public ZookeeperBootComponent() {
-        super(DXRAMComponentOrder.Init.BOOT, DXRAMComponentOrder.Shutdown.BOOT, ZookeeperBootComponentConfig.class);
-    }
-
-    /**
-     * Called when the component is initialized. Setup data structures, get dependent components, read settings etc.
-     *
-     * @param p_config
-     *         Configuration instance provided by the engine.
-     * @return True if initialing was successful, false otherwise.
-     */
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
-        m_contextConfig = p_config;
-        m_address = m_contextConfig.getEngineConfig().getAddress().getIP();
-        m_port = m_contextConfig.getEngineConfig().getAddress().getPort();
-        m_role = m_contextConfig.getEngineConfig().getRole();
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
+        m_address = p_config.getEngineConfig().getAddress().getIP();
+        m_port = p_config.getEngineConfig().getAddress().getPort();
+        m_role = p_config.getEngineConfig().getRole();
+        m_capabilities = detectNodeCapabilities(p_config);
 
         LOGGER.info("Initializing with address %s:%d and role %s", m_address, m_port, m_role);
 
-        String zooKeeperAddress = String.format("%s:%d", m_config.getConnection().getIP(),
-                m_config.getConnection().getPort());
+        String zooKeeperAddress = String.format("%s:%d", getConfig().getConnection().getIP(),
+                getConfig().getConnection().getPort());
 
         LOGGER.info("Connecting to ZooKeeper at %s", zooKeeperAddress);
 
@@ -125,45 +116,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         }
     }
 
-    /**
-     * Finish initialization of this component when all services are running.
-     *
-     * @return True if finishing initialization was successful, false otherwise.
-     */
-    @Override
-    public boolean finishInitComponent() {
-        if (m_role == NodeRole.SUPERPEER) {
-            return true;
-        }
-
-        return true;
-    }
-
-    /**
-     * Check if the component supports the superpeer node role.
-     *
-     * @return True if supporting, false otherwise.
-     */
-    @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    /**
-     * Check if the component supports the peer node role.
-     *
-     * @return True if supporting, false otherwise.
-     */
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    /**
-     * Shut down this component.
-     *
-     * @return True if shutting down was successful, false otherwise.
-     */
     @Override
     protected boolean shutdownComponent() {
         m_nodeRegistry.close();
@@ -179,10 +131,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     private NodeRegistry.NodeDetails buildNodeDetails() {
         return NodeRegistry.NodeDetails.builder(m_id, m_address, m_port)
                 .withRole(m_role)
-                .withRack(m_config.getRack())
-                .withSwitch(m_config.getSwitch())
+                .withRack(getConfig().getRack())
+                .withSwitch(getConfig().getSwitch())
                 .withOnline(true)
-                .withCapabilities(detectNodeCapabilities())
+                .withCapabilities(m_capabilities)
                 .build();
     }
 
@@ -329,17 +281,17 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      *
      * @return This node's capabilities.
      */
-    private int detectNodeCapabilities() {
+    private int detectNodeCapabilities(final DXRAMConfig p_config) {
         if (m_role == NodeRole.SUPERPEER) {
             return NodeCapabilities.NONE;
         }
 
-        if (m_config.isClient()) {
+        if (getConfig().isClient()) {
             return NodeCapabilities.COMPUTE;
         }
 
-        ChunkComponentConfig chunkConfig = m_contextConfig.getComponentConfig(ChunkComponentConfig.class);
-        BackupComponentConfig backupConfig = m_contextConfig.getComponentConfig(BackupComponentConfig.class);
+        ChunkComponentConfig chunkConfig = p_config.getComponentConfig(ChunkComponent.class);
+        BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponent.class);
 
         int capabilities = 0;
 

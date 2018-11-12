@@ -16,19 +16,15 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
- * Main class to run DXRAM with components and services.
+ * Engine class running DXRAM with components and services.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
@@ -36,17 +32,14 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMEngine.class.getSimpleName());
 
     private final DXRAMVersion m_version;
-    private final DXRAMComponentManager m_componentManager;
-    private final DXRAMServiceManager m_serviceManager;
-
-    private DXRAMContextCreator m_contextCreator;
-    private DXRAMContext m_context;
-    private DXRAMJNIManager m_jniManager;
+    private final DXRAMModuleManager m_componentManager;
+    private final DXRAMModuleManager m_serviceManager;
 
     private boolean m_isInitialized;
-    private volatile boolean m_triggerReboot;
+    private DXRAMConfig m_config;
+    private DXRAMJNIManager m_jniManager;
 
-    private Map<String, String> m_servicesShortName = new HashMap<>();
+    private volatile boolean m_triggerReboot;
 
     /**
      * Constructor
@@ -56,8 +49,8 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      */
     public DXRAMEngine(final DXRAMVersion p_version) {
         m_version = Objects.requireNonNull(p_version);
-        m_componentManager = new DXRAMComponentManager();
-        m_serviceManager = new DXRAMServiceManager();
+        m_componentManager = new DXRAMModuleManager();
+        m_serviceManager = new DXRAMModuleManager();
     }
 
     /**
@@ -69,19 +62,21 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         return m_version;
     }
 
-    @Override
-    public List<String> getServiceShortNames() {
-        return new ArrayList<>(m_servicesShortName.keySet());
-    }
-
     /**
      * Register a DXRAM component
      *
      * @param p_class
      *         Class of the component to register
+     * @param p_configClass
+     *         Configuration class to associate with the component
      */
-    public void registerComponent(final Class<? extends AbstractDXRAMComponent> p_class) {
-        m_componentManager.register(p_class);
+    public void registerComponent(final Class<? extends AbstractDXRAMComponent> p_class,
+            final Class<? extends DXRAMModuleConfig> p_configClass) {
+        if (m_isInitialized) {
+            throw new IllegalStateException("Invalid initialization state");
+        }
+
+        m_componentManager.register(p_class, p_configClass);
     }
 
     /**
@@ -89,233 +84,121 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      *
      * @param p_class
      *         Class of the service to register
+     * @param p_configClass
+     *         Configuration class to associate with the component
      */
-    public void registerService(final Class<? extends AbstractDXRAMService> p_class) {
-        m_serviceManager.register(p_class);
-    }
-
-    @Override
-    public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
-        T service = null;
-
+    public void registerService(final Class<? extends AbstractDXRAMService> p_class,
+            final Class<? extends DXRAMModuleConfig> p_configClass) {
         if (m_isInitialized) {
-            AbstractDXRAMService tmpService = m_context.getServices().get(p_class.getSimpleName());
-            if (tmpService == null) {
-                // check for any kind of instance of the specified class
-                // we might have another interface/abstract class between the
-                // class we request and an instance we could serve
-                for (Entry<String, AbstractDXRAMService> entry : m_context.getServices()
-                        .entrySet()) {
-                    tmpService = entry.getValue();
-                    if (p_class.isInstance(tmpService)) {
-                        break;
-                    }
-
-                    tmpService = null;
-                }
-            }
-
-            if (p_class.isInstance(tmpService)) {
-                service = p_class.cast(tmpService);
-            }
-
-            if (service == null) {
-                LOGGER.warn("Service not available %s", p_class);
-            }
+            throw new IllegalStateException("Invalid initialization state");
         }
 
-        if (service == null) {
-            LOGGER.warn("Service '%s' not available", p_class.getSimpleName());
-        }
-
-        return service;
+        m_serviceManager.register(p_class, p_configClass);
     }
 
-    @Override
-    public AbstractDXRAMService getService(final String p_shortName) {
-        AbstractDXRAMService service = null;
-
+    /**
+     * Create a new configuration instance based on the default values of the registered and available
+     * components and services
+     *
+     * @return New configuration instance
+     */
+    public DXRAMConfig createConfigInstance() {
         if (m_isInitialized) {
-            service = m_context.getServices().get(m_servicesShortName.get(p_shortName));
+            throw new IllegalStateException("Invalid initialization state");
         }
 
-        if (service == null) {
-            LOGGER.warn("Service '%s' not available", p_shortName);
-        }
-
-        return service;
-    }
-
-    @Override
-    public <T extends AbstractDXRAMService> boolean isServiceAvailable(final Class<T> p_class) {
-        AbstractDXRAMService service = null;
-
-        if (m_isInitialized) {
-            service = m_context.getServices().get(p_class.getSimpleName());
-        }
-
-        return service != null;
-    }
-
-    @Override
-    public boolean isServiceAvailable(final String p_shortName) {
-        AbstractDXRAMService service = null;
-
-        if (m_isInitialized) {
-            service = m_context.getServices().get(m_servicesShortName.get(p_shortName));
-        }
-
-        return service != null;
-    }
-
-    @Override
-    public <T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
-        T component = null;
-
-        AbstractDXRAMComponent tmpComponent = m_context.getComponents().get(
-                p_class.getSimpleName());
-        if (tmpComponent == null) {
-            // check for any kind of instance of the specified class
-            // we might have another interface/abstract class between the
-            // class we request and an instance we could serve
-            for (Entry<String, AbstractDXRAMComponent> entry : m_context.getComponents()
-                    .entrySet()) {
-                tmpComponent = entry.getValue();
-                if (p_class.isInstance(tmpComponent)) {
-                    break;
-                }
-
-                tmpComponent = null;
-            }
-        }
-
-        if (p_class.isInstance(tmpComponent)) {
-            component = p_class.cast(tmpComponent);
-        }
-
-        if (component == null) {
-            LOGGER.warn("Getting component '%s', not available", p_class.getSimpleName());
-        }
-
-        return component;
+        return new DXRAMConfig(m_componentManager.createDefaultConfigs(), m_serviceManager.createDefaultConfigs());
     }
 
     /**
      * Initialize DXRAM with a configuration
      *
-     * @param p_creator
-     *         Context creator which creates a context with configuration
+     * @param p_config
+     *         Configuration for DXRAM
      * @return True if initialization successful, false on error or if a new configuration was generated
      */
-    public boolean init(final DXRAMContextCreator p_creator) {
+    public boolean init(final DXRAMConfig p_config) {
+        LOGGER.info("Initializing engine (version %s)...", m_version);
+
         if (m_isInitialized) {
-            throw new IllegalStateException("Already initialized");
+            throw new IllegalStateException("Invalid initialization state");
         }
 
-        // bootstrapping configuration
+        // log final config for debugging
+        LOGGER.debug("Configuration for this instance: %s", p_config);
 
-        m_contextCreator = p_creator;
-        m_context = m_contextCreator.create(m_componentManager, m_serviceManager);
-
-        if (m_context == null) {
-            return false;
-        }
-
-        LOGGER.debug("Created context: %s", m_context);
+        LOGGER.debug("Verifying configuration...");
 
         // verify configuration values
-        if (!m_context.verifyConfigurationValuesComponents()) {
+        if (!p_config.verifyConfigurationValuesComponents()) {
             return false;
         }
 
-        if (!m_context.verifyConfigurationValuesServices()) {
+        if (!p_config.verifyConfigurationValuesServices()) {
             return false;
         }
 
-        // create component/service instances
-        m_context.createComponentsFromConfig(m_componentManager, m_context.getConfig().getEngineConfig().getRole());
-        m_context.createServicesFromConfig(m_serviceManager, m_context.getConfig().getEngineConfig().getRole());
+        m_config = p_config;
 
         // -----------------------------
 
-        // log final config for debugging
-        LOGGER.debug("Configuration for this instance: %s", m_context.getConfig());
+        m_jniManager = new DXRAMJNIManager(m_config.getEngineConfig().getJniPath());
 
-        final List<AbstractDXRAMComponent> list;
-        final Comparator<AbstractDXRAMComponent> comp;
+        // -----------------------------
 
-        LOGGER.info("Initializing engine (version %s)...", m_version);
+        LOGGER.debug("Configuration verification successful");
 
-        m_jniManager = new DXRAMJNIManager(m_context.getConfig().getEngineConfig().getJniPath());
+        LOGGER.debug("Initializing component manager...");
+        m_componentManager.init(p_config.getEngineConfig().getRole(), p_config.m_componentConfigs);
 
-        // init the short names for the services
-        for (Entry<String, AbstractDXRAMService> service : m_context.getServices().entrySet()) {
-            m_servicesShortName.put(service.getValue().getShortName(), service.getKey());
-        }
+        LOGGER.debug("Initializing service manager...");
+        m_serviceManager.init(p_config.getEngineConfig().getRole(), p_config.m_serviceConfigs);
 
-        list = new ArrayList<>(m_context.getComponents().values());
-
-        // check list for null objects -> invalid component in list
-        for (AbstractDXRAMComponent component : list) {
-            if (component == null) {
-                LOGGER.fatal("Found null object in component list, most likely due to invalid configuration entry");
-                return false;
-            }
-        }
+        // -----------------------------
 
         // sort list by initialization priority
-        comp = Comparator.comparingInt(AbstractDXRAMComponent::getPriorityInit);
-        list.sort(comp);
+        List<AbstractDXRAMComponent> components = m_componentManager.getModules(AbstractDXRAMComponent.class);
+        components.sort(Comparator.comparingInt(AbstractDXRAMComponent::getPriorityInit));
 
-        LOGGER.info("Initializing %d components...", list.size());
+        LOGGER.info("Initializing %d components...", components.size());
 
-        for (AbstractDXRAMComponent component : list) {
+        for (AbstractDXRAMComponent component : components) {
             if (!component.init(this)) {
-
-                LOGGER.error("Initializing component '%s' failed, aborting init", component.getComponentName());
-
+                LOGGER.error("Initializing component '%s' failed, aborting init", component.getName());
                 return false;
             }
         }
 
         LOGGER.info("Initializing components done");
-        LOGGER.info("Starting %d services...", m_context.getServices().size());
 
-        for (AbstractDXRAMService service : m_context.getServices().values()) {
-            // check for null -> invalid service
-            if (service == null) {
-                LOGGER.fatal("Found null object in service list, most likely due to invalid configuration entry");
-                return false;
-            }
+        // -----------------------------
 
-            if (!service.start(this)) {
+        List<AbstractDXRAMService> services = m_serviceManager.getModules(AbstractDXRAMService.class);
 
-                LOGGER.error("Starting service '%s' failed, aborting init", service.getServiceName());
+        LOGGER.info("Starting %d services...", services.size());
 
+        for (AbstractDXRAMService service : services) {
+            if (!service.init(this)) {
+                LOGGER.error("Starting service '%s' failed, aborting init", service.getName());
                 return false;
             }
         }
 
         LOGGER.info("Starting services done");
-        LOGGER.info("Finishing initialization of components");
 
-        for (AbstractDXRAMComponent component : list) {
-            if (!component.finishInitComponent()) {
+        // -----------------------------
 
-                LOGGER.error("Finishing initialization of component '%s' failed, aborting init",
-                        component.getComponentName());
+        LOGGER.info("Triggering engineInitFinished on all components... ");
 
-                return false;
-            }
+        for (AbstractDXRAMComponent component : components) {
+            component.engineInitFinished();
         }
+
+        // -----------------------------
 
         LOGGER.info("Initializing engine done");
 
         m_isInitialized = true;
-
-        for (AbstractDXRAMService service : m_context.getServices().values()) {
-            service.engineInitFinished();
-        }
 
         return true;
     }
@@ -327,7 +210,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      */
     public boolean update() {
         if (!m_isInitialized) {
-            throw new IllegalStateException("Not initialized");
+            throw new IllegalStateException("Invalid initialization state");
         }
 
         if (Thread.currentThread().getId() != 1) {
@@ -343,7 +226,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
                 return false;
             }
 
-            if (!init(m_contextCreator)) {
+            if (!init(m_config)) {
                 return false;
             }
 
@@ -365,36 +248,36 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      */
     public boolean shutdown() {
         if (!m_isInitialized) {
-            throw new IllegalStateException("Not initialized");
+            throw new IllegalStateException("Invalid initialization state");
         }
 
-        final List<AbstractDXRAMComponent> list;
-        final Comparator<AbstractDXRAMComponent> comp;
-
         LOGGER.info("Shutting down engine...");
-        LOGGER.info("Shutting down %d services...", m_context.getServices().size());
 
-        m_context.getServices().values().stream().filter(service -> !service.shutdown()).forEach(
-                service -> LOGGER.error("Shutting down service '%s' failed.", service.getServiceName()));
+        // -----------------------------
 
-        m_servicesShortName.clear();
+        List<AbstractDXRAMService> services = m_serviceManager.getModules(AbstractDXRAMService.class);
+
+        LOGGER.info("Shutting down %d services...", services.size());
+
+        services.stream().filter(service -> !service.shutdown()).forEach(
+                service -> LOGGER.error("Shutting down service '%s' failed.", service.getName()));
 
         LOGGER.info("Shutting down services done");
 
-        list = new ArrayList<>(m_context.getComponents().values());
+        // -----------------------------
 
-        comp = Comparator.comparingInt(AbstractDXRAMComponent::getPriorityShutdown);
+        List<AbstractDXRAMComponent> components = m_componentManager.getModules(AbstractDXRAMComponent.class);
+        components.sort(Comparator.comparingInt(AbstractDXRAMComponent::getPriorityShutdown));
 
-        list.sort(comp);
+        LOGGER.info("Shutting down %d components...", components.size());
 
-        LOGGER.info("Shutting down %d components...", list.size());
-
-        list.forEach(AbstractDXRAMComponent::shutdown);
+        components.forEach(AbstractDXRAMComponent::shutdown);
 
         LOGGER.info("Shutting down components done");
-        LOGGER.info("Shutting down engine done");
 
-        m_context = null;
+        // -----------------------------
+
+        LOGGER.info("Shutting down engine done");
 
         m_isInitialized = false;
 
@@ -408,13 +291,39 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         m_triggerReboot = true;
     }
 
+    @Override
+    public <T extends AbstractDXRAMComponent> T getComponent(final Class<T> p_class) {
+        // don't check for initialized because this call is used to resolve component
+        // dependencies during initialization
+
+        return m_componentManager.getModule(p_class);
+    }
+
+    @Override
+    public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
+        if (!m_isInitialized) {
+            throw new IllegalStateException("Invalid initialization state");
+        }
+
+        return m_serviceManager.getModule(p_class);
+    }
+
+    @Override
+    public boolean isServiceAvailable(final Class<? extends AbstractDXRAMService> p_class) {
+        if (!m_isInitialized) {
+            throw new IllegalStateException("Invalid initialization state");
+        }
+
+        return m_serviceManager.getModule(p_class) != null;
+    }
+
     /**
      * Get the configuration instance
      *
      * @return Configuration
      */
-    DXRAMContext.Config getConfig() {
-        return m_context.getConfig();
+    DXRAMConfig getConfig() {
+        return m_config;
     }
 
     /**

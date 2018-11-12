@@ -20,9 +20,11 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.operation.GetAnon;
 import de.hhu.bsinfo.dxram.chunk.operation.PutAnon;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -32,7 +34,8 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.03.2017
  */
-public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfig> {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class ChunkAnonService extends AbstractDXRAMService<DXRAMModuleConfig> {
     // component dependencies
     private AbstractBootComponent m_boot;
     private BackupComponent m_backup;
@@ -44,13 +47,6 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     // chunk operations of service
     private GetAnon m_getAnon;
     private PutAnon m_putAnon;
-
-    /**
-     * Constructor
-     */
-    public ChunkAnonService() {
-        super("chunkanon", ChunkAnonServiceConfig.class);
-    }
 
     /**
      * Get the getAnon operation
@@ -71,16 +67,6 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
@@ -91,7 +77,7 @@ public class ChunkAnonService extends AbstractDXRAMService<ChunkAnonServiceConfi
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         m_getAnon = new GetAnon(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_putAnon = new PutAnon(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
 

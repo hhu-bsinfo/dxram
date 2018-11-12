@@ -22,8 +22,9 @@ import java.util.Map;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 
 /**
@@ -32,17 +33,13 @@ import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.EVENT,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.EVENT)
 public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig> implements EventInterface {
     // private state
     private Map<String, ArrayList<EventListener<? extends AbstractEvent>>> m_eventListener = new HashMap<>();
     private TaskExecutor m_executor;
-
-    /**
-     * Constructor
-     */
-    public EventComponent() {
-        super(DXRAMComponentOrder.Init.EVENT, DXRAMComponentOrder.Shutdown.EVENT, EventComponentConfig.class);
-    }
 
     /**
      * Register a listener to listen to specific event.
@@ -89,22 +86,12 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         // no dependencies
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         LOGGER.info("EventExecutor: Initialising %d threads", getConfig().getThreadCount());
 
         m_executor = new TaskExecutor("EventExecutor", getConfig().getThreadCount());

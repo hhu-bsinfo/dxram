@@ -27,9 +27,11 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
 import de.hhu.bsinfo.dxram.logger.messages.SetLogLevelMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -39,17 +41,11 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 02.02.2016
  */
-public class LoggerService extends AbstractDXRAMService<LoggerServiceConfig> implements MessageReceiver {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+public class LoggerService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
     // component dependencies
     private NetworkComponent m_network;
     private AbstractBootComponent m_boot;
-
-    /**
-     * Constructor
-     */
-    public LoggerService() {
-        super("logger", LoggerServiceConfig.class);
-    }
 
     /**
      * Set the log level for the logger.
@@ -60,7 +56,6 @@ public class LoggerService extends AbstractDXRAMService<LoggerServiceConfig> imp
      */
     @SuppressWarnings("WeakerAccess")
     public static void setLogLevel(final String p_logLevel) {
-
         setLogLevel(Level.getLevel(p_logLevel.toUpperCase()));
     }
 
@@ -73,7 +68,6 @@ public class LoggerService extends AbstractDXRAMService<LoggerServiceConfig> imp
      */
     @SuppressWarnings("WeakerAccess")
     public static void setLogLevel(final Level p_logLevel) {
-
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         Configuration config = ctx.getConfiguration();
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
@@ -120,23 +114,13 @@ public class LoggerService extends AbstractDXRAMService<LoggerServiceConfig> imp
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return true;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
     }
 
     @Override
-    protected boolean startService(final DXRAMContext.Config p_config) {
+    protected boolean startService(final DXRAMConfig p_config) {
         m_network.registerMessageType(DXRAMMessageTypes.LOGGER_MESSAGES_TYPE,
                 LoggerMessages.SUBTYPE_SET_LOG_LEVEL_MESSAGE, SetLogLevelMessage.class);
 

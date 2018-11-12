@@ -113,15 +113,14 @@ public abstract class AbstractApplication extends Thread {
     }
 
     /**
-     * Check if a service is available/enabled
+     * Check if a service is available
      *
      * @param p_class
-     *         Class of the service to check
-     * @param <T>
-     *         Class extending DXRAMService
-     * @return True if service available/enabled, false otherwise
+     *         Class of the service to check. If the service has different implementations, use the common interface
+     *         or abstract class to get the registered instance.
+     * @return True if available, false otherwise
      */
-    protected <T extends AbstractDXRAMService> boolean isServiceAvailable(final Class<T> p_class) {
+    protected boolean isServiceAvailable(final Class<? extends AbstractDXRAMService> p_class) {
         return m_dxram.isServiceAvailable(p_class);
     }
 }

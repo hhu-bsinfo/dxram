@@ -25,9 +25,11 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.LogBufferMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -37,19 +39,15 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComponentConfig> {
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.BACKUP,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.BACKUP)
+public class ChunkBackupComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
 
     // component dependencies
     private AbstractBootComponent m_boot;
     private ChunkComponent m_chunk;
     private NetworkComponent m_network;
-
-    /**
-     * Constructor
-     */
-    public ChunkBackupComponent() {
-        super(DXRAMComponentOrder.Init.CHUNK, DXRAMComponentOrder.Shutdown.CHUNK, ChunkBackupComponentConfig.class);
-    }
 
     /**
      * Replicates all local Chunks to a specific backup peer
@@ -159,16 +157,6 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
@@ -176,7 +164,7 @@ public class ChunkBackupComponent extends AbstractDXRAMComponent<ChunkBackupComp
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         // Add DXRAMComponentOrder.Init value if something is put here
         return true;
     }

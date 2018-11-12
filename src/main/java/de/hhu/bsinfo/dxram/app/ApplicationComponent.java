@@ -8,8 +8,9 @@ import java.util.List;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.engine.DXRAMContext;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 
 /**
@@ -17,17 +18,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.APPLICATION,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.APPLICATION)
 public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComponentConfig> {
     private ApplicationLoader m_loader;
     private ApplicationRunner m_runner;
-
-    /**
-     * Constructor
-     */
-    public ApplicationComponent() {
-        super(DXRAMComponentOrder.Init.APPLICATION, DXRAMComponentOrder.Shutdown.APPLICATION,
-                ApplicationComponentConfig.class);
-    }
 
     /**
      * Start an application
@@ -76,23 +72,15 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
     }
 
     @Override
-    protected boolean supportsSuperpeer() {
-        return false;
-    }
-
-    @Override
-    protected boolean supportsPeer() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 
     }
 
     @Override
-    protected boolean initComponent(final DXRAMContext.Config p_config, final DXRAMJNIManager p_jniManager) {
-        m_loader = new ApplicationLoader(getConfig().getApplicationPath());
+    protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
+        ApplicationComponentConfig applicationConfig = p_config.getComponentConfig(ApplicationComponent.class);
+
+        m_loader = new ApplicationLoader(applicationConfig.getApplicationPath());
         m_runner = new ApplicationRunner(m_loader, getParentEngine().getVersion(), getParentEngine());
 
         return true;
