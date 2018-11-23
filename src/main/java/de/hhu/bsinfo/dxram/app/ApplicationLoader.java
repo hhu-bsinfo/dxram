@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -13,8 +14,10 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
+import de.hhu.bsinfo.dxutils.FileSystemUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Loader scanning application folder for jar files and loading classes
@@ -26,6 +29,10 @@ class ApplicationLoader {
 
     private final HashMap<String, Class<? extends AbstractApplication>> m_applicationClasses = new HashMap<>();
 
+    private ApplicationWatcher m_watcher;
+
+    private final File m_applicationDirectory;
+
     /**
      * Constructor
      *
@@ -35,10 +42,10 @@ class ApplicationLoader {
     ApplicationLoader(final String p_path) {
         LOGGER.info("Scanning for applications in %s", p_path);
 
-        File dir = new File(p_path);
+        m_applicationDirectory = new File(p_path);
 
-        if (dir.exists() && dir.isDirectory()) {
-            File[] files = dir.listFiles();
+        if (m_applicationDirectory.exists() && m_applicationDirectory.isDirectory()) {
+            File[] files = m_applicationDirectory.listFiles();
 
             if (files != null) {
                 Arrays.stream(files)
@@ -50,6 +57,21 @@ class ApplicationLoader {
             for (String clazz : m_applicationClasses.keySet()) {
                 LOGGER.info("Found application %s", clazz);
             }
+
+
+            if (FileSystemUtils.isNetworkMount(m_applicationDirectory)) {
+                LOGGER.warn("Hot Reloading is not supported on NFS");
+            } else {
+                // Try to activate hot reloading applications
+                try {
+                    m_watcher = new ApplicationWatcher(p_path, this::onApplicationChanged);
+                    m_watcher.start();
+                    LOGGER.info("Hot Reloading is active");
+                } catch (IOException p_e) {
+                    LOGGER.warn("Couldn't initialize application watcher (Hot Reloading disabled)");
+                }
+            }
+
         } else {
             LOGGER.warn("Can't scan for applications from %s, no such directory", p_path);
         }
@@ -168,5 +190,69 @@ class ApplicationLoader {
         }
 
         return "";
+    }
+
+    private void onApplicationChanged(@NotNull String p_filename) {
+        File applicationJar = new File(m_applicationDirectory, p_filename);
+
+        for (Class<? extends AbstractApplication> appClass : getApplicationClasses(applicationJar)) {
+            m_applicationClasses.put(appClass.getName(), appClass);
+            LOGGER.info("Reloaded application %s", appClass.getName());
+        }
+    }
+
+    public static class ApplicationWatcher extends Thread {
+
+        private static final Logger LOGGER = LogManager.getFormatterLogger(ApplicationWatcher.class.getSimpleName());
+
+        private final WatchService m_watchService;
+        private final ApplicationChangeListener m_changeListener;
+
+        private static final String JAR_SUFFIX = ".jar";
+        private static final String THREAD_NAME = "ApplicationWatcher";
+
+        public interface ApplicationChangeListener {
+            void onApplicationChanged(@NotNull String p_filename);
+        }
+
+        public ApplicationWatcher(final @NotNull String p_path, final @NotNull ApplicationChangeListener p_changeListener) throws IOException {
+            super(THREAD_NAME);
+            m_watchService = FileSystems.getDefault().newWatchService();
+            m_changeListener = p_changeListener;
+
+            Paths.get(p_path).register(m_watchService, StandardWatchEventKinds.ENTRY_CREATE,
+                    StandardWatchEventKinds.ENTRY_MODIFY);
+        }
+
+        @Override
+        public void run() {
+
+            WatchKey key = null;
+            String fileName;
+            for (;;) {
+
+                try {
+                    key = m_watchService.take();
+                } catch (InterruptedException p_e) {
+                    LOGGER.warn("Interrupted while waiting for events");
+                }
+
+                if (key == null) {
+                    LOGGER.warn("Service returned null key");
+                    continue;
+                }
+
+
+                for (WatchEvent<?> event : key.pollEvents()) {
+                    fileName = event.context().toString();
+
+                    if (fileName.endsWith(JAR_SUFFIX)) {
+                        m_changeListener.onApplicationChanged(fileName);
+                    }
+                }
+
+                key.reset();
+            }
+        }
     }
 }
