@@ -82,17 +82,11 @@ final class DXRAMGsonContext {
                 return null;
             }
 
-            if (!clazz.getSuperclass().equals(DXRAMModuleConfig.class)) {
-                // check if there is an "interface"/abstract class between DXRAMComponent and the instance to
-                // create
-                if (!clazz.getSuperclass().getSuperclass().equals(DXRAMModuleConfig.class)) {
-                    LOGGER.fatal("Class '%s' is not a subclass of DXRAMModuleConfig, check your config file",
-                            className);
-                    return null;
-                }
+            if (clazz.equals(DXRAMModuleConfig.class)) {
+                return new DXRAMModuleConfig(jsonObj.get("m_moduleClassName").getAsString());
+            } else {
+                return p_jsonDeserializationContext.deserialize(p_jsonElement, clazz);
             }
-
-            return p_jsonDeserializationContext.deserialize(p_jsonElement, clazz);
         }
 
         @Override
@@ -107,7 +101,16 @@ final class DXRAMGsonContext {
                 return null;
             }
 
-            return p_jsonSerializationContext.serialize(p_moduleConfig, clazz);
+            if (clazz.equals(DXRAMModuleConfig.class)) {
+                JsonObject obj = new JsonObject();
+
+                obj.addProperty("m_configClassName", p_moduleConfig.getConfigClassName());
+                obj.addProperty("m_moduleClassName", p_moduleConfig.getModuleClassName());
+
+                return obj;
+            } else {
+                return p_jsonSerializationContext.serialize(p_moduleConfig, clazz);
+            }
         }
     }
 }
