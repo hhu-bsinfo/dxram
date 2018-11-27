@@ -250,8 +250,8 @@ public final class LogComponent extends AbstractDXRAMComponent<LogComponentConfi
 
         m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup();
         if (m_loggingIsActive) {
-            m_dxlog = new DXLog(getConfig().getDxlogConfig(), m_boot.getNodeId(),
-                    m_backup.getConfig().getBackupDirectory(),
+            m_dxlog = new DXLog(getConfig().getDxlogConfig(), p_config.getEngineConfig().getJniPath(),
+                    m_boot.getNodeId(), m_backup.getConfig().getBackupDirectory(),
                     (int) m_backup.getConfig().getBackupRangeSize().getBytes() * 2, m_chunk.getMemory().recovery());
         }
 
