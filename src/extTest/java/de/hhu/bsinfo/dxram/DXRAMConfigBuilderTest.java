@@ -15,6 +15,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
 class DXRAMConfigBuilderTest implements DXRAMConfigBuilder {
+    private final String m_dxramBuildDistDir;
     private final IPV4Unit m_zookeeperConnection;
     private final DXRAMTestConfiguration m_config;
     private final int m_nodeIdx;
@@ -23,6 +24,9 @@ class DXRAMConfigBuilderTest implements DXRAMConfigBuilder {
     /**
      * Constructor
      *
+     * @param p_dxramBuilDistDir
+     *         Path to directory containing the build output for distribution (required to test with applications,
+     *         backup/logging etc)
      * @param p_zookeeperConnection
      *         Address of the zookeeper server instance to connect to
      * @param p_config
@@ -32,8 +36,9 @@ class DXRAMConfigBuilderTest implements DXRAMConfigBuilder {
      * @param p_nodePort
      *         Port to assign to node
      */
-    DXRAMConfigBuilderTest(final IPV4Unit p_zookeeperConnection, final DXRAMTestConfiguration p_config,
-            final int p_nodeIdx, final int p_nodePort) {
+    DXRAMConfigBuilderTest(final String p_dxramBuilDistDir, final IPV4Unit p_zookeeperConnection,
+            final DXRAMTestConfiguration p_config, final int p_nodeIdx, final int p_nodePort) {
+        m_dxramBuildDistDir = p_dxramBuilDistDir;
         m_zookeeperConnection = p_zookeeperConnection;
         m_config = p_config;
         m_nodeIdx = p_nodeIdx;
@@ -42,6 +47,8 @@ class DXRAMConfigBuilderTest implements DXRAMConfigBuilder {
 
     @Override
     public DXRAMConfig build(final DXRAMConfig p_config) {
+        p_config.getEngineConfig().setJniPath(m_dxramBuildDistDir + "/jni");
+
         p_config.getEngineConfig().setRole(m_config.nodes()[m_nodeIdx].nodeRole().toString());
         p_config.getEngineConfig().setAddress(new IPV4Unit("127.0.0.1", m_nodePort));
 

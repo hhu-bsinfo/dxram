@@ -16,6 +16,7 @@
 
 package de.hhu.bsinfo.dxram;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
@@ -101,7 +102,8 @@ public class DXRAMJunitRunner extends Runner {
         System.out.println("Creating " + m_instances.length + " DXRAM instances");
 
         for (int i = 0; i < m_instances.length; i++) {
-            m_instances[i] = createNodeInstance(zookeeperConnection, config, i, 22221 + i);
+            m_instances[i] = createNodeInstance(props.getProperty("dxram_build_dist_out"), zookeeperConnection,
+                    config, i, 22221 + i);
         }
 
         DXRAM testInstance = getInstanceForTest(m_instances, config);
@@ -129,6 +131,9 @@ public class DXRAMJunitRunner extends Runner {
     /**
      * Create a DXRAM instance
      *
+     * @param p_dxramBuildDistDir
+     *         Path to directory containing the build output for distribution (required to test with applications,
+     *         backup/logging etc)
      * @param p_zookeeperConnection
      *         Address to zookeeper server
      * @param p_config
@@ -137,14 +142,20 @@ public class DXRAMJunitRunner extends Runner {
      *         Index of node to start
      * @param p_nodePort
      *         Port to assign to node
-     * @return
+     * @return New DXRAM instance
      */
-    private DXRAM createNodeInstance(final IPV4Unit p_zookeeperConnection, final DXRAMTestConfiguration p_config,
-            final int p_nodeIdx, final int p_nodePort) {
+    private DXRAM createNodeInstance(final String p_dxramBuildDistDir, final IPV4Unit p_zookeeperConnection,
+            final DXRAMTestConfiguration p_config, final int p_nodeIdx, final int p_nodePort) {
+        if (!new File(p_dxramBuildDistDir).exists()) {
+            throw new RuntimeException("Directory '" + p_dxramBuildDistDir +
+                    "' with DXRAM build distribution output does not exist, required for testing applications, " +
+                    "backup/logging etc");
+        }
+
         DXRAM instance = new DXRAM();
 
-        DXRAMConfig config = new DXRAMConfigBuilderTest(p_zookeeperConnection, p_config, p_nodeIdx, p_nodePort)
-                .build(instance.createDefaultConfigInstance());
+        DXRAMConfig config = new DXRAMConfigBuilderTest(p_dxramBuildDistDir, p_zookeeperConnection, p_config,
+                p_nodeIdx, p_nodePort).build(instance.createDefaultConfigInstance());
 
         if (!instance.initialize(config, true)) {
             System.out.println("Creating instance failed");

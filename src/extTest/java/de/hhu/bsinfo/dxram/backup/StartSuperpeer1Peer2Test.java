@@ -1,4 +1,4 @@
-package de.hhu.bsinfo.dxram.engine;
+package de.hhu.bsinfo.dxram.backup;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,8 +13,8 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 @DXRAMTestConfiguration(runTestOnNodeIdx = 1,
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, backupActive = true, availableForBackup = true),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, backupActive = true, availableForBackup = true)
         })
 public class StartSuperpeer1Peer2Test {
     @ClientInstance
