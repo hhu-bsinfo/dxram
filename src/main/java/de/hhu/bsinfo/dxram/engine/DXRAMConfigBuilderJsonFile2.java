@@ -25,7 +25,7 @@ public class DXRAMConfigBuilderJsonFile2 extends DXRAMConfigBuilderJsonFile {
             LOGGER.warn("No config file path specified as JVM args (%s), use default path: %s", JVM_ARG_KEY, PATH);
         } else {
             PATH = value;
-            LOGGER.info("JVM arg config path", PATH);
+            LOGGER.info("JVM arg config path: %s", PATH);
         }
     }
 
