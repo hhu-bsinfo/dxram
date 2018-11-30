@@ -196,6 +196,14 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         // -----------------------------
 
+        LOGGER.info("Triggering engineInitFinished on all services... ");
+
+        for (AbstractDXRAMService service : services) {
+            service.engineInitFinished();
+        }
+
+        // -----------------------------
+
         LOGGER.info("Initializing engine done");
 
         m_isInitialized = true;
