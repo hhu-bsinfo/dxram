@@ -156,6 +156,8 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
         List<ApplicationServiceConfig.ApplicationEntry> list = getConfig().getAutoStart();
         list.sort(Comparator.comparingInt(ApplicationServiceConfig.ApplicationEntry::getStartOrderId));
 
+        LOGGER.info("Auto starting %d applications", list.size());
+
         getConfig().getAutoStart().forEach(entry -> {
             String[] args;
 
