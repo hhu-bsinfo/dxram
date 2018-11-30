@@ -13,9 +13,11 @@ public class DXRAMConfigBuilderJsonFile2 extends DXRAMConfigBuilderJsonFile {
     private static final Logger LOGGER =
             LogManager.getFormatterLogger(DXRAMConfigBuilderJsonFile2.class.getSimpleName());
 
+    private static final String JVM_ARG_CREATE_EXIT = "dxram.config.createDefaultAndExit";
     private static final String JVM_ARG_KEY = "dxram.config";
     private static final String DEFAULT_PATH = "config/dxram.json";
     private static final String PATH;
+    private static final boolean CREATE_AND_EXIT;
 
     static {
         String value = System.getProperty(JVM_ARG_KEY);
@@ -27,12 +29,14 @@ public class DXRAMConfigBuilderJsonFile2 extends DXRAMConfigBuilderJsonFile {
             PATH = value;
             LOGGER.info("JVM arg config path: %s", PATH);
         }
+
+        CREATE_AND_EXIT = System.getProperty(JVM_ARG_CREATE_EXIT) != null;
     }
 
     /**
      * Constructor
      */
     public DXRAMConfigBuilderJsonFile2() {
-        super (PATH, true);
+        super (PATH, true, CREATE_AND_EXIT);
     }
 }

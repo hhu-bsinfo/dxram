@@ -29,6 +29,7 @@ public class DXRAMConfigBuilderJsonFile implements DXRAMConfigBuilder {
 
     private final String m_path;
     private final boolean m_createIfNotExists;
+    private final boolean m_exitAfterCreate;
 
     /**
      * Constructor
@@ -39,6 +40,21 @@ public class DXRAMConfigBuilderJsonFile implements DXRAMConfigBuilder {
     public DXRAMConfigBuilderJsonFile(final String p_path, final boolean p_createIfNotExists) {
         m_path = p_path;
         m_createIfNotExists = p_createIfNotExists;
+        m_exitAfterCreate = false;
+    }
+
+    /**
+     * Constructor
+     *
+     * @param p_path Path of the configuration file
+     * @param p_createIfNotExists True to create a new default configuration if no config file exists
+     * @param p_exitAfterCreate Exit the application after creating the default configuration
+     */
+    public DXRAMConfigBuilderJsonFile(final String p_path, final boolean p_createIfNotExists,
+            final boolean p_exitAfterCreate) {
+        m_path = p_path;
+        m_createIfNotExists = p_createIfNotExists;
+        m_exitAfterCreate = p_exitAfterCreate;
     }
 
     @Override
@@ -71,6 +87,11 @@ public class DXRAMConfigBuilderJsonFile implements DXRAMConfigBuilder {
                 }
             } else {
                 throw new DXRAMConfigBuilderException("Loading config from " + m_path + " failed, file does not exist");
+            }
+
+            if (m_exitAfterCreate) {
+                LOGGER.info("Exiting after create enabled.");
+                System.exit(0);
             }
         } else {
             LOGGER.info("Loading from existing JSON config file: %s", m_path);
