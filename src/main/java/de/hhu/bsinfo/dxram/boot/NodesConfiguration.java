@@ -24,7 +24,12 @@ import com.google.gson.annotations.Expose;
 import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
-import de.hhu.bsinfo.dxutils.serialization.*;
+import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
+import de.hhu.bsinfo.dxutils.serialization.Exportable;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importable;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
@@ -42,7 +47,8 @@ public final class NodesConfiguration {
     /**
      * Creates an instance of NodesConfiguration
      */
-    NodesConfiguration() {}
+    NodesConfiguration() {
+    }
 
     /**
      * Gets the configured node
@@ -307,7 +313,7 @@ public final class NodesConfiguration {
         @Override
         public String toString() {
             return String.format("NodesConfigurationEntry [m_address=%s, m_nodeID=%s, m_rack=%d, m_switch=%d," +
-                    "m_role=%c, m_capabilities=0x%X, m_online=%s, m_availableForBackup=%s, m_readFromFile=%s]",
+                            "m_role=%c, m_capabilities=0x%X, m_online=%s, m_availableForBackup=%s, m_readFromFile=%s]",
                     m_address, NodeID.toHexString(m_nodeID), m_rack, m_switch, m_role.getAcronym(), m_capabilities,
                     m_online, m_availableForBackup, m_readFromFile == 1);
         }
