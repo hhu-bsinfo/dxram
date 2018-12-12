@@ -15,8 +15,8 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 @DXRAMTestConfiguration(runTestOnNodeIdx = 2,
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, backupActive = true, availableForBackup = true),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, backupActive = true, availableForBackup = true),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
         })
 public class ChunkServiceGetPut2Test {
     @ClientInstance

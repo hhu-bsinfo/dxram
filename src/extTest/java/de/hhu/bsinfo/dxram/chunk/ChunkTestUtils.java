@@ -81,14 +81,14 @@ public class ChunkTestUtils {
 
         for (long cid : p_ranges) {
             chunk.setID(cid);
-            Assert.assertEquals(1, chunkService.get().get(ChunkLockOperation.ACQUIRE_BEFORE_OP, 1000, chunk));
+            Assert.assertEquals(1, chunkService.get().get(ChunkLockOperation.WRITE_LOCK_ACQ_PRE_OP, 1000, chunk));
             Assert.assertTrue(chunk.isStateOk());
 
             chunk.fillContents();
-            Assert.assertEquals(1, chunkService.put().put(ChunkLockOperation.RELEASE_AFTER_OP, 1000, chunk));
+            Assert.assertEquals(1, chunkService.put().put(ChunkLockOperation.WRITE_LOCK_REL_POST_OP, 1000, chunk));
             Assert.assertTrue(chunk.isStateOk());
 
-            Assert.assertEquals(1, chunkService.get().get(ChunkLockOperation.ACQUIRE_OP_RELEASE, 1000, chunk));
+            Assert.assertEquals(1, chunkService.get().get(ChunkLockOperation.WRITE_LOCK_ACQ_OP_REL, 1000, chunk));
             Assert.assertTrue(chunk.isStateOk());
             Assert.assertTrue(chunk.verifyContents());
         }
