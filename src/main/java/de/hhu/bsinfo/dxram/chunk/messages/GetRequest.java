@@ -22,8 +22,6 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxutils.ArrayListShort;
-import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Request for getting a chunk from a remote node. The size of a chunk is known prior fetching the data
@@ -107,6 +105,24 @@ public class GetRequest extends Request {
      */
     public AbstractChunk getChunk() {
         return m_chunk;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append(super.toString());
+
+        builder.append("m_lockOperation ").append(m_lockOperation).append('\n');
+        builder.append("m_lockOperationTimeoutMs ").append(m_lockOperationTimeoutMs).append('\n');
+
+        if (m_chunk != null) {
+            builder.append("m_chunk ").append(m_chunk).append('\n');
+        } else {
+            builder.append("m_chunkID ").append(m_chunkID).append('\n');
+        }
+
+        return builder.toString();
     }
 
     @Override
