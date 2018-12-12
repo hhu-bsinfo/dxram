@@ -718,16 +718,12 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
             int counter = 1;
             for (BackupPeer backupPeer : backupPeers) {
                 if (backupPeer != null) {
-
-                    LOGGER.info("%d. backup peer determined for new range %s: %s", counter++, backupRange.getRangeID(),
-                            NodeID.toHexString(backupPeer.getNodeID()));
-
+                    LOGGER.info("%d. backup peer determined for new range ID %d (range: %s): %X", counter++,
+                            backupRange.getRangeID(), backupRange, backupPeer.getNodeID());
                 }
             }
         } else {
-
-            LOGGER.info("Backup range could not be determined!");
-
+            LOGGER.warn("Backup range could not be determined!");
         }
     }
 }

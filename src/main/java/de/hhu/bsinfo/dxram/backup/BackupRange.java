@@ -257,17 +257,20 @@ public class BackupRange implements Comparable<BackupRange>, Importable, Exporta
      */
     @Override
     public String toString() {
-        StringBuilder ret = new StringBuilder(m_rangeID + " [");
+        StringBuilder ret = new StringBuilder("ID " + m_rangeID + " [");
 
         for (int i = 0; i < ms_replicationFactor; i++) {
-            ret.append(NodeID.toHexString(m_backupPeers[i].getNodeID()));
+            // If we have less backup peers than the replication factor
+            if (m_backupPeers[i] != null) {
+                ret.append(NodeID.toHexString(m_backupPeers[i].getNodeID()));
 
-            if (i == ms_replicationFactor - 1) {
-                ret.append(']');
-            } else {
-                ret.append(", ");
+                if (i != ms_replicationFactor - 1) {
+                    ret.append(", ");
+                }
             }
         }
+
+        ret.append(']');
 
         return ret.toString();
     }
