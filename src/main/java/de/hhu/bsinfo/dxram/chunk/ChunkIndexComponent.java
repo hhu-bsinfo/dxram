@@ -2,7 +2,6 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
-import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
@@ -67,7 +66,7 @@ public class ChunkIndexComponent extends AbstractDXRAMComponent<DXRAMModuleConfi
      * @return True if successful, false otherwise
      */
     public boolean putIndexChunk(final AbstractChunk p_chunk) {
-        m_chunk.getMemory().put().put(p_chunk, ChunkLockOperation.ACQUIRE_OP_RELEASE, -1);
+        m_chunk.getMemory().put().put(p_chunk);
 
         if (!p_chunk.isStateOk()) {
             return false;

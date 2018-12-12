@@ -87,7 +87,7 @@ public class PutAnon extends AbstractOperation implements MessageReceiver {
      * @return Number of successful operations. If less than expected, check the chunk object states for errors
      */
     public int put(final ChunkAnon... p_chunks) {
-        return put(p_chunks, 0, p_chunks.length, ChunkLockOperation.ACQUIRE_OP_RELEASE, -1);
+        return put(p_chunks, 0, p_chunks.length, ChunkLockOperation.WRITE_LOCK_ACQ_OP_REL, -1);
     }
 
     /**
