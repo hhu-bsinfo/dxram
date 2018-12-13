@@ -13,8 +13,8 @@ the dxram root folder (same directory level). The build system automatically det
 the folder's name) and compile the project with your local copy instead.
 
 # ZooKeeper
-Download, install and setup [ZooKeeper](https://zookeeper.apache.org/). See System Requirements in the admin guide of
-ZooKeeper (a packaged version is included with DXRAM, see *util/zookeeper.zip*).
+Download, install and setup [ZooKeeper](http://mirror.netcologne.de/apache.org/zookeeper/zookeeper-3.4.13/zookeeper-3.4.13.tar.gz). See System Requirements in the admin guide of
+ZooKeeper.
 
 # Building and install
 Our build system uses gradle and the project comes with a gradle-wrapper included, so you don't have to install gradle.
