@@ -1,27 +1,33 @@
 #!/bin/bash
 
-build_type="release"
+set -e
+
+usage() {
+  echo "Usage: $0 [type] [-d destination]"
+  exit 1
+}
+
+DEST=/home/$USER
+BUILD_TYPE="release"
+
+while getopts d: option
+do
+  case "${option}"
+  in
+    d) DEST=${OPTARG};;
+  esac
+done
+
+shift $((OPTIND-1))
 
 if [ "$1" ]; then
-    build_type="$1"
+    BUILD_TYPE="$1"
 fi
 
-case "$build_type" in
-    debug)
-        ;;
-    release)
-        ;;
-    performance)
-        ;;
-    *)
-        echo "Invalid build type \"$build_type\" specified"
-        exit -1
-esac
+if [ -z "${DEST}" ] || [ -z "${BUILD_TYPE}" ]; then
+    usage
+fi
 
-echo "Build type: $build_type"
+mkdir -p "${DEST}/dxram"
 
-<<<<<<< HEAD
-./gradlew installDist distZip -PbuildVariant="$build_type"
-=======
-./gradlew distZip -PbuildVariant="$build_type"
->>>>>>> Seperate autostart arguments using @ character
+./gradlew installDist -PoutputDir="${DEST}"
