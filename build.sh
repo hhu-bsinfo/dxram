@@ -6,19 +6,12 @@ if [ "$1" ]; then
     build_type="$1"
 fi
 
-clean=""
-
 case "$build_type" in
     debug)
         ;;
     release)
-	./gradlew clean
         ;;
     performance)
-	./gradlew clean
-        ;;
-    clean)
-        clean="1"        
         ;;
     *)
         echo "Invalid build type \"$build_type\" specified"
@@ -27,8 +20,8 @@ esac
 
 echo "Build type: $build_type"
 
-if [ ! "$clean" ]; then
-    TERM=dumb ./gradlew distZip -PbuildVariant="$build_type"
-else
-    TERM=dumb ./gradlew cleanAll
-fi 
+<<<<<<< HEAD
+./gradlew installDist distZip -PbuildVariant="$build_type"
+=======
+./gradlew distZip -PbuildVariant="$build_type"
+>>>>>>> Seperate autostart arguments using @ character
