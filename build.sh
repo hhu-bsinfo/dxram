@@ -30,4 +30,4 @@ fi
 
 mkdir -p "${DEST}/dxram"
 
-./gradlew installDist -PoutputDir="${DEST}"
+./gradlew installDist -PoutputDir="${DEST}" -PbuildVariant="${BUILD_TYPE}"
