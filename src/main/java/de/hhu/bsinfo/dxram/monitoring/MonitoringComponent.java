@@ -17,6 +17,8 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
@@ -41,7 +43,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true, isActive = false)
 @AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.MONITORING,
         priorityShutdown = DXRAMComponentOrder.Shutdown.MONITORING)
 public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringComponentConfig> {
@@ -53,6 +55,8 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
     private EventComponent m_event;
+
+    private static final String VIRTUALMACHINE_CLASS = "com.sun.tools.attach.VirtualMachine";
 
     /**
      * Returns true if monitoring is activated.
@@ -71,8 +75,22 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
 
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
+
+        if (!isToolsJarLoaded()) {
+            LOGGER.error("The monitoring system requires tools.jar to be on the classpath");
+            return false;
+        }
+
         LogComponentConfig logConfig = p_config.getComponentConfig(LogComponent.class);
         MonitoringComponentConfig componentConfig = p_config.getComponentConfig(MonitoringComponent.class);
+
+        // Create directory if it doesn't exist
+        try {
+            Files.createDirectories(Paths.get(componentConfig.getMonitoringFolder()));
+        } catch (IOException e) {
+            LOGGER.error("Failed creating monitoring data directory");
+            return false;
+        }
 
         if (componentConfig.isMonitoringActive()) {
             String diskIdentifier = componentConfig.getDisk();
@@ -147,6 +165,21 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
                         new PeerDXRAMMonitoringHandler(ownNid, numberOfCollects, secondDelay, monitoringFolder);
                 m_dxramPeerHandler.start();
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if tools.jar is included within the classpath.
+     *
+     * @return True, if tools.jar is included; false else
+     */
+    private boolean isToolsJarLoaded() {
+        try {
+            Class.forName(VIRTUALMACHINE_CLASS, false, this.getClass().getClassLoader());
+        } catch (ClassNotFoundException e) {
+            return false;
         }
 
         return true;

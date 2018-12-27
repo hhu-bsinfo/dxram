@@ -61,6 +61,8 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponentConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupService;
 import de.hhu.bsinfo.dxram.migration.MigrationService;
+import de.hhu.bsinfo.dxram.monitoring.MonitoringComponent;
+import de.hhu.bsinfo.dxram.monitoring.MonitoringComponentConfig;
 import de.hhu.bsinfo.dxram.monitoring.MonitoringService;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeServiceConfig;
@@ -199,6 +201,7 @@ public final class DXRAM {
         p_engine.registerComponent(ChunkComponent.class, ChunkComponentConfig.class);
         p_engine.registerComponent(ChunkIndexComponent.class, DXRAMModuleConfig.class);
         p_engine.registerComponent(ChunkMigrationComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(MonitoringComponent.class, MonitoringComponentConfig.class);
         p_engine.registerComponent(EventComponent.class, EventComponentConfig.class);
         p_engine.registerComponent(FailureComponent.class, DXRAMModuleConfig.class);
         p_engine.registerComponent(JobWorkStealingComponent.class, JobWorkStealingComponentConfig.class);

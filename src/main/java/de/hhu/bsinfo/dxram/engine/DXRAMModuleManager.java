@@ -98,6 +98,12 @@ class DXRAMModuleManager {
                 throw new IllegalStateException("Missing attributes for module " + module.getName());
             }
 
+            if (!attributes.isActive()) {
+                LOGGER.info("Disabling module %s", module.m_name);
+                m_modules.remove(config.getModuleClassName());
+                continue;
+            }
+
             if (p_currentInstanceNodeRole == NodeRole.SUPERPEER && attributes.supportsSuperpeer() ||
                     p_currentInstanceNodeRole == NodeRole.PEER && attributes.supportsPeer()) {
                 LOGGER.debug("Creating instance of %s", module.getName());
