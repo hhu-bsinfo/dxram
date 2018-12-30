@@ -78,38 +78,4 @@ public abstract class AbstractDXRAMService<T> extends AbstractDXRAMModule<T> {
      * @return True if shutdown was successful, false otherwise.
      */
     protected abstract boolean shutdownService();
-
-    /**
-     * Check if this class is a service accessor i.e. breaking the rules of
-     * not knowing other services. Override this if this feature is used.
-     *
-     * @return True if accessor, false otherwise.
-     */
-    protected boolean isServiceAccessor() {
-        return false;
-    }
-
-    /**
-     * Check if this class is an engine accessor i.e. breaking the rules of
-     * not knowing the engine. Override this if this feature is used.
-     * Do not override this if you do not know what you are doing.
-     *
-     * @return True if accessor, false otherwise.
-     */
-    protected boolean isEngineAccessor() {
-        return false;
-    }
-
-    /**
-     * Get the proxy class to access other services.
-     *
-     * @return This returns a valid accessor only if the class is declared a service accessor.
-     */
-    protected DXRAMServiceAccessor getServiceAccessor() {
-        if (isServiceAccessor()) {
-            return getParentEngine();
-        } else {
-            return null;
-        }
-    }
 }

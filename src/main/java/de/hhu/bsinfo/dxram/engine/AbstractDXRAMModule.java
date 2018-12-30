@@ -157,6 +157,26 @@ public abstract class AbstractDXRAMModule<T> {
     }
 
     /**
+     * Check if this class is a component accessor i.e. knowing other components.
+     * Override this if this feature is used.
+     *
+     * @return True if accessor, false otherwise.
+     */
+    protected boolean isComponentAccessor() {
+        return false;
+    }
+
+    /**
+     * Check if this class is a service accessor i.e. breaking the rules of
+     * not knowing other services. Override this if this feature is used.
+     *
+     * @return True if accessor, false otherwise.
+     */
+    protected boolean isServiceAccessor() {
+        return false;
+    }
+
+    /**
      * Get the engine within the module.
      * If you don't know what you are doing, do not use this.
      * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
@@ -166,6 +186,32 @@ public abstract class AbstractDXRAMModule<T> {
     protected DXRAMEngine getParentEngine() {
         if (isEngineAccessor()) {
             return m_parentEngine;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get the proxy class to access other services.
+     *
+     * @return This returns a valid accessor only if the class is declared a service accessor.
+     */
+    protected DXRAMServiceAccessor getServiceAccessor() {
+        if (isServiceAccessor()) {
+            return (DXRAMServiceAccessor) m_parentEngine;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * Get the proxy class to access other components.
+     *
+     * @return This returns a valid accessor only if the class is declared a component accessor.
+     */
+    protected DXRAMComponentAccessor getComponentAccessor() {
+        if (isComponentAccessor()) {
+            return (DXRAMComponentAccessor) m_parentEngine;
         } else {
             return null;
         }
