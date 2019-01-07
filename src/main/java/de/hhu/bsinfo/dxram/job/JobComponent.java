@@ -51,14 +51,17 @@ public class JobComponent extends AbstractDXRAMComponent<JobComponentConfig>
             return false;
         }
 
+        // gives the job access to dxram services
+        p_job.setServiceAccessor(getParentEngine());
+
         // cause we are using a work stealing approach, we do not need to
         // care about which worker to assign this job to
 
         boolean success = false;
+
         for (Worker worker : m_workers) {
             if (worker.pushJob(p_job)) {
                 // causes the garbage collector to go crazy if too many jobs are pushed very quickly
-
                 LOGGER.debug("Submitted job %s to worker %s", p_job, worker);
 
                 success = true;
@@ -165,6 +168,7 @@ public class JobComponent extends AbstractDXRAMComponent<JobComponentConfig>
             }
 
             job = worker.stealJob();
+
             if (job != null) {
                 LOGGER.trace("Job %s stolen from worker %s", job, worker);
 
@@ -190,10 +194,5 @@ public class JobComponent extends AbstractDXRAMComponent<JobComponentConfig>
     public void finishedJob(final AbstractJob p_job) {
         m_unfinishedJobs.decrementAndGet();
         p_job.notifyListenersJobFinishedExecution(m_boot.getNodeId());
-    }
-
-    @Override
-    public short getNodeID() {
-        return m_boot.getNodeId();
     }
 }

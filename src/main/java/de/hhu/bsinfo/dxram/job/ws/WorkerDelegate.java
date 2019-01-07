@@ -56,11 +56,4 @@ public interface WorkerDelegate {
      *         Job that finished execution.
      */
     void finishedJob(final AbstractJob p_job);
-
-    /**
-     * Get the ID of the Node the worker is running on.
-     *
-     * @return NodeID.
-     */
-    short getNodeID();
 }

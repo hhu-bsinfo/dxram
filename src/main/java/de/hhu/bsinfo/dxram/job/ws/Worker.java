@@ -30,7 +30,7 @@ public class Worker extends Thread {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(Worker.class.getSimpleName());
 
-    private int m_id = -1;
+    private int m_id;
     private volatile boolean m_running;
     private volatile boolean m_shutdown;
     private volatile boolean m_isIdle;
@@ -123,7 +123,7 @@ public class Worker extends Thread {
     @Override
     public String toString() {
         return "Worker[m_id " + m_id + ", m_running " + m_running + ", m_shutdown " + m_shutdown + ", m_isIdle " +
-                m_isIdle + "]";
+                m_isIdle + ']';
     }
 
     // -------------------------------------------------------------------
@@ -145,7 +145,7 @@ public class Worker extends Thread {
                 LOGGER.debug("Worker %d: Executing job %s from queue", m_id, job);
 
                 m_workerDelegate.executingJob(job);
-                job.execute(m_workerDelegate.getNodeID());
+                job.execute();
                 m_workerDelegate.finishedJob(job);
                 continue;
             }
@@ -157,7 +157,7 @@ public class Worker extends Thread {
                 LOGGER.debug("Worker %d: Executing stolen job %s", m_id, job);
 
                 m_workerDelegate.executingJob(job);
-                job.execute(m_workerDelegate.getNodeID());
+                job.execute();
                 m_workerDelegate.finishedJob(job);
                 continue;
             }

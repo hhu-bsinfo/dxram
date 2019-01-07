@@ -105,8 +105,9 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
         long jobId = JobID.createJobID(m_boot.getNodeId(), m_jobIDCounter.incrementAndGet());
 
         // nasty way to access the services...feel free to have a better solution for this
-        p_job.setServiceAccessor(getServiceAccessor());
+        p_job.setServiceAccessor(getParentEngine());
         p_job.setID(jobId);
+
         if (!m_job.pushJob(p_job)) {
             jobId = JobID.INVALID_ID;
             p_job.setID(jobId);
@@ -327,11 +328,6 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
         return true;
     }
 
-    @Override
-    protected boolean isServiceAccessor() {
-        return true;
-    }
-
     // ------------------------------------------------------------------------------------------
 
     /**
@@ -373,7 +369,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
         // de-serialize job data
         importer.importObject(job);
 
-        job.setServiceAccessor(getServiceAccessor());
+        job.setServiceAccessor(getParentEngine());
 
         // register ourselves as listener to event callbacks
         // and redirect them to the remote source
