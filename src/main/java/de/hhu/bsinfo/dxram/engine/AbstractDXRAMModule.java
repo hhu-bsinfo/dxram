@@ -146,29 +146,15 @@ public abstract class AbstractDXRAMModule<T> {
     }
 
     /**
-     * Check if this class is an engine accessor i.e. breaking the rules of
-     * not knowing the engine. Override this method to use that feature.
-     * Do not override this if you do not know what you are doing.
-     *
-     * @return True if accessor, false otherwise.
-     */
-    protected boolean isEngineAccessor() {
-        return false;
-    }
-
-    /**
      * Get the engine within the module.
      * If you don't know what you are doing, do not use this.
-     * There are some internal exceptions that make this necessary (like triggering a shutdown or reboot)
+     * There are some internal exceptions that make this necessary
+     * (e.g. accessing services from applications, jobs etc).
      *
-     * @return Returns the parent engine if allowed to do so (override isEngineAccessor), null otherwise.
+     * @return Returns the parent engine
      */
     protected DXRAMEngine getParentEngine() {
-        if (isEngineAccessor()) {
-            return m_parentEngine;
-        } else {
-            return null;
-        }
+        return m_parentEngine;
     }
 
     /**
