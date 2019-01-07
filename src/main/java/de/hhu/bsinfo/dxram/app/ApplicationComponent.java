@@ -1,8 +1,5 @@
 package de.hhu.bsinfo.dxram.app;
 
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.WatchService;
 import java.util.Collection;
 import java.util.List;
 
@@ -69,6 +66,17 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
 
     public Collection<ApplicationProcess> getRunningProcesses() {
         return m_runner.getRunningProcesses();
+    }
+
+    /**
+     * Register an application class at the loader (external). Allows registering in-code
+     * application classes without having to load jars (e.g. for testing).
+     *
+     * @param p_class
+     *         Application class to register
+     */
+    public void registerApplicationClass(final Class<? extends AbstractApplication> p_class) {
+        m_loader.registerApplicationClass(p_class);
     }
 
     @Override
