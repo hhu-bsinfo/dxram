@@ -26,13 +26,11 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
-import de.hhu.bsinfo.dxram.boot.messages.RebootMessage;
 import de.hhu.bsinfo.dxram.boot.messages.ShutdownMessage;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -261,48 +259,11 @@ public class BootService extends AbstractDXRAMService<DXRAMModuleConfig> impleme
         return true;
     }
 
-    /**
-     * (Soft) reboot the current node
-     */
-    public void rebootThisNode() {
-        rebootNode();
-    }
-
-    /**
-     * (Soft) reboot a DXRAM node.
-     *
-     * @param p_nodeID
-     *         Node to reboot.
-     * @return True if successful, false otherwise.
-     */
-    public boolean rebootNode(final short p_nodeID) {
-        if (p_nodeID == m_boot.getNodeId()) {
-            rebootNode();
-        }
-
-        RebootMessage message = new RebootMessage(p_nodeID);
-        try {
-            m_network.sendMessage(message);
-        } catch (final NetworkException e) {
-
-            LOGGER.error("Rebooting node %s failed: %s", NodeID.toHexString(p_nodeID), e);
-
-            return false;
-        }
-
-        LOGGER.info("Sent reboot message to node %s", NodeID.toHexString(p_nodeID));
-
-        return true;
-    }
-
     @Override
     public void onIncomingMessage(final Message p_message) {
         if (p_message != null) {
             if (p_message.getType() == DXRAMMessageTypes.BOOT_MESSAGES_TYPE) {
                 switch (p_message.getSubtype()) {
-                    case BootMessages.SUBTYPE_REBOOT_MESSAGE:
-                        incomingRebootMessage((RebootMessage) p_message);
-                        break;
                     case BootMessages.SUBTYPE_SHUTDOWN_MESSAGE:
                         incomingShutdownMessage((ShutdownMessage) p_message);
                         break;
@@ -314,11 +275,6 @@ public class BootService extends AbstractDXRAMService<DXRAMModuleConfig> impleme
     }
 
     @Override
-    protected boolean isEngineAccessor() {
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
@@ -326,12 +282,9 @@ public class BootService extends AbstractDXRAMService<DXRAMModuleConfig> impleme
 
     @Override
     protected boolean startService(final DXRAMConfig p_config) {
-        m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE,
-                RebootMessage.class);
         m_network.registerMessageType(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE,
                 ShutdownMessage.class);
 
-        m_network.register(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE, this);
 
         return true;
@@ -339,27 +292,8 @@ public class BootService extends AbstractDXRAMService<DXRAMModuleConfig> impleme
 
     @Override
     protected boolean shutdownService() {
-        m_network.unregister(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_REBOOT_MESSAGE, this);
         m_network.unregister(DXRAMMessageTypes.BOOT_MESSAGES_TYPE, BootMessages.SUBTYPE_SHUTDOWN_MESSAGE, this);
 
         return true;
-    }
-
-    /**
-     * Handler an incoming RebootMessage.
-     *
-     * @param p_message
-     *         Message to handle.
-     */
-    private void incomingRebootMessage(final RebootMessage p_message) {
-        rebootNode();
-    }
-
-    /**
-     * Trigger a node reboot
-     */
-    private void rebootNode() {
-        DXRAMEngine parentEngine = getParentEngine();
-        new Thread(parentEngine::triggerSoftReboot).start();
     }
 }
