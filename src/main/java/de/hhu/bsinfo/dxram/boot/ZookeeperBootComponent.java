@@ -179,7 +179,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         LOGGER.info("Waiting on bootstrap node to finish initialization");
 
         // Wait until bootstrap node finishes initializing
-        NodeRegistry.NodeDetails bootstrapDetails = Poller.blockingPoll(this::getBootstrapDetails, 1, TimeUnit.SECONDS);
+        Poller.blockingPoll(this::getBootstrapDetails, 1, TimeUnit.SECONDS);
 
         LOGGER.info("Bootstrap node is ready");
 
