@@ -186,10 +186,5 @@ public abstract class AbstractDXRAMModule<T> {
          * True if module supports the peer node role, false otherwise
          */
         boolean supportsPeer();
-
-        /**
-         * Indicates if this module should be loaded or not.
-         */
-        boolean isActive() default true;
     }
 }
