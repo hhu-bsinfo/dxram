@@ -35,7 +35,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true, isActive = false)
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class MonitoringService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
     private boolean m_peerIsSuperpeer;
 
