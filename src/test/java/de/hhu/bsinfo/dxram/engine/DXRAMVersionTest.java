@@ -24,5 +24,13 @@ public class DXRAMVersionTest {
         assertEquals(1, versionRel.getMajor());
         assertEquals(2, versionRel.getMinor());
         assertEquals(3, versionRel.getRevision());
+
+        final String versionStringTwoDigits = "1.12.3";
+
+        final DXRAMVersion versionTwoDigits = DXRAMVersion.fromString(versionStringTwoDigits);
+
+        assertEquals(1, versionTwoDigits.getMajor());
+        assertEquals(12, versionTwoDigits.getMinor());
+        assertEquals(3, versionTwoDigits.getRevision());
     }
 }
