@@ -1,33 +1,34 @@
 package de.hhu.bsinfo.dxram.monitoring.beans;
 
-import de.hhu.bsinfo.dxmem.DXMem;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 
 public class Storage extends MBean implements StorageMBean {
+    private final ChunkComponent m_chunk;
 
-    private final DXMem m_memory;
-
-    public Storage(DXMem p_memory) {
+    public Storage(final ChunkComponent p_chunk) {
         super(Storage.class.getSimpleName());
-        m_memory = p_memory;
+
+        m_chunk = p_chunk;
     }
 
     @Override
     public long getAllocatedChunks() {
-        return m_memory.stats().getLIDStoreStatus().getCurrentLIDCounter() - m_memory.stats().getLIDStoreStatus().getTotalFreeLIDs();
+        return m_chunk.getMemory().stats().getLIDStoreStatus().getCurrentLIDCounter() -
+                m_chunk.getMemory().stats().getLIDStoreStatus().getTotalFreeLIDs();
     }
 
     @Override
     public long getFreeMemory() {
-        return m_memory.stats().getHeapStatus().getFreeSizeBytes();
+        return m_chunk.getMemory().stats().getHeapStatus().getFreeSizeBytes();
     }
 
     @Override
     public double getFragmentation() {
-        return m_memory.stats().getHeapStatus().getFragmentation();
+        return m_chunk.getMemory().stats().getHeapStatus().getFragmentation();
     }
 
     @Override
     public long allocateChunk(int p_size) {
-        return m_memory.create().create(p_size);
+        return m_chunk.getMemory().create().create(p_size);
     }
 }

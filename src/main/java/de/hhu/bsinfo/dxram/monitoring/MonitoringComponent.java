@@ -17,7 +17,6 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
 import java.lang.management.ManagementFactory;
-import java.util.stream.Stream;
 
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
@@ -26,7 +25,6 @@ import javax.management.NotCompliantMBeanException;
 
 import org.jetbrains.annotations.NotNull;
 
-import de.hhu.bsinfo.dxmem.DXMem;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
@@ -59,7 +57,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
     private EventComponent m_event;
-    private DXMem m_memory;
+    private ChunkComponent m_chunk;
 
     private static final String VIRTUALMACHINE_CLASS = "com.sun.tools.attach.VirtualMachine";
 
@@ -78,7 +76,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
-        m_memory = p_componentAccessor.getComponent(ChunkComponent.class).getMemory();
+        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
     }
 
     @Override
@@ -260,9 +258,11 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
      * Registers custom MBeans within the MBeanServer.
      */
     private boolean registerMBeans() {
-        return Stream.of(
-                registerBean(new Storage(m_memory))
-        ).allMatch(Boolean::booleanValue);
+        if (m_chunk.isStorageEnabled()) {
+            return registerBean(new Storage(m_chunk));
+        } else {
+            return true;
+        }
     }
 
     /**
