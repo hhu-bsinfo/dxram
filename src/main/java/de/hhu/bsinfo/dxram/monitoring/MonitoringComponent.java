@@ -277,7 +277,10 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     private boolean registerBean(final @NotNull MBean p_bean) {
         try {
             m_beanServer.registerMBean(p_bean, p_bean.getObjectName());
-        } catch (InstanceAlreadyExistsException | MBeanRegistrationException | NotCompliantMBeanException e) {
+        } catch (InstanceAlreadyExistsException e) {
+            LOGGER.info("MBean %s already exists", p_bean.getObjectName());
+            return true;
+        } catch (MBeanRegistrationException | NotCompliantMBeanException e) {
             LOGGER.warn("Failed registering MBean", e);
             return false;
         }
