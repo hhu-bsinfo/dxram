@@ -175,9 +175,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
         //            }
         //        }
 
-        registerMBeans();
-
-        return true;
+        return registerMBeans();
     }
 
     /**
@@ -281,7 +279,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
             LOGGER.info("MBean %s already exists", p_bean.getObjectName());
             return true;
         } catch (MBeanRegistrationException | NotCompliantMBeanException e) {
-            LOGGER.warn("Failed registering MBean", e);
+            LOGGER.error("Failed registering MBean", e);
             return false;
         }
 
