@@ -4,11 +4,14 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponentConfig;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfigBuilder;
 import de.hhu.bsinfo.dxram.job.JobComponent;
 import de.hhu.bsinfo.dxram.job.JobComponentConfig;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
+import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
 /**
  * Creates a configuration for a DXRAM runner. This allows runtime configuration of settings for the DXRAM
@@ -63,6 +66,11 @@ class DXRAMConfigBuilderTest implements DXRAMConfigBuilder {
 
         JobComponentConfig jobConfig = p_config.getComponentConfig(JobComponent.class);
         jobConfig.setEnabled(m_config.nodes()[m_nodeIdx].enableJobService());
+
+        ChunkComponentConfig chunkConfig = p_config.getComponentConfig(ChunkComponent.class);
+        chunkConfig.setKeyValueStoreSize(new StorageUnit(m_config.nodes()[m_nodeIdx].keyValueStorageSizeMB(),
+                StorageUnit.MB));
+        chunkConfig.setChunkStorageEnabled(m_config.nodes()[m_nodeIdx].enableKeyValueStorage());
 
         return p_config;
     }
