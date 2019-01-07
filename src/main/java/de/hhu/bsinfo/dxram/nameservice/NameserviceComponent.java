@@ -23,6 +23,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkIndexComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
@@ -49,6 +51,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
 
     private NameServiceStringConverter m_converter;
 
+    private boolean m_chunkIndexDataEnabled;
     private NameServiceIndexData m_indexData;
     private boolean m_indexDataRegistered;
     private Lock m_indexDataLock;
@@ -130,6 +133,11 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
 
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
+        ChunkComponentConfig chunkComponentConfig = p_config.getComponentConfig(ChunkComponent.class);
+
+        // can't store index data as chunk if backend storage disabled
+        m_chunkIndexDataEnabled = chunkComponentConfig.isChunkStorageEnabled();
+
         return initName();
     }
 
@@ -174,22 +182,24 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
     private boolean initName() {
         m_converter = new NameServiceStringConverter(getConfig().getType());
 
-        m_indexData = new NameServiceIndexData();
+        if (m_chunkIndexDataEnabled) {
+            m_indexData = new NameServiceIndexData();
 
-        // this does not create the backup (if backup is turned on) because the backup
-        // service is not available at this point
-        // the flag m_indexDataRegistered ensures that a backup of the data is distributed
-        // later once the first name entry is registered
-        m_indexData.setID(m_chunkIndex.createIndexChunk(m_indexData.sizeofObject()));
+            // this does not create the backup (if backup is turned on) because the backup
+            // service is not available at this point
+            // the flag m_indexDataRegistered ensures that a backup of the data is distributed
+            // later once the first name entry is registered
+            m_indexData.setID(m_chunkIndex.createIndexChunk(m_indexData.sizeofObject()));
 
-        if (m_indexData.getID() == ChunkID.INVALID_ID) {
-            LOGGER.error("Creating root index chunk failed");
-            return false;
+            if (m_indexData.getID() == ChunkID.INVALID_ID) {
+                LOGGER.error("Creating root index chunk failed");
+                return false;
+            }
+
+            m_indexDataRegistered = false;
+
+            m_indexDataLock = new ReentrantLock(false);
         }
-
-        m_indexDataRegistered = false;
-
-        m_indexDataLock = new ReentrantLock(false);
 
         return true;
     }
@@ -214,48 +224,51 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
      * @return whether this operation was successful
      */
     private boolean insertMapping(final int p_key, final long p_chunkID) {
-        m_indexDataLock.lock();
+        if (m_chunkIndexDataEnabled) {
+            m_indexDataLock.lock();
 
-        if (!m_indexDataRegistered) {
-            m_chunkIndex.registerIndexChunk(m_indexData.getID(), m_indexData.sizeofObject());
-        }
-
-        if (!m_indexData.insertMapping(p_key, p_chunkID)) {
-            // index chunk full, create new one
-            final NameServiceIndexData nextIndexChunk = new NameServiceIndexData();
-            nextIndexChunk.setID(m_chunkIndex.createIndexChunk(nextIndexChunk.sizeofObject()));
-
-            if (nextIndexChunk.getID() == ChunkID.INVALID_ID) {
-                LOGGER.error("Creating next index chunk failed");
-
-                m_indexDataLock.unlock();
-                return false;
+            if (!m_indexDataRegistered) {
+                m_chunkIndex.registerIndexChunk(m_indexData.getID(), m_indexData.sizeofObject());
             }
 
-            // link previous to new and update
-            m_indexData.setNextIndexDataChunk(nextIndexChunk.getID());
+            if (!m_indexData.insertMapping(p_key, p_chunkID)) {
+                // index chunk full, create new one
+                final NameServiceIndexData nextIndexChunk = new NameServiceIndexData();
+                nextIndexChunk.setID(m_chunkIndex.createIndexChunk(nextIndexChunk.sizeofObject()));
+
+                if (nextIndexChunk.getID() == ChunkID.INVALID_ID) {
+                    LOGGER.error("Creating next index chunk failed");
+
+                    m_indexDataLock.unlock();
+                    return false;
+                }
+
+                // link previous to new and update
+                m_indexData.setNextIndexDataChunk(nextIndexChunk.getID());
+
+                if (!m_chunkIndex.putIndexChunk(m_indexData)) {
+                    LOGGER.error("Updating current index chunk with successor failed");
+
+                    m_indexDataLock.unlock();
+                    return false;
+                }
+
+                m_indexData = nextIndexChunk;
+            }
+
+            // insert mapping into current chunk and update
+            m_indexData.insertMapping(p_key, p_chunkID);
 
             if (!m_chunkIndex.putIndexChunk(m_indexData)) {
-                LOGGER.error("Updating current index chunk with successor failed");
+                LOGGER.error("Updating current index chunk failed");
 
                 m_indexDataLock.unlock();
                 return false;
             }
 
-            m_indexData = nextIndexChunk;
-        }
-
-        // insert mapping into current chunk and update
-        m_indexData.insertMapping(p_key, p_chunkID);
-
-        if (!m_chunkIndex.putIndexChunk(m_indexData)) {
-            LOGGER.error("Updating current index chunk failed");
-
             m_indexDataLock.unlock();
-            return false;
         }
 
-        m_indexDataLock.unlock();
         return true;
     }
 }
