@@ -59,43 +59,20 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 @SuppressWarnings("WeakerAccess")
 public class NodeRegistry implements ServiceCacheListener {
     private static final Logger LOGGER = LogManager.getFormatterLogger(NodeRegistry.class);
-
-    private final CuratorFramework m_curator;
-    private final List<Listener> m_listener = new ArrayList<>();
-
-    private final JsonInstanceSerializer<NodeDetails> serializer = new JsonInstanceSerializer<>(NodeDetails.class);
-
-    private final AtomicBoolean m_isRunning = new AtomicBoolean(false);
-
-    private ServiceDiscovery<NodeDetails> m_serviceDiscovery;
-    private ServiceInstance<NodeDetails> m_instance;
-    private ServiceCache<NodeDetails> m_cache;
-
     private static final String BASE_PATH = "/dxram";
     private static final String SERVICE_NAME = "nodes";
     private static final String THREAD_NAME = "discovery";
     private static final String DISCOVERY_PATH = String.format("%s/%s", BASE_PATH, SERVICE_NAME);
-
+    private final CuratorFramework m_curator;
+    private final List<Listener> m_listener = new ArrayList<>();
+    private final JsonInstanceSerializer<NodeDetails> m_serializer = new JsonInstanceSerializer<>(NodeDetails.class);
+    private final AtomicBoolean m_isRunning = new AtomicBoolean(false);
     private final ConcurrentHashMap<Short, NodeDetails> m_serviceMap = new ConcurrentHashMap<>();
-
     private final ExecutorService m_executor = Executors.newSingleThreadExecutor(
             runnable -> new Thread(runnable, THREAD_NAME));
-
-    public interface Listener {
-        void onPeerJoined(final NodeDetails p_nodeDetails);
-
-        void onPeerLeft(final NodeDetails p_nodeDetails);
-
-        void onSuperpeerJoined(final NodeDetails p_nodeDetails);
-
-        void onSuperpeerLeft(final NodeDetails p_nodeDetails);
-
-        void onNodeUpdated(final NodeDetails p_nodeDetails);
-    }
-
-    private enum ListenerEvent {
-        PEER_JOINED, PEER_LEFT, SUPERPEER_JOINED, SUPERPEER_LEFT, NODE_UPDATED
-    }
+    private ServiceDiscovery<NodeDetails> m_serviceDiscovery;
+    private ServiceInstance<NodeDetails> m_instance;
+    private ServiceCache<NodeDetails> m_cache;
 
     NodeRegistry(final @NotNull CuratorFramework p_curator) {
         m_curator = p_curator;
@@ -132,7 +109,7 @@ public class NodeRegistry implements ServiceCacheListener {
         m_serviceDiscovery = ServiceDiscoveryBuilder.builder(NodeDetails.class)
                 .client(m_curator)
                 .basePath(BASE_PATH)
-                .serializer(serializer)
+                .serializer(m_serializer)
                 .thisInstance(m_instance)
                 .build();
 
@@ -172,8 +149,8 @@ public class NodeRegistry implements ServiceCacheListener {
 
         try {
             m_serviceDiscovery.updateService(serviceInstance);
-        } catch (Exception p_e) {
-            LOGGER.warn("Updating registry entry failed", p_e);
+        } catch (Exception e) {
+            LOGGER.warn("Updating registry entry failed", e);
         }
     }
 
@@ -235,8 +212,7 @@ public class NodeRegistry implements ServiceCacheListener {
      *         The node's id.
      * @return The specified node's details.
      */
-    @Nullable
-    public NodeDetails getDetails(final short p_nodeId) {
+    public @Nullable NodeDetails getDetails(final short p_nodeId) {
         NodeDetails details = m_serviceMap.get(p_nodeId);
 
         return details != null ? details : getRemoteDetails(p_nodeId);
@@ -250,18 +226,18 @@ public class NodeRegistry implements ServiceCacheListener {
      * @return The specified node's details.
      */
     private NodeDetails getRemoteDetails(short p_nodeId) {
-        byte[] bootBytes;
+        byte[] data;
 
         try {
-            bootBytes = m_curator.getData().forPath(
+            data = m_curator.getData().forPath(
                     String.format("%s/%s", DISCOVERY_PATH, NodeID.toHexStringShort(p_nodeId)));
-        } catch (Exception p_e) {
+        } catch (Exception e) {
             return null;
         }
 
         try {
-            return serializer.deserialize(bootBytes).getPayload();
-        } catch (Exception p_e) {
+            return m_serializer.deserialize(data).getPayload();
+        } catch (Exception e) {
             LOGGER.warn("Couldn't deserialize remote node details");
             return null;
         }
@@ -272,8 +248,7 @@ public class NodeRegistry implements ServiceCacheListener {
      *
      * @return This node's details.
      */
-    @Nullable
-    public NodeDetails getDetails() {
+    public @Nullable NodeDetails getDetails() {
         NodeDetails details = m_instance.getPayload();
 
         if (details == null) {
@@ -314,7 +289,7 @@ public class NodeRegistry implements ServiceCacheListener {
                 continue;
             }
 
-            if (details.getRole().equals(NodeRole.SUPERPEER)) {
+            if (details.getRole() == NodeRole.SUPERPEER) {
                 notifyListener(ListenerEvent.SUPERPEER_JOINED, details);
             } else {
                 notifyListener(ListenerEvent.PEER_JOINED, details);
@@ -335,7 +310,7 @@ public class NodeRegistry implements ServiceCacheListener {
 
             m_serviceMap.put(nodeId, leftNode.withOnline(false));
 
-            if (leftNode.getRole().equals(NodeRole.SUPERPEER)) {
+            if (leftNode.getRole() == NodeRole.SUPERPEER) {
                 notifyListener(ListenerEvent.SUPERPEER_LEFT, leftNode);
             } else {
                 notifyListener(ListenerEvent.PEER_LEFT, leftNode);
@@ -354,6 +329,22 @@ public class NodeRegistry implements ServiceCacheListener {
     @Override
     public void stateChanged(CuratorFramework p_client, ConnectionState p_newState) {
         LOGGER.info("Curator connection state changed to {}", p_newState.isConnected() ? "CONNECTED" : "DISCONNECTED");
+    }
+
+    private enum ListenerEvent {
+        PEER_JOINED, PEER_LEFT, SUPERPEER_JOINED, SUPERPEER_LEFT, NODE_UPDATED
+    }
+
+    public interface Listener {
+        void onPeerJoined(final NodeDetails p_nodeDetails);
+
+        void onPeerLeft(final NodeDetails p_nodeDetails);
+
+        void onSuperpeerJoined(final NodeDetails p_nodeDetails);
+
+        void onSuperpeerLeft(final NodeDetails p_nodeDetails);
+
+        void onNodeUpdated(final NodeDetails p_nodeDetails);
     }
 
     @SuppressWarnings("unused")
@@ -432,6 +423,32 @@ public class NodeRegistry implements ServiceCacheListener {
             return new Builder(p_id, p_ip, p_port);
         }
 
+        public static NodeDetails fromByteArray(final byte[] p_bytes) {
+            ByteBuffer buffer = ByteBuffer.wrap(p_bytes);
+            ByteBufferImExporter importer = new ByteBufferImExporter(buffer);
+
+            short tmpId = 0;
+            String tmpIp = "";
+            int tmpPort = 0;
+            short tmpRack = 0;
+            short tmpSwitch = 0;
+            char tmpRole = '0';
+            boolean tmpOnline;
+            int tmpCapabilites = 0;
+
+            tmpId = importer.readShort(tmpId);
+            tmpIp = importer.readString(tmpIp);
+            tmpPort = importer.readInt(tmpPort);
+            tmpRack = importer.readShort(tmpRack);
+            tmpSwitch = importer.readShort(tmpSwitch);
+            tmpRole = importer.readChar(tmpRole);
+            tmpOnline = importer.readBoolean(false);
+            tmpCapabilites = importer.readInt(tmpCapabilites);
+
+            return new NodeDetails(tmpId, tmpIp, tmpPort, tmpRack, tmpSwitch,
+                    NodeRole.getRoleByAcronym(tmpRole), tmpOnline, tmpCapabilites);
+        }
+
         public short getId() {
             return m_id;
         }
@@ -497,7 +514,7 @@ public class NodeRegistry implements ServiceCacheListener {
 
         @Override
         public int hashCode() {
-            return Objects.hash(m_id);
+            return Short.hashCode(m_id);
         }
 
         @Override
@@ -525,32 +542,6 @@ public class NodeRegistry implements ServiceCacheListener {
             exporter.writeInt(m_capabilities);
 
             return buffer.array();
-        }
-
-        public static NodeDetails fromByteArray(final byte[] p_bytes) {
-            ByteBuffer buffer = ByteBuffer.wrap(p_bytes);
-            ByteBufferImExporter importer = new ByteBufferImExporter(buffer);
-
-            short tmpId = 0;
-            String tmpIp = "";
-            int tmpPort = 0;
-            short tmpRack = 0;
-            short tmpSwitch = 0;
-            char tmpRole = '0';
-            boolean tmpOnline;
-            int tmpCapabilites = 0;
-
-            tmpId = importer.readShort(tmpId);
-            tmpIp = importer.readString(tmpIp);
-            tmpPort = importer.readInt(tmpPort);
-            tmpRack = importer.readShort(tmpRack);
-            tmpSwitch = importer.readShort(tmpSwitch);
-            tmpRole = importer.readChar(tmpRole);
-            tmpOnline = importer.readBoolean(false);
-            tmpCapabilites = importer.readInt(tmpCapabilites);
-
-            return new NodeDetails(tmpId, tmpIp, tmpPort, tmpRack, tmpSwitch,
-                    NodeRole.getRoleByAcronym(tmpRole), tmpOnline, tmpCapabilites);
         }
 
         public static class Builder {
