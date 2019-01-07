@@ -207,18 +207,20 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     private void assignNodeId() {
         AtomicValue<Integer> atomicValue;
 
-        try {
-            atomicValue = m_counter.increment();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        do {
+            try {
+                atomicValue = m_counter.increment();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
 
-        if (!atomicValue.succeeded()) {
-            throw new IllegalStateException("Incrementing atomic counter failed");
-        }
+            if (!atomicValue.succeeded()) {
+                throw new IllegalStateException("Incrementing atomic counter failed");
+            }
 
-        m_counterValue = atomicValue.postValue();
-        m_id = calculateNodeId();
+            m_counterValue = atomicValue.postValue();
+            m_id = calculateNodeId();
+        } while (m_nodeRegistry.getDetails(m_id) != null);
 
         LOGGER.info("Assigned counter value %d to this node", m_counterValue);
     }
