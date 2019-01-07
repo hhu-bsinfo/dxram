@@ -6,6 +6,8 @@ import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfigBuilder;
+import de.hhu.bsinfo.dxram.job.JobComponent;
+import de.hhu.bsinfo.dxram.job.JobComponentConfig;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
@@ -58,6 +60,9 @@ class DXRAMConfigBuilderTest implements DXRAMConfigBuilder {
         BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponent.class);
         backupConfig.setBackupActive(m_config.nodes()[m_nodeIdx].backupActive());
         backupConfig.setAvailableForBackup(m_config.nodes()[m_nodeIdx].availableForBackup());
+
+        JobComponentConfig jobConfig = p_config.getComponentConfig(JobComponent.class);
+        jobConfig.setEnabled(m_config.nodes()[m_nodeIdx].enableJobService());
 
         return p_config;
     }

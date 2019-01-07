@@ -67,5 +67,12 @@ public @interface DXRAMTestConfiguration {
          * Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
          */
         boolean availableForBackup() default false;
+
+        /**
+         * Enable the job subsystem
+         *
+         * @return True to enable, false disable
+         */
+        boolean enableJobService() default false;
     }
 }
