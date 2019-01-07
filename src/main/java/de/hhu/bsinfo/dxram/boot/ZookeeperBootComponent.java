@@ -18,8 +18,10 @@ package de.hhu.bsinfo.dxram.boot;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import de.hhu.bsinfo.dxutils.Poller;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -177,17 +179,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         LOGGER.info("Waiting on bootstrap node to finish initialization");
 
         // Wait until bootstrap node finishes initializing
-        NodeRegistry.NodeDetails bootstrapDetails = getBootstrapDetails();
-
-        while (bootstrapDetails == null) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException p_e) {
-                // Ignored
-            }
-
-            bootstrapDetails = getBootstrapDetails();
-        }
+        NodeRegistry.NodeDetails bootstrapDetails = Poller.blockingPoll(this::getBootstrapDetails, 1, TimeUnit.SECONDS);
 
         LOGGER.info("Bootstrap node is ready");
 
