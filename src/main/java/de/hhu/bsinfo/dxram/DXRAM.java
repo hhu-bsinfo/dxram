@@ -51,8 +51,8 @@ import de.hhu.bsinfo.dxram.event.EventComponentConfig;
 import de.hhu.bsinfo.dxram.failure.FailureComponent;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxram.job.JobComponent;
-import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.job.JobComponentConfig;
+import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.LogComponentConfig;
 import de.hhu.bsinfo.dxram.log.LogService;
@@ -79,6 +79,7 @@ import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -283,9 +284,16 @@ public final class DXRAM {
 
         if (bootService != null) {
             short nodeId = bootService.getNodeID();
+            int capabilities = bootService.getNodeCapabilities(nodeId);
+
             builder.append("NodeID: ");
             builder.append(NodeID.toHexString(nodeId));
             builder.append('\n');
+
+            builder.append("Capabilities: ");
+            builder.append(NodeCapabilities.toString(capabilities));
+            builder.append('\n');
+
             builder.append("Role: ");
             builder.append(bootService.getNodeRole(nodeId));
             builder.append('\n');
