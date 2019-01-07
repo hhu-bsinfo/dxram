@@ -174,7 +174,16 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
      * @return True if waiting was successful and all jobs finished, false otherwise.
      */
     public boolean waitForLocalJobsToFinish() {
-        return m_job.waitForSubmittedJobsToFinish();
+        return waitForAllJobsToFinish(true, false);
+    }
+
+    /**
+     * Wait for all remotely scheduled and currently executing jobs to finish.
+     *
+     * @return True if waiting was successful and all jobs finished, false otherwise.
+     */
+    public boolean waitForRemoteJobsToFinish() {
+        return waitForAllJobsToFinish(false, true);
     }
 
     /**
@@ -183,61 +192,11 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
      * @return True if all jobs finished successfully, false otherwise.
      */
     public boolean waitForAllJobsToFinish() {
-        int successCount = 0;
-        // if we checked all job systems successfully
-        // 5 times in a row, we consider this as a full termination
-        while (successCount < 5) {
-            // wait for local jobs to finish first
-            if (!m_job.waitForSubmittedJobsToFinish()) {
-                return false;
-            }
-
-            // now check for remote peers
-            List<Short> peers = m_boot.getOnlinePeerIds();
-            for (short peer : peers) {
-                // filter own node id
-                if (peer == m_boot.getNodeId()) {
-                    continue;
-                }
-
-                StatusRequest request = new StatusRequest(peer);
-
-                try {
-                    m_network.sendSync(request);
-                } catch (final NetworkException e) {
-
-                    LOGGER.error("Sending get status request to wait for termination to 0x%X failed: %s", peer, e);
-
-                    // abort here as well, as we do not know what happened exactly
-                    return false;
-                }
-
-                StatusResponse response = request.getResponse(StatusResponse.class);
-                if (response.getStatus().getNumberOfUnfinishedJobs() != 0) {
-                    successCount = 0;
-
-                    // not done, yet...sleep a little and try again
-                    try {
-                        Thread.sleep(1000);
-                    } catch (final InterruptedException ignored) {
-                    }
-                    continue;
-                }
-            }
-
-            // we checked all job systems and were successful, but
-            // this does not guarantee we are really done due to
-            // race conditions...
-            // make sure to check a few more times
-            successCount++;
-        }
-
-        return true;
+        return waitForAllJobsToFinish(true, true);
     }
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
 
         if (p_message != null) {
@@ -259,7 +218,6 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
         }
 
         LOGGER.trace("Exiting incomingMessage");
-
     }
 
     // --------------------------------------------------------------------------------------------
@@ -351,6 +309,78 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
         m_network.register(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE, this);
         m_network.register(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_STATUS_REQUEST, this);
         m_network.register(DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_JOB_EVENT_TRIGGERED_MESSAGE, this);
+    }
+
+    /**
+     * Wait for multiple jobs to finish (local and/or remote)
+     *
+     * @param p_local
+     *         Wait for jobs running locally.
+     * @param p_remote
+     *         Wait for jobs running remotely.
+     * @return True if all jobs finished successfully, false otherwise.
+     */
+    private boolean waitForAllJobsToFinish(final boolean p_local, final boolean p_remote) {
+        assert !(!p_local && !p_remote);
+
+        int successCount = 0;
+
+        // if we checked all job systems successfully
+        // 5 times in a row, we consider this as a full termination
+        while (successCount < 5) {
+            if (p_local) {
+                // wait for local jobs to finish first
+                if (!m_job.waitForSubmittedJobsToFinish()) {
+                    return false;
+                }
+            }
+
+            if (p_remote) {
+                // now check for remote peers
+                List<Short> peers = m_boot.getOnlinePeerIds();
+
+                for (int i = 0; i < peers.size(); i++) {
+                    // filter own node id
+                    if (peers.get(i) == m_boot.getNodeId()) {
+                        continue;
+                    }
+
+                    StatusRequest request = new StatusRequest(peers.get(i));
+
+                    try {
+                        m_network.sendSync(request);
+                    } catch (final NetworkException e) {
+                        LOGGER.error("Sending get status request to wait for termination to 0x%X failed: %s",
+                                peers.get(i), e);
+
+                        // abort here as well, as we do not know what happened exactly
+                        return false;
+                    }
+
+                    StatusResponse response = request.getResponse(StatusResponse.class);
+
+                    if (response.getStatus().getNumberOfUnfinishedJobs() != 0) {
+                        successCount = 0;
+
+                        // not done, yet...sleep a little and try again
+                        try {
+                            Thread.sleep(1000);
+                        } catch (final InterruptedException ignored) {
+                        }
+
+                        continue;
+                    }
+                }
+            }
+
+            // we checked all job systems and were successful, but
+            // this does not guarantee we are really done due to
+            // race conditions...
+            // make sure to check a few more times
+            successCount++;
+        }
+
+        return true;
     }
 
     /**
