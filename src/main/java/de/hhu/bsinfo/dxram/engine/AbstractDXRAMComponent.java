@@ -82,14 +82,16 @@ public abstract class AbstractDXRAMComponent<T> extends AbstractDXRAMModule<T> {
      * @param p_componentAccessor
      *         Component accessor that provides access to other components
      */
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {}
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    }
 
     /**
      * Called when the component is initialized. Setup data structures, read settings etc.
      *
      * @param p_config
      *         Configuration instance provided by the engine.
-     * @param p_jniManager Instance of JNI manager to load JNI libraries
+     * @param p_jniManager
+     *         Instance of JNI manager to load JNI libraries
      * @return True if initialing was successful, false otherwise.
      */
     protected abstract boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager);

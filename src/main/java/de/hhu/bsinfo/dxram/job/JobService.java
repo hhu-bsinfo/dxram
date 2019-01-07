@@ -68,7 +68,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
 
     // depdendent components
     private AbstractBootComponent m_boot;
-    private AbstractJobComponent m_job;
+    private JobComponent m_job;
     private NetworkComponent m_network;
 
     private final JobMap m_jobMap = new JobMap();
@@ -308,7 +308,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_job = p_componentAccessor.getComponent(AbstractJobComponent.class);
+        m_job = p_componentAccessor.getComponent(JobComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 

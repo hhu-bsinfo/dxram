@@ -46,7 +46,7 @@ public final class DXRAMComponentOrder {
         public static final short BACKUP = 11;
         public static final short CHUNK_INDEX = 12;
         public static final short NAMESERVICE = 13;
-        public static final short JOB_WORK_STEALING = 14;
+        public static final short JOB = 14;
         public static final short MONITORING = 15;
         public static final short APPLICATION = 16;
 
@@ -65,7 +65,7 @@ public final class DXRAMComponentOrder {
         public static final short BOOT = Short.MIN_VALUE;
         public static final short APPLICATION = -15;
         public static final short MONITORING = -14;
-        public static final short JOB_WORK_STEALING = -13;
+        public static final short JOB = -13;
         public static final short NAMESERVICE = -12;
         public static final short CHUNK_INDEX = -11;
         public static final short BACKUP = -10;
