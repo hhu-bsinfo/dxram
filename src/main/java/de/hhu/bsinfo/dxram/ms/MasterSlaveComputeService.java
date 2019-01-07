@@ -369,12 +369,6 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
     }
 
     @Override
-    protected boolean isServiceAccessor() {
-        // we need this for the tasks
-        return true;
-    }
-
-    @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
@@ -413,17 +407,17 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         switch (ComputeRole.toComputeRole(getConfig().getRole())) {
             case MASTER:
                 m_computeMSInstance = new ComputeMaster(getConfig().getComputeGroupId(),
-                        getConfig().getPingInterval().getMs(), getServiceAccessor(), m_network,
+                        getConfig().getPingInterval().getMs(), getParentEngine(), m_network,
                         m_nameservice, m_boot, m_lookup);
                 break;
             case SLAVE:
                 m_computeMSInstance =
                         new ComputeSlave(getConfig().getComputeGroupId(), getConfig().getPingInterval().getMs(),
-                                getServiceAccessor(), m_network, m_nameservice,
+                                getParentEngine(), m_network, m_nameservice,
                                 m_boot, m_lookup);
                 break;
             case NONE:
-                m_computeMSInstance = new ComputeNone(getServiceAccessor(), m_network, m_nameservice, m_boot, m_lookup);
+                m_computeMSInstance = new ComputeNone(getParentEngine(), m_network, m_nameservice, m_boot, m_lookup);
                 break;
             default:
                 assert false;
