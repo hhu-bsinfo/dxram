@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Copyright (C) 2019 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
  * Department Operating Systems
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
@@ -83,7 +83,7 @@ import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
- * DXRAM main class (for main entry point, refer to DXRAMMain)
+ * DXRAM main class (for main entry point, refer to DXRAMMain).
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
@@ -94,7 +94,7 @@ public final class DXRAM {
     private ShutdownThread m_shutdownHook;
 
     /**
-     * Constructor
+     * Constructor.
      */
     public DXRAM() {
         Locale.setDefault(new Locale("en", "US"));
@@ -108,7 +108,7 @@ public final class DXRAM {
     }
 
     /**
-     * Get the version of DXRAM
+     * Get the version of DXRAM.
      *
      * @return DXRAM version
      */
@@ -117,7 +117,7 @@ public final class DXRAM {
     }
 
     /**
-     * Create a configuration instance with default values
+     * Create a configuration instance with default values.
      *
      * @return Configuration instance
      */
@@ -244,7 +244,7 @@ public final class DXRAM {
     }
 
     /**
-     * Print information about the current build
+     * Print information about the current build.
      */
     private static void printBuildInfo() {
         StringBuilder builder = new StringBuilder();
@@ -268,6 +268,9 @@ public final class DXRAM {
         System.out.println(builder);
     }
 
+    /**
+     * Print some info about the current instance to the terminal.
+     */
     private static void printInstanceInfo() {
         System.out.println(">>> Instance <<<\n" + InstanceInfo.compile() + '\n');
     }
@@ -310,7 +313,7 @@ public final class DXRAM {
     }
 
     /**
-     * Shuts down DXRAM in case of the system exits
+     * Shuts down DXRAM in case of the system exits.
      *
      * @author Florian Klein 03.09.2013
      */
@@ -318,7 +321,7 @@ public final class DXRAM {
         private DXRAM m_dxram;
 
         /**
-         * Creates an instance of ShutdownThread
+         * Creates an instance of ShutdownThread.
          *
          * @param p_dxram
          *         Reference to DXRAM instance.

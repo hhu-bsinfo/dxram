@@ -274,7 +274,7 @@ public class Lock extends AbstractOperation implements MessageReceiver {
                     state = m_chunk.getMemory().lock().lock(request.getChunkIDs()[i], request.isWriteLock(),
                             request.getLockOperationTimeoutMs());
                 } else {
-                    state =  m_chunk.getMemory().lock().unlock(request.getChunkIDs()[i], request.isWriteLock());
+                    state = m_chunk.getMemory().lock().unlock(request.getChunkIDs()[i], request.isWriteLock());
                 }
 
                 chunkStates[i] = (byte) state.ordinal();
