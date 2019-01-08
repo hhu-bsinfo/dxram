@@ -2,8 +2,9 @@
 
 This style guide outlines the style used for all code written in Java in DXRAM and all related projects. We would like
 to keep this style consistent across all projects. Instead of writing down all the rules we want you to follow when
-contributing to our projects, please use the [formatter.xml](../intellij/formatter.xml) file with IntelliJ included in
-the repository.
+contributing to our projects, please use the [formatter.xml](../intellij/formatter.xml) and
+[checkstyle.xml](../intellij/checkstyle.xml) files with IntelliJ included in the repository. You can setup macros
+to apply the formatter rules when saving Java-files (e.g. on *ctrl + s*).
 
 Furthermore, please use the [inspections.xml](../intellij/inspections.xml) file with IntelliJ. It includes a lot of
 very useful warnings that highlight common mistakes and also enforce some rules to enhance overall code quality.
@@ -59,19 +60,6 @@ int myFunc() {
 int myFunc() {
      int var = 1;
      return var++;
-}
-```
-
-## All method parameters must be declared final
-```
-// bad
-void myFunc(int p_v1, bool p_v2) {
-    // ...
-}
-
-// good
-void myFunc(final int v1, final bool p_v2) {
-    // ...
 }
 ```
 
@@ -132,4 +120,43 @@ if (var == 1) {
         // ...
     }
 }
+```
+
+## Fill up line on method arguments also when exceeding a single line
+```
+// bad
+public void method(
+        final int p_v1,
+        final int p_v2,
+        final int p_v3,
+        final int p_v4) {
+    // ...
+}
+
+// good
+public void method(final int p_v1, final int p_v2, final int p_v3, final int p_v4) {
+    // ...
+}
+
+// good
+public void method(final int p_v1, final int p_v2, final int p_v3, final int p_v4, final int p_v5, final int p_v6,
+        final int p_v7, final int p_v8) {
+    // ...
+}
+```
+
+## Fill up line on method calls when passing parameters
+```
+// bad
+myVeryLongLongLongLongMethodName(
+        myLongVariableName1,
+        myLongVariableName2,
+        myLongVariableName3,
+        myLongVariableName4,
+        myLongVariableName5,
+        myLongVariableName6);
+
+// good
+myVeryLongLongLongLongMethodName(myLongVariableName1, myLongVariableName2, myLongVariableName3, myLongVariableName4,
+        myLongVariableName5, myLongVariableName6);
 ```
