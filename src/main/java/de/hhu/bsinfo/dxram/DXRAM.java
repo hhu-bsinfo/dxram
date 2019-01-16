@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Copyright (C) 2019 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
  * Department Operating Systems
  *
  * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
@@ -50,9 +50,9 @@ import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventComponentConfig;
 import de.hhu.bsinfo.dxram.failure.FailureComponent;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
+import de.hhu.bsinfo.dxram.job.JobComponent;
+import de.hhu.bsinfo.dxram.job.JobComponentConfig;
 import de.hhu.bsinfo.dxram.job.JobService;
-import de.hhu.bsinfo.dxram.job.JobWorkStealingComponent;
-import de.hhu.bsinfo.dxram.job.JobWorkStealingComponentConfig;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.LogComponentConfig;
 import de.hhu.bsinfo.dxram.log.LogService;
@@ -61,6 +61,8 @@ import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponentConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupService;
 import de.hhu.bsinfo.dxram.migration.MigrationService;
+import de.hhu.bsinfo.dxram.monitoring.MonitoringComponent;
+import de.hhu.bsinfo.dxram.monitoring.MonitoringComponentConfig;
 import de.hhu.bsinfo.dxram.monitoring.MonitoringService;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeServiceConfig;
@@ -77,10 +79,11 @@ import de.hhu.bsinfo.dxram.sync.SynchronizationService;
 import de.hhu.bsinfo.dxram.sync.SynchronizationServiceConfig;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageService;
 import de.hhu.bsinfo.dxram.tmp.TemporaryStorageServiceConfig;
+import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
- * DXRAM main class (for main entry point, refer to DXRAMMain)
+ * DXRAM main class (for main entry point, refer to DXRAMMain).
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
@@ -91,7 +94,7 @@ public final class DXRAM {
     private ShutdownThread m_shutdownHook;
 
     /**
-     * Constructor
+     * Constructor.
      */
     public DXRAM() {
         Locale.setDefault(new Locale("en", "US"));
@@ -105,7 +108,7 @@ public final class DXRAM {
     }
 
     /**
-     * Get the version of DXRAM
+     * Get the version of DXRAM.
      *
      * @return DXRAM version
      */
@@ -114,7 +117,7 @@ public final class DXRAM {
     }
 
     /**
-     * Create a configuration instance with default values
+     * Create a configuration instance with default values.
      *
      * @return Configuration instance
      */
@@ -199,9 +202,10 @@ public final class DXRAM {
         p_engine.registerComponent(ChunkComponent.class, ChunkComponentConfig.class);
         p_engine.registerComponent(ChunkIndexComponent.class, DXRAMModuleConfig.class);
         p_engine.registerComponent(ChunkMigrationComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(MonitoringComponent.class, MonitoringComponentConfig.class);
         p_engine.registerComponent(EventComponent.class, EventComponentConfig.class);
         p_engine.registerComponent(FailureComponent.class, DXRAMModuleConfig.class);
-        p_engine.registerComponent(JobWorkStealingComponent.class, JobWorkStealingComponentConfig.class);
+        p_engine.registerComponent(JobComponent.class, JobComponentConfig.class);
         p_engine.registerComponent(LogComponent.class, LogComponentConfig.class);
         p_engine.registerComponent(LookupComponent.class, LookupComponentConfig.class);
         p_engine.registerComponent(NameserviceComponent.class, NameserviceComponentConfig.class);
@@ -240,7 +244,7 @@ public final class DXRAM {
     }
 
     /**
-     * Print information about the current build
+     * Print information about the current build.
      */
     private static void printBuildInfo() {
         StringBuilder builder = new StringBuilder();
@@ -264,6 +268,9 @@ public final class DXRAM {
         System.out.println(builder);
     }
 
+    /**
+     * Print some info about the current instance to the terminal.
+     */
     private static void printInstanceInfo() {
         System.out.println(">>> Instance <<<\n" + InstanceInfo.compile() + '\n');
     }
@@ -280,9 +287,16 @@ public final class DXRAM {
 
         if (bootService != null) {
             short nodeId = bootService.getNodeID();
+            int capabilities = bootService.getNodeCapabilities(nodeId);
+
             builder.append("NodeID: ");
             builder.append(NodeID.toHexString(nodeId));
             builder.append('\n');
+
+            builder.append("Capabilities: ");
+            builder.append(NodeCapabilities.toString(capabilities));
+            builder.append('\n');
+
             builder.append("Role: ");
             builder.append(bootService.getNodeRole(nodeId));
             builder.append('\n');
@@ -299,7 +313,7 @@ public final class DXRAM {
     }
 
     /**
-     * Shuts down DXRAM in case of the system exits
+     * Shuts down DXRAM in case of the system exits.
      *
      * @author Florian Klein 03.09.2013
      */
@@ -307,7 +321,7 @@ public final class DXRAM {
         private DXRAM m_dxram;
 
         /**
-         * Creates an instance of ShutdownThread
+         * Creates an instance of ShutdownThread.
          *
          * @param p_dxram
          *         Reference to DXRAM instance.

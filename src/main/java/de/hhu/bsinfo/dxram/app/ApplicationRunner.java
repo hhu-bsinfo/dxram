@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 
 /**
@@ -21,7 +22,7 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
 
     private final ApplicationLoader m_loader;
     private final DXRAMVersion m_dxramVersion;
-    private final DXRAMEngine m_dxramEngine;
+    private final DXRAMServiceAccessor m_dxramServiceAccessor;
 
     private HashMap<String, ApplicationProcess> m_runningProcesses;
 
@@ -36,14 +37,14 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
      *         Instance of loader to use
      * @param p_dxramVersion
      *         Version of DXRAM running on
-     * @param p_dxramEngine
-     *         Parent DXRAM engine
+     * @param p_dxramServiceAccessor
+     *         DXRAM service accessor
      */
     ApplicationRunner(final ApplicationLoader p_loader, final DXRAMVersion p_dxramVersion,
-            final DXRAMEngine p_dxramEngine) {
+            final DXRAMServiceAccessor p_dxramServiceAccessor) {
         m_loader = p_loader;
         m_dxramVersion = p_dxramVersion;
-        m_dxramEngine = p_dxramEngine;
+        m_dxramServiceAccessor = p_dxramServiceAccessor;
 
         m_runningProcesses = new HashMap<>();
     }
@@ -92,7 +93,7 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
             return false;
         }
 
-        app.init(m_dxramEngine, this, p_args);
+        app.init(m_dxramServiceAccessor, this, p_args);
         app.start();
 
         return true;

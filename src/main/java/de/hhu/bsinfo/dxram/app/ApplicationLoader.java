@@ -6,7 +6,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.*;
+import java.nio.file.FileSystems;
+import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,10 +19,11 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-import de.hhu.bsinfo.dxutils.FileSystemUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+
+import de.hhu.bsinfo.dxutils.FileSystemUtils;
 
 /**
  * Loader scanning application folder for jar files and loading classes
@@ -58,7 +64,6 @@ class ApplicationLoader {
                 LOGGER.info("Found application %s", clazz);
             }
 
-
             if (FileSystemUtils.isNetworkMount(m_applicationDirectory)) {
                 LOGGER.warn("Hot Reloading is not supported on NFS");
             } else {
@@ -75,6 +80,17 @@ class ApplicationLoader {
         } else {
             LOGGER.warn("Can't scan for applications from %s, no such directory", p_path);
         }
+    }
+
+    /**
+     * Register an application class at the loader (external). Allows registering in-code
+     * application classes without having to load jars (e.g. for testing).
+     *
+     * @param p_class
+     *         Application class to register
+     */
+    public void registerApplicationClass(final Class<? extends AbstractApplication> p_class) {
+        m_applicationClasses.put(p_class.getName(), p_class);
     }
 
     /**
@@ -215,7 +231,8 @@ class ApplicationLoader {
             void onApplicationChanged(@NotNull String p_filename);
         }
 
-        public ApplicationWatcher(final @NotNull String p_path, final @NotNull ApplicationChangeListener p_changeListener) throws IOException {
+        public ApplicationWatcher(final @NotNull String p_path,
+                final @NotNull ApplicationChangeListener p_changeListener) throws IOException {
             super(THREAD_NAME);
             m_watchService = FileSystems.getDefault().newWatchService();
             m_changeListener = p_changeListener;
@@ -229,7 +246,7 @@ class ApplicationLoader {
 
             WatchKey key = null;
             String fileName;
-            for (;;) {
+            for (; ; ) {
 
                 try {
                     key = m_watchService.take();
@@ -241,7 +258,6 @@ class ApplicationLoader {
                     LOGGER.warn("Service returned null key");
                     continue;
                 }
-
 
                 for (WatchEvent<?> event : key.pollEvents()) {
                     fileName = event.context().toString();

@@ -114,8 +114,8 @@ public class MonitoringComponentConfig extends DXRAMModuleConfig {
             LOGGER.warn("Getting available disks to verify configured disk failed, ignore");
         }
 
-        if (m_monitoringFolder.isEmpty() || !new File(m_monitoringFolder).exists()) {
-            LOGGER.error("Monitoring folder [%s] invalid or doesn't exist", m_monitoringFolder);
+        if (m_monitoringFolder.isEmpty()) {
+            LOGGER.error("Monitoring folder must be set");
             return false;
         }
 

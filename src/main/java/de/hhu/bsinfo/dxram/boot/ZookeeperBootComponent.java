@@ -18,8 +18,10 @@ package de.hhu.bsinfo.dxram.boot;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import de.hhu.bsinfo.dxutils.Poller;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -49,7 +51,6 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-@SuppressWarnings("WeakerAccess")
 @AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
 @AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.BOOT,
         priorityShutdown = DXRAMComponentOrder.Shutdown.BOOT)
@@ -103,7 +104,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         m_counter = new DistributedAtomicInteger(m_curatorClient, COUNTER_PATH, RETRY_POLICY);
 
         // Assign a globally unique counter value to this superpeer
-        if (m_role.equals(NodeRole.SUPERPEER)) {
+        if (m_role == NodeRole.SUPERPEER) {
             assignNodeId();
         }
 
@@ -150,16 +151,16 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         try {
             m_nodeRegistry.start(m_details);
-        } catch (Exception p_e) {
-            LOGGER.error("Starting node registry failed", p_e);
+        } catch (Exception e) {
+            LOGGER.error("Starting node registry failed", e);
             return false;
         }
 
         try {
             // Insert own node information into ZooKeeper so other nodes can find the bootstrap node
             m_curatorClient.create().creatingParentsIfNeeded().forPath(BOOTSTRAP_NODE_PATH, m_details.toByteArray());
-        } catch (Exception p_e) {
-            LOGGER.error("Creating bootstrap entry failed", p_e);
+        } catch (Exception e) {
+            LOGGER.error("Creating bootstrap entry failed", e);
             return false;
         }
 
@@ -177,17 +178,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         LOGGER.info("Waiting on bootstrap node to finish initialization");
 
         // Wait until bootstrap node finishes initializing
-        NodeRegistry.NodeDetails bootstrapDetails = getBootstrapDetails();
-
-        while (bootstrapDetails == null) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException p_e) {
-                // Ignored
-            }
-
-            bootstrapDetails = getBootstrapDetails();
-        }
+        Poller.blockingPoll(this::getBootstrapDetails, 1, TimeUnit.SECONDS);
 
         LOGGER.info("Bootstrap node is ready");
 
@@ -200,7 +191,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         try {
             m_nodeRegistry.start(m_details);
-        } catch (Exception p_e) {
+        } catch (Exception e) {
             LOGGER.error("Starting node registry failed");
             return false;
         }
@@ -216,18 +207,20 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     private void assignNodeId() {
         AtomicValue<Integer> atomicValue;
 
-        try {
-            atomicValue = m_counter.increment();
-        } catch (Exception p_e) {
-            throw new RuntimeException(p_e);
-        }
+        do {
+            try {
+                atomicValue = m_counter.increment();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
 
-        if (!atomicValue.succeeded()) {
-            throw new IllegalStateException("Incrementing atomic counter failed");
-        }
+            if (!atomicValue.succeeded()) {
+                throw new IllegalStateException("Incrementing atomic counter failed");
+            }
 
-        m_counterValue = atomicValue.postValue();
-        m_id = calculateNodeId();
+            m_counterValue = atomicValue.postValue();
+            m_id = calculateNodeId();
+        } while (m_nodeRegistry.getDetails(m_id) != null);
 
         LOGGER.info("Assigned counter value %d to this node", m_counterValue);
     }
@@ -254,13 +247,12 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      *
      * @return The bootstrap node's details.
      */
-    @Nullable
-    private NodeRegistry.NodeDetails getBootstrapDetails() {
+    private @Nullable NodeRegistry.NodeDetails getBootstrapDetails() {
         byte[] bootBytes;
 
         try {
             bootBytes = m_curatorClient.getData().forPath(BOOTSTRAP_NODE_PATH);
-        } catch (Exception p_e) {
+        } catch (Exception e) {
             return null;
         }
 
@@ -346,7 +338,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     public List<Short> getOnlinePeerIds() {
         return m_nodeRegistry.getAll().stream()
                 .filter(NodeRegistry.NodeDetails::isOnline)
-                .filter(node -> node.getRole().equals(NodeRole.PEER))
+                .filter(node -> node.getRole() == NodeRole.PEER)
                 .map(NodeRegistry.NodeDetails::getId)
                 .collect(Collectors.toList());
     }
@@ -355,7 +347,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     public List<Short> getOnlineSuperpeerIds() {
         return m_nodeRegistry.getAll().stream()
                 .filter(NodeRegistry.NodeDetails::isOnline)
-                .filter(node -> node.getRole().equals(NodeRole.SUPERPEER))
+                .filter(node -> node.getRole() == NodeRole.SUPERPEER)
                 .map(NodeRegistry.NodeDetails::getId)
                 .collect(Collectors.toList());
     }

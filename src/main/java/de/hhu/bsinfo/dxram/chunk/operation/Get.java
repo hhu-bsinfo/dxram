@@ -159,7 +159,11 @@ public class Get extends AbstractOperation implements MessageReceiver {
                 p_chunk.setState(ChunkState.INVALID_ID);
             } else {
                 // try to get locally, will check first if it exists
-                m_chunk.getMemory().get().get(p_chunk, p_lockOperation, p_lockOperationTimeoutMs);
+                if (m_chunk.isStorageEnabled()) {
+                    m_chunk.getMemory().get().get(p_chunk, p_lockOperation, p_lockOperationTimeoutMs);
+                } else {
+                    p_chunk.setState(ChunkState.DOES_NOT_EXIST);
+                }
 
                 if (p_chunk.getState() == ChunkState.OK) {
                     result = true;
@@ -308,7 +312,11 @@ public class Get extends AbstractOperation implements MessageReceiver {
             }
 
             // try to get locally, will check first if it exists
-            m_chunk.getMemory().get().get(p_chunks[i], p_lockOperation, p_lockOperationTimeoutMs);
+            if (m_chunk.isStorageEnabled()) {
+                m_chunk.getMemory().get().get(p_chunks[i], p_lockOperation, p_lockOperationTimeoutMs);
+            } else {
+                p_chunks[i].setState(ChunkState.DOES_NOT_EXIST);
+            }
 
             if (p_chunks[i].getState() == ChunkState.OK) {
                 totalChunksGot++;

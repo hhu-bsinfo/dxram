@@ -34,9 +34,9 @@ import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 @AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.JOB_WORK_STEALING,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.JOB_WORK_STEALING)
-public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkStealingComponentConfig>
+@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.JOB,
+        priorityShutdown = DXRAMComponentOrder.Shutdown.JOB)
+public class JobComponent extends AbstractDXRAMComponent<JobComponentConfig>
         implements WorkerDelegate {
     // component dependencies
     private AbstractBootComponent m_boot;
@@ -45,21 +45,23 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
     private Worker[] m_workers;
     private AtomicLong m_unfinishedJobs = new AtomicLong(0);
 
-    @Override
     public boolean pushJob(final AbstractJob p_job) {
         if (!m_enabled) {
             LOGGER.warn("Cannot push job, disabled");
             return false;
         }
 
+        // gives the job access to dxram services
+        p_job.setServiceAccessor(getParentEngine());
+
         // cause we are using a work stealing approach, we do not need to
         // care about which worker to assign this job to
 
         boolean success = false;
+
         for (Worker worker : m_workers) {
             if (worker.pushJob(p_job)) {
                 // causes the garbage collector to go crazy if too many jobs are pushed very quickly
-
                 LOGGER.debug("Submitted job %s to worker %s", p_job, worker);
 
                 success = true;
@@ -74,7 +76,6 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
         return success;
     }
 
-    @Override
     public long getNumberOfUnfinishedJobs() {
         if (!m_enabled) {
             return 0;
@@ -83,7 +84,6 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
         return m_unfinishedJobs.get();
     }
 
-    @Override
     public boolean waitForSubmittedJobsToFinish() {
         if (!m_enabled) {
             return true;
@@ -103,7 +103,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
 
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
-        JobWorkStealingComponentConfig config = p_config.getComponentConfig(JobWorkStealingComponent.class);
+        JobComponentConfig config = p_config.getComponentConfig(JobComponent.class);
 
         m_enabled = config.isEnabled();
 
@@ -168,6 +168,7 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
             }
 
             job = worker.stealJob();
+
             if (job != null) {
                 LOGGER.trace("Job %s stolen from worker %s", job, worker);
 
@@ -193,10 +194,5 @@ public class JobWorkStealingComponent extends AbstractJobComponent<JobWorkSteali
     public void finishedJob(final AbstractJob p_job) {
         m_unfinishedJobs.decrementAndGet();
         p_job.notifyListenersJobFinishedExecution(m_boot.getNodeId());
-    }
-
-    @Override
-    public short getNodeID() {
-        return m_boot.getNodeId();
     }
 }

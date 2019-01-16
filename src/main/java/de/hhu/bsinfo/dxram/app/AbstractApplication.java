@@ -6,7 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
+import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 
 /**
@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 public abstract class AbstractApplication extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractApplication.class.getSimpleName());
 
-    private DXRAMEngine m_dxram;
+    private DXRAMServiceAccessor m_dxramServiceAccessor;
     private ApplicationCallbackHandler m_callbackHandler;
     private String[] m_args;
 
@@ -77,15 +77,16 @@ public abstract class AbstractApplication extends Thread {
     /**
      * Init the application class before starting it
      *
-     * @param p_engine
-     *         Parent engine
+     * @param p_dxramServiceAccessor
+     *         DXRAM service accessor
      * @param p_callbackHandler
      *         Callback handler for application state change
      * @param p_args
      *         Args for application
      */
-    void init(final DXRAMEngine p_engine, final ApplicationCallbackHandler p_callbackHandler, final String[] p_args) {
-        m_dxram = p_engine;
+    void init(final DXRAMServiceAccessor p_dxramServiceAccessor, final ApplicationCallbackHandler p_callbackHandler,
+            final String[] p_args) {
+        m_dxramServiceAccessor = p_dxramServiceAccessor;
         m_callbackHandler = p_callbackHandler;
         m_args = p_args;
     }
@@ -109,7 +110,7 @@ public abstract class AbstractApplication extends Thread {
      * @return DXRAM service or null if not available.
      */
     protected <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
-        return m_dxram.getService(p_class);
+        return m_dxramServiceAccessor.getService(p_class);
     }
 
     /**
@@ -121,6 +122,6 @@ public abstract class AbstractApplication extends Thread {
      * @return True if available, false otherwise
      */
     protected boolean isServiceAvailable(final Class<? extends AbstractDXRAMService> p_class) {
-        return m_dxram.isServiceAvailable(p_class);
+        return m_dxramServiceAccessor.isServiceAvailable(p_class);
     }
 }

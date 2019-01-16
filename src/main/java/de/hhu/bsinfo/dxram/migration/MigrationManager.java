@@ -16,8 +16,28 @@
 
 package de.hhu.bsinfo.dxram.migration;
 
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.LongStream;
 
-import de.hhu.bsinfo.dxmem.DXMem;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
@@ -38,17 +58,6 @@ import de.hhu.bsinfo.dxram.migration.progress.MigrationProgressTracker;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxutils.ArrayListLong;
 import de.hhu.bsinfo.dxutils.NodeID;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.text.DecimalFormat;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 @SuppressWarnings("WeakerAccess")
 public class MigrationManager implements MessageReceiver, ChunkMigrator {
@@ -62,7 +71,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     private final AbstractBootComponent m_boot;
     private final BackupComponent m_backup;
     private final ChunkMigrationComponent m_chunkMigration;
-    private final DXMem m_memory;
+    private final ChunkComponent m_chunk;
     private final NetworkComponent m_network;
 
     private final int m_workerCount;
@@ -74,7 +83,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
         m_executor = Executors.newFixedThreadPool(p_workerCount, THREAD_FACTORY);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_memory = p_componentAccessor.getComponent(ChunkComponent.class).getMemory();
+        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
         m_chunkMigration = p_componentAccessor.getComponent(ChunkMigrationComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
@@ -82,8 +91,10 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     /**
      * Migrates the specified chunk range to the target node using multiple worker threads.
      *
-     * @param p_target The target node.
-     * @param p_range The chunk range.
+     * @param p_target
+     *         The target node.
+     * @param p_range
+     *         The chunk range.
      * @return A ticket containing information associated with the created migration.
      */
     public MigrationTicket migrateRange(final short p_target, final LongRange p_range) {
@@ -101,7 +112,8 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     /**
      * Creates multiple migration tasks using the specified migration identifier.
      *
-     * @param p_identifier The migration identifier.
+     * @param p_identifier
+     *         The migration identifier.
      * @return An array containing migration tasks.
      */
     public List<MigrationTask> createMigrationTasks(MigrationIdentifier p_identifier, LongRange p_range) {
@@ -195,7 +207,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
         for (LongRange range : p_ranges) {
             for (long chunkId = range.getFrom(); chunkId < range.getTo(); chunkId++) {
 
-                if ((data[index] = m_memory.get().get(chunkId).getData()) == null) {
+                if ((data[index] = m_chunk.getMemory().get().get(chunkId).getData()) == null) {
                     log.warn("Chunk %X does not exist", chunkId);
                     throw new IllegalArgumentException("Can't migrate non-existent chunks");
                 }
@@ -232,13 +244,13 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     }
 
     public static String readableFileSize(long size) {
-        if (size <= 0){
+        if (size <= 0) {
             return "0";
         }
 
-        final String[] units = new String[] { "B", "kB", "MB", "GB", "TB" };
-        int digitGroups = (int) (Math.log10(size)/Math.log10(1024));
-        return new DecimalFormat("###0.#").format(size/Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+        final String[] units = new String[] {"B", "kB", "MB", "GB", "TB"};
+        int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
+        return new DecimalFormat("###0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
     }
 
     private void handle(final MigrationPush p_migrationPush) {
@@ -252,7 +264,8 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
                 p_migrationPush.getDestination(),
                 readableFileSize(size));
 
-        final long[] chunkIds = ranges.stream().flatMapToLong(range -> LongStream.range(range.getFrom(), range.getTo())).toArray();
+        final long[] chunkIds = ranges.stream().flatMapToLong(range -> LongStream.range(range.getFrom(), range.getTo()))
+                .toArray();
 
         log.debug("Saving received chunks");
 
@@ -289,7 +302,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
         // Remove chunks from local storage
         for (LongRange range : ranges) {
             for (long cid = range.getFrom(); cid < range.getTo(); cid++) {
-                int chunkSize = m_memory.remove().remove(cid, true);
+                int chunkSize = m_chunk.getMemory().remove().remove(cid, true);
                 m_backup.deregisterChunk(cid, chunkSize);
             }
         }
@@ -315,14 +328,14 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
             }
         }
 
-
         m_progressTracker.setFinished(identifier, ranges);
     }
 
     /**
      * Returns the progress associated with the specified identifier or null if the identifier is not registered.
      *
-     * @param p_identifier The identifier.
+     * @param p_identifier
+     *         The identifier.
      * @return The progress associated with the specified identifier.
      */
     @Nullable
@@ -342,7 +355,8 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     /**
      * Waits until the corresponding migration finishes.
      *
-     * @param p_ticket The ticket associated with the migration.
+     * @param p_ticket
+     *         The ticket associated with the migration.
      * @return The migration's status or null if an exception occurred.
      */
     @Nullable
@@ -358,11 +372,13 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     /**
      * Waits until the corresponding migration finishes or the specified timeout is reached.
      *
-     * @param p_ticket The ticket associated with the migration.
+     * @param p_ticket
+     *         The ticket associated with the migration.
      * @return The migration's status or null if an exception occurred or the timeout was reached.
      */
     @Nullable
-    public MigrationStatus await(final long p_timeout, final @NotNull TimeUnit p_timeUnit, final @NotNull MigrationTicket p_ticket) {
+    public MigrationStatus await(final long p_timeout, final @NotNull TimeUnit p_timeUnit,
+            final @NotNull MigrationTicket p_ticket) {
         try {
             return p_ticket.getFuture().get(p_timeout, p_timeUnit);
         } catch (InterruptedException | ExecutionException | TimeoutException p_e) {

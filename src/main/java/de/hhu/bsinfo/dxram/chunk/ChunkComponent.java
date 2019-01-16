@@ -40,11 +40,24 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
     private DXMem m_memory;
 
     /**
+     * Check if the key-value backend storage is enabled.
+     *
+     * @return True if enabled, false otherwise.
+     */
+    public boolean isStorageEnabled() {
+        return m_memory != null;
+    }
+
+    /**
      * Get the local key-value memory instance
      *
      * @return DXMem instance
      */
     public DXMem getMemory() {
+        if (m_memory == null) {
+            throw new IllegalStateException("Cannot access local chunk storage, disabled by configuration");
+        }
+
         return m_memory;
     }
 
@@ -57,18 +70,26 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         ChunkComponentConfig chunkConfig = p_config.getComponentConfig(ChunkComponent.class);
 
-        LOGGER.info("Allocating native memory (%d mb). This may take a while...",
-                chunkConfig.getKeyValueStoreSize().getMB());
+        if (chunkConfig.isChunkStorageEnabled()) {
+            LOGGER.info("Allocating native memory (%d mb). This may take a while...",
+                    chunkConfig.getKeyValueStoreSize().getMB());
 
-        m_memory = new DXMem(m_boot.getNodeId(), chunkConfig.getKeyValueStoreSize().getBytes(),
-                chunkConfig.isChunkLockDisabled());
+            m_memory = new DXMem(m_boot.getNodeId(), chunkConfig.getKeyValueStoreSize().getBytes(),
+                    chunkConfig.isChunkLockDisabled());
+        } else {
+            LOGGER.info("Chunk storage disabled");
+            m_memory = null;
+        }
 
         return true;
     }
 
     @Override
     protected boolean shutdownComponent() {
-        m_memory.shutdown();
+        if (m_memory != null) {
+            m_memory.shutdown();
+        }
+
         m_memory = null;
 
         return true;

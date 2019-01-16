@@ -56,6 +56,20 @@ public @interface DXRAMTestConfiguration {
         NodeRole nodeRole();
 
         /**
+         * The total size of the backend key-value storage.
+         *
+         * @return Total size of key-value storage in MB.
+         */
+        long keyValueStorageSizeMB() default 128;
+
+        /**
+         * Enable/disable the key-value backend storage.
+         *
+         * @return True to enable, false to disable.
+         */
+        boolean enableKeyValueStorage() default true;
+
+        /**
          * Activate/Disable the backup. This parameter should be either active for all nodes or inactive for all nodes
          */
         boolean backupActive() default false;
@@ -67,5 +81,12 @@ public @interface DXRAMTestConfiguration {
          * Do not set this parameter globally to deactivate backup. Use backupActive parameter for that purpose.
          */
         boolean availableForBackup() default false;
+
+        /**
+         * Enable the job subsystem
+         *
+         * @return True to enable, false disable
+         */
+        boolean enableJobService() default false;
     }
 }

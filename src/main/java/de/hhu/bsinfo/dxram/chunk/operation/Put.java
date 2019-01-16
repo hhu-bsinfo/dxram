@@ -1,11 +1,8 @@
 package de.hhu.bsinfo.dxram.chunk.operation;
 
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.TreeMap;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
-import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxmem.data.ChunkState;
@@ -20,8 +17,6 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
-import de.hhu.bsinfo.dxram.chunk.messages.GetMultiRequest;
-import de.hhu.bsinfo.dxram.chunk.messages.GetMultiResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutMultiRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.PutMultiResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.PutRequest;
@@ -149,7 +144,7 @@ public class Put extends AbstractOperation implements MessageReceiver {
      *         to network timeouts instead)
      * @return True if successful, false on error (check the chunk object state for errors)
      */
-    public boolean put(final AbstractChunk p_chunk , final ChunkLockOperation p_lockOperation,
+    public boolean put(final AbstractChunk p_chunk, final ChunkLockOperation p_lockOperation,
             final int p_lockOperationTimeoutMs) {
         m_logger.trace("put[chunk %X, lock op %s, lock timeout %d]", p_chunk.getID(), p_lockOperation,
                 p_lockOperationTimeoutMs);
@@ -165,7 +160,11 @@ public class Put extends AbstractOperation implements MessageReceiver {
                 p_chunk.setState(ChunkState.INVALID_ID);
             } else {
                 // try to get locally, will check first if it exists
-                m_chunk.getMemory().put().put(p_chunk, p_lockOperation, p_lockOperationTimeoutMs);
+                if (m_chunk.isStorageEnabled()) {
+                    m_chunk.getMemory().put().put(p_chunk, p_lockOperation, p_lockOperationTimeoutMs);
+                } else {
+                    p_chunk.setState(ChunkState.DOES_NOT_EXIST);
+                }
 
                 if (p_chunk.getState() == ChunkState.OK) {
                     result = true;
@@ -315,7 +314,11 @@ public class Put extends AbstractOperation implements MessageReceiver {
             }
 
             // try to put locally, will check first if it exists
-            m_chunk.getMemory().put().put(p_chunks[i], p_lockOperation, p_lockOperationTimeoutMs);
+            if (m_chunk.isStorageEnabled()) {
+                m_chunk.getMemory().put().put(p_chunks[i], p_lockOperation, p_lockOperationTimeoutMs);
+            } else {
+                p_chunks[i].setState(ChunkState.DOES_NOT_EXIST);
+            }
 
             if (p_chunks[i].getState() == ChunkState.OK) {
                 totalChunksGot++;
@@ -471,6 +474,7 @@ public class Put extends AbstractOperation implements MessageReceiver {
 
                 ChunkState state = m_chunk.getMemory().put().put(chunkID, data, request.getLockOperation(),
                         request.getLockOperationTimeoutMs());
+
                 statusChunks = (byte) state.ordinal();
                 successful = state == ChunkState.OK;
 
@@ -511,7 +515,8 @@ public class Put extends AbstractOperation implements MessageReceiver {
                 int successfulPuts = 0;
 
                 for (int i = 0; i < chunkStates.length; i++) {
-                    ChunkState state = m_chunk.getMemory().put().put(request.getChunkIDs()[i], request.getChunkData()[i],
+                    ChunkState state = m_chunk.getMemory().put().put(request.getChunkIDs()[i],
+                            request.getChunkData()[i],
                             request.getLockOperation(), request.getLockOperationTimeoutMs());
 
                     chunkStates[i] = (byte) state.ordinal();

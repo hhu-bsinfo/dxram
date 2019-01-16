@@ -1,5 +1,7 @@
 # Create releases of DXRAM and all related repositories
 
+Document for development of DXRAM.
+
 Repositories (create releases in order due to depedencies):
 * dxbuild
 * dxutils

@@ -68,7 +68,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
 
     // depdendent components
     private AbstractBootComponent m_boot;
-    private AbstractJobComponent m_job;
+    private JobComponent m_job;
     private NetworkComponent m_network;
 
     private final JobMap m_jobMap = new JobMap();
@@ -105,8 +105,9 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
         long jobId = JobID.createJobID(m_boot.getNodeId(), m_jobIDCounter.incrementAndGet());
 
         // nasty way to access the services...feel free to have a better solution for this
-        p_job.setServiceAccessor(getServiceAccessor());
+        p_job.setServiceAccessor(getParentEngine());
         p_job.setID(jobId);
+
         if (!m_job.pushJob(p_job)) {
             jobId = JobID.INVALID_ID;
             p_job.setID(jobId);
@@ -173,7 +174,16 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
      * @return True if waiting was successful and all jobs finished, false otherwise.
      */
     public boolean waitForLocalJobsToFinish() {
-        return m_job.waitForSubmittedJobsToFinish();
+        return waitForAllJobsToFinish(true, false);
+    }
+
+    /**
+     * Wait for all remotely scheduled and currently executing jobs to finish.
+     *
+     * @return True if waiting was successful and all jobs finished, false otherwise.
+     */
+    public boolean waitForRemoteJobsToFinish() {
+        return waitForAllJobsToFinish(false, true);
     }
 
     /**
@@ -182,61 +192,11 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
      * @return True if all jobs finished successfully, false otherwise.
      */
     public boolean waitForAllJobsToFinish() {
-        int successCount = 0;
-        // if we checked all job systems successfully
-        // 5 times in a row, we consider this as a full termination
-        while (successCount < 5) {
-            // wait for local jobs to finish first
-            if (!m_job.waitForSubmittedJobsToFinish()) {
-                return false;
-            }
-
-            // now check for remote peers
-            List<Short> peers = m_boot.getOnlinePeerIds();
-            for (short peer : peers) {
-                // filter own node id
-                if (peer == m_boot.getNodeId()) {
-                    continue;
-                }
-
-                StatusRequest request = new StatusRequest(peer);
-
-                try {
-                    m_network.sendSync(request);
-                } catch (final NetworkException e) {
-
-                    LOGGER.error("Sending get status request to wait for termination to 0x%X failed: %s", peer, e);
-
-                    // abort here as well, as we do not know what happened exactly
-                    return false;
-                }
-
-                StatusResponse response = request.getResponse(StatusResponse.class);
-                if (response.getStatus().getNumberOfUnfinishedJobs() != 0) {
-                    successCount = 0;
-
-                    // not done, yet...sleep a little and try again
-                    try {
-                        Thread.sleep(1000);
-                    } catch (final InterruptedException ignored) {
-                    }
-                    continue;
-                }
-            }
-
-            // we checked all job systems and were successful, but
-            // this does not guarantee we are really done due to
-            // race conditions...
-            // make sure to check a few more times
-            successCount++;
-        }
-
-        return true;
+        return waitForAllJobsToFinish(true, true);
     }
 
     @Override
     public void onIncomingMessage(final Message p_message) {
-
         LOGGER.trace("Entering incomingMessage with: p_message=%s", p_message);
 
         if (p_message != null) {
@@ -258,7 +218,6 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
         }
 
         LOGGER.trace("Exiting incomingMessage");
-
     }
 
     // --------------------------------------------------------------------------------------------
@@ -308,7 +267,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_job = p_componentAccessor.getComponent(AbstractJobComponent.class);
+        m_job = p_componentAccessor.getComponent(JobComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
@@ -324,11 +283,6 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
 
     @Override
     protected boolean shutdownService() {
-        return true;
-    }
-
-    @Override
-    protected boolean isServiceAccessor() {
         return true;
     }
 
@@ -358,6 +312,78 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
     }
 
     /**
+     * Wait for multiple jobs to finish (local and/or remote)
+     *
+     * @param p_local
+     *         Wait for jobs running locally.
+     * @param p_remote
+     *         Wait for jobs running remotely.
+     * @return True if all jobs finished successfully, false otherwise.
+     */
+    private boolean waitForAllJobsToFinish(final boolean p_local, final boolean p_remote) {
+        assert !(!p_local && !p_remote);
+
+        int successCount = 0;
+
+        // if we checked all job systems successfully
+        // 5 times in a row, we consider this as a full termination
+        while (successCount < 5) {
+            if (p_local) {
+                // wait for local jobs to finish first
+                if (!m_job.waitForSubmittedJobsToFinish()) {
+                    return false;
+                }
+            }
+
+            if (p_remote) {
+                // now check for remote peers
+                List<Short> peers = m_boot.getOnlinePeerIds();
+
+                for (int i = 0; i < peers.size(); i++) {
+                    // filter own node id
+                    if (peers.get(i) == m_boot.getNodeId()) {
+                        continue;
+                    }
+
+                    StatusRequest request = new StatusRequest(peers.get(i));
+
+                    try {
+                        m_network.sendSync(request);
+                    } catch (final NetworkException e) {
+                        LOGGER.error("Sending get status request to wait for termination to 0x%X failed: %s",
+                                peers.get(i), e);
+
+                        // abort here as well, as we do not know what happened exactly
+                        return false;
+                    }
+
+                    StatusResponse response = request.getResponse(StatusResponse.class);
+
+                    if (response.getStatus().getNumberOfUnfinishedJobs() != 0) {
+                        successCount = 0;
+
+                        // not done, yet...sleep a little and try again
+                        try {
+                            Thread.sleep(1000);
+                        } catch (final InterruptedException ignored) {
+                        }
+
+                        continue;
+                    }
+                }
+            }
+
+            // we checked all job systems and were successful, but
+            // this does not guarantee we are really done due to
+            // race conditions...
+            // make sure to check a few more times
+            successCount++;
+        }
+
+        return true;
+    }
+
+    /**
      * Handle incoming push queue request.
      *
      * @param p_request
@@ -373,7 +399,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
         // de-serialize job data
         importer.importObject(job);
 
-        job.setServiceAccessor(getServiceAccessor());
+        job.setServiceAccessor(getParentEngine());
 
         // register ourselves as listener to event callbacks
         // and redirect them to the remote source

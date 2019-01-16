@@ -65,7 +65,7 @@ public class DXRAMVersion {
      * @return DXRAMVersion object
      */
     public static DXRAMVersion fromString(final String p_version) {
-        Pattern pattern = Pattern.compile("^(\\d).(\\d).(\\d)(?:-\\w+)*$");
+        Pattern pattern = Pattern.compile("^(\\d+).(\\d+).(\\d+)(?:-\\w+)*$");
 
         Matcher matcher = pattern.matcher(p_version);
 

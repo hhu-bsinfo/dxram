@@ -10,14 +10,14 @@ import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
- * Config for the JobWorkStealingComponent
+ * Config for the JobComponent
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 24.05.2017
  */
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class JobWorkStealingComponentConfig extends DXRAMModuleConfig {
+public class JobComponentConfig extends DXRAMModuleConfig {
     private static final int NUM_WORKERS_MAX = 64;
 
     /**
@@ -35,8 +35,8 @@ public class JobWorkStealingComponentConfig extends DXRAMModuleConfig {
     /**
      * Constructor
      */
-    public JobWorkStealingComponentConfig() {
-        super(JobWorkStealingComponent.class);
+    public JobComponentConfig() {
+        super(JobComponent.class);
     }
 
     @Override

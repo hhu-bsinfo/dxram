@@ -25,7 +25,6 @@ import org.apache.logging.log4j.Logger;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class JobNull extends AbstractJob {
-
     private static final Logger LOGGER = LogManager.getFormatterLogger(JobNull.class.getSimpleName());
 
     public static final short MS_TYPE_ID = 0;
@@ -34,7 +33,7 @@ public class JobNull extends AbstractJob {
      * Constructor
      */
     public JobNull() {
-        super(null);
+
     }
 
     @Override
@@ -43,9 +42,7 @@ public class JobNull extends AbstractJob {
     }
 
     @Override
-    protected void execute(final short p_nodeID, final long[] p_chunkIDs) {
-
+    public void execute() {
         LOGGER.debug("I am null job.");
-
     }
 }

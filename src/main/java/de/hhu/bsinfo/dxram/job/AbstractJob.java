@@ -17,8 +17,6 @@
 package de.hhu.bsinfo.dxram.job;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -28,7 +26,6 @@ import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
-import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Base class for an job that can be executed by the
@@ -41,7 +38,6 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  */
 public abstract class AbstractJob implements Importable, Exportable {
     private long m_id = JobID.INVALID_ID;
-    private long[] m_parameterChunkIDs;
 
     // allow the job system to access the listeners
     ArrayList<JobEventListener> m_eventListeners = new ArrayList<>();
@@ -51,31 +47,11 @@ public abstract class AbstractJob implements Importable, Exportable {
     private DXRAMServiceAccessor m_serviceAccessor;
 
     /**
-     * Constructor
-     *
-     * @param p_parameterChunkIDs
-     *         ChunkIDs, which are passed as parameters to the Job on execution.
-     *         The max count is 255, which is plenty enough.
-     */
-    public AbstractJob(final long... p_parameterChunkIDs) {
-        assert p_parameterChunkIDs.length <= 255;
-
-        m_parameterChunkIDs = p_parameterChunkIDs;
-    }
-
-    /**
-     * Constructor with no chunkID parameters.
+     * Constructor.
      */
     public AbstractJob() {
-        m_parameterChunkIDs = new long[0];
-    }
 
-    /**
-     * Get the type ID of this Job object.
-     *
-     * @return Type ID.
-     */
-    public abstract short getTypeID();
+    }
 
     /**
      * Get the ID of this job.
@@ -87,14 +63,16 @@ public abstract class AbstractJob implements Importable, Exportable {
     }
 
     /**
-     * Execute this job.
+     * Get the type ID of this Job object.
      *
-     * @param p_nodeID
-     *         NodeID of the node this job is excecuted on.
+     * @return Type ID.
      */
-    public void execute(final short p_nodeID) {
-        execute(p_nodeID, m_parameterChunkIDs);
-    }
+    public abstract short getTypeID();
+
+    /**
+     * Execute this job.
+     */
+    public abstract void execute();
 
     @Override
     public String toString() {
@@ -117,18 +95,16 @@ public abstract class AbstractJob implements Importable, Exportable {
     @Override
     public void importObject(final Importer p_importer) {
         m_id = p_importer.readLong(m_id);
-        m_parameterChunkIDs = p_importer.readLongArray(m_parameterChunkIDs);
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeLong(m_id);
-        p_exporter.writeLongArray(m_parameterChunkIDs);
     }
 
     @Override
     public int sizeofObject() {
-        return Long.BYTES + ObjectSizeUtil.sizeofLongArray(m_parameterChunkIDs);
+        return Long.BYTES;
     }
 
     // -------------------------------------------------------------------
@@ -197,16 +173,6 @@ public abstract class AbstractJob implements Importable, Exportable {
     }
 
     // -------------------------------------------------------------------
-
-    /**
-     * Implement this function and put your code to be executed with this job here.
-     *
-     * @param p_nodeID
-     *         NodeID this job is executed on.
-     * @param p_chunkIDs
-     *         Parameters this job was created with.
-     */
-    protected abstract void execute(final short p_nodeID, long[] p_chunkIDs);
 
     /**
      * Get services from DXRAM within this job. This is allowed for external jobs, only.

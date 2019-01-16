@@ -169,7 +169,7 @@ public class Remove extends AbstractOperation implements MessageReceiver {
                 continue;
             }
 
-            if (m_chunk.getMemory().exists().exists(p_cids[i + p_offset])) {
+            if (m_chunk.isStorageEnabled() && m_chunk.getMemory().exists().exists(p_cids[i + p_offset])) {
                 if (ChunkID.getCreatorID(p_cids[i + p_offset]) != m_boot.getNodeId()) {
                     // sort by initial owner/creator for chunk ID reuse
                     ArrayListLong reuseChunkIDsOfPeer = reuseChunkIDsByPeers.computeIfAbsent(ChunkID.getCreatorID(

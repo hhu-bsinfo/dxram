@@ -38,6 +38,17 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
      *
      * @param p_class
      *         Fully qualified class name of application to start
+     * @return True if starting application was successful, false on error
+     */
+    public boolean startApplication(final String p_class) {
+        return m_appComponent.startApplication(p_class, new String[] {});
+    }
+
+    /**
+     * Start an application
+     *
+     * @param p_class
+     *         Fully qualified class name of application to start
      * @param p_args
      *         Arguments for application
      * @return True if starting application was successful, false on error
@@ -99,12 +110,23 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
      *
      * @return List of currently running applications
      */
-    public List<String> geApplicationsRunning() {
+    public List<String> getApplicationsRunning() {
         return m_appComponent.getApplicationsRunning();
     }
 
     public Collection<ApplicationProcess> getRunningProcesses() {
         return m_appComponent.getRunningProcesses();
+    }
+
+    /**
+     * Register an application class at the loader (external). Allows registering in-code
+     * application classes without having to load jars (e.g. for testing).
+     *
+     * @param p_class
+     *         Application class to register
+     */
+    public void registerApplicationClass(final Class<? extends AbstractApplication> p_class) {
+        m_appComponent.registerApplicationClass(p_class);
     }
 
     @Override
