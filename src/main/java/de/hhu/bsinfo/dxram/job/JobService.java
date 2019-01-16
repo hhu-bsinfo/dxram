@@ -177,39 +177,18 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
     }
 
     /**
-     * Wait for remote jobs to finish
-     *
-     * @return True if all remote jobs finished successfully, false otherwise.
-     */
-    public boolean waitForRemoteJobsToFinish() {
-        return waitForJobsToFinish(false);
-    }
-
-    /**
      * Wait for all jobs including remote ones to finish
      *
      * @return True if all jobs finished successfully, false otherwise.
      */
     public boolean waitForAllJobsToFinish() {
-        return waitForJobsToFinish(true);
-    }
-
-    /**
-     * Wait for jobs to finish
-     *
-     * @param waitForLocalJobs True if including local jobs, false otherwise.
-     * @return True if all jobs finished successfully, false otherwise.
-     */
-    public boolean waitForJobsToFinish(boolean waitForLocalJobs) {
         int successCount = 0;
         // if we checked all job systems successfully
         // 5 times in a row, we consider this as a full termination
         while (successCount < 5) {
             // wait for local jobs to finish first
-            if (waitForLocalJobs) {
-        	    if (!m_job.waitForSubmittedJobsToFinish()) {
-                    return false;
-                }
+            if (!m_job.waitForSubmittedJobsToFinish()) {
+                return false;
             }
 
             // now check for remote peers
