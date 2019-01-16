@@ -16,7 +16,9 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -89,6 +91,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         m_role = p_config.getEngineConfig().getRole();
         m_capabilities = detectNodeCapabilities(p_config);
 
+        LOGGER.info("Searching free port");
+
+        m_port = getNextOpenPort(m_port);
+
         LOGGER.info("Initializing with address %s:%d and role %s", m_address, m_port, m_role);
 
         String zooKeeperAddress = String.format("%s:%d", getConfig().getConnection().getIP(),
@@ -114,6 +120,17 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         } else {
             // Start normal node initialization process if this is not the first superpeer
             return initializeNormalNode();
+        }
+    }
+
+    private static int getNextOpenPort(final int p_start) {
+        int currentPort = p_start;
+        while(true) {
+            try (ServerSocket socket = new ServerSocket(currentPort)) {
+                return socket.getLocalPort();
+            } catch (IOException e) {
+                currentPort++;
+            }
         }
     }
 
