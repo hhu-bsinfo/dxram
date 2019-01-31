@@ -40,7 +40,6 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
 /**
  * JUnit runner to run local DXRAM instances (in the same JVM!!!) and connect them over localhost ethernet. This allows
@@ -50,7 +49,6 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
 public class DXRAMJunitRunner extends Runner {
-    private ZookeeperServer m_zookeeper;
     private DXRAM[] m_instances;
 
     private Class m_testClass;
@@ -86,24 +84,12 @@ public class DXRAMJunitRunner extends Runner {
 
         Properties props = getConfigProperties();
 
-        m_zookeeper = new ZookeeperServer(props.getProperty("zookeeper_path"));
-
-        System.out.println("Starting zookeeper");
-
-        if (!m_zookeeper.start()) {
-            throw new RuntimeException("Starting zookeeper failed");
-        }
-
-        IPV4Unit zookeeperConnection = new IPV4Unit(props.getProperty("zookeeper_ip"),
-                Integer.parseInt(props.getProperty("zookeeper_port")));
-
         m_instances = new DXRAM[config.nodes().length];
 
         System.out.println("Creating " + m_instances.length + " DXRAM instances");
 
         for (int i = 0; i < m_instances.length; i++) {
-            m_instances[i] = createNodeInstance(props.getProperty("dxram_build_dist_out"), zookeeperConnection,
-                    config, i, 22221 + i);
+            m_instances[i] = createNodeInstance(props.getProperty("dxram_build_dist_out"), config, i, 22221 + i);
         }
 
         DXRAM testInstance = getInstanceForTest(m_instances, config);
@@ -111,7 +97,6 @@ public class DXRAMJunitRunner extends Runner {
         runTestOnInstance(testInstance, p_notifier);
 
         cleanupNodeInstances(m_instances);
-        m_zookeeper.shutdown();
     }
 
     /**
@@ -134,8 +119,6 @@ public class DXRAMJunitRunner extends Runner {
      * @param p_dxramBuildDistDir
      *         Path to directory containing the build output for distribution (required to test with applications,
      *         backup/logging etc)
-     * @param p_zookeeperConnection
-     *         Address to zookeeper server
      * @param p_config
      *         Test configuration to use
      * @param p_nodeIdx
@@ -144,8 +127,8 @@ public class DXRAMJunitRunner extends Runner {
      *         Port to assign to node
      * @return New DXRAM instance
      */
-    private DXRAM createNodeInstance(final String p_dxramBuildDistDir, final IPV4Unit p_zookeeperConnection,
-            final DXRAMTestConfiguration p_config, final int p_nodeIdx, final int p_nodePort) {
+    private DXRAM createNodeInstance(final String p_dxramBuildDistDir, final DXRAMTestConfiguration p_config,
+            final int p_nodeIdx, final int p_nodePort) {
         if (!new File(p_dxramBuildDistDir).exists()) {
             throw new RuntimeException("Directory '" + p_dxramBuildDistDir +
                     "' with DXRAM build distribution output does not exist, required for testing applications, " +
@@ -154,8 +137,8 @@ public class DXRAMJunitRunner extends Runner {
 
         DXRAM instance = new DXRAM();
 
-        DXRAMConfig config = new DXRAMConfigBuilderTest(p_dxramBuildDistDir, p_zookeeperConnection, p_config,
-                p_nodeIdx, p_nodePort).build(instance.createDefaultConfigInstance());
+        DXRAMConfig config = new DXRAMConfigBuilderTest(p_dxramBuildDistDir, p_config, p_nodeIdx,
+                p_nodePort).build(instance.createDefaultConfigInstance());
 
         if (!instance.initialize(config, true)) {
             System.out.println("Creating instance failed");
@@ -172,10 +155,11 @@ public class DXRAMJunitRunner extends Runner {
      *         Instances to cleanup
      */
     private void cleanupNodeInstances(final DXRAM[] p_instances) {
-        System.out.println("Cleanup DXRAM instances");
+        System.out.println("Cleanup DXRAM instances: " + p_instances.length);
 
-        for (DXRAM instance : p_instances) {
-            instance.shutdown();
+        // cleanup in reverse order: superpeers have to soft shutdown last
+        for (int i = p_instances.length - 1; i >= 0; i--) {
+            p_instances[i].shutdown();
         }
     }
 

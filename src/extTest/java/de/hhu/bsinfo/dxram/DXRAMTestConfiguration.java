@@ -21,6 +21,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import de.hhu.bsinfo.dxram.ms.ComputeRole;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
@@ -88,5 +89,20 @@ public @interface DXRAMTestConfiguration {
          * @return True to enable, false disable
          */
         boolean enableJobService() default false;
+
+        /**
+         * Enable the master slave service and set the role for the compute node
+         *
+         * @return Role of the node
+         */
+        ComputeRole masterSlaveComputeRole() default ComputeRole.NONE;
+
+        /**
+         * Set the request response timeout for network messages.
+         * Have a rather high timeout for localhost testing because, naturally, everything will be slower.
+         *
+         * @return Timeout in ms.
+         */
+        int networkRequestResponseTimeoutMs() default 1000;
     }
 }
