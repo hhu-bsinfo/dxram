@@ -164,6 +164,16 @@ public final class NodeCapabilities {
     }
 
     /**
+     * Indicates if the specified capabilities represent a client.
+     *
+     * @param p_capabilities The capabilities.
+     * @return True, if the capabilities represent a client; false else.
+     */
+    public static boolean isClient(final int p_capabilities) {
+        return p_capabilities == NONE;
+    }
+
+    /**
      * Creates a bitmask representing the specified capabilities.
      * <pre>
      * <u>Example</u>

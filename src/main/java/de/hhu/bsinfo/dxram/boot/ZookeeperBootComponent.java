@@ -29,6 +29,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import de.hhu.bsinfo.dxram.job.JobComponent;
+import de.hhu.bsinfo.dxram.job.JobComponentConfig;
+import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeServiceConfig;
 import de.hhu.bsinfo.dxutils.Poller;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -404,12 +407,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return NodeCapabilities.NONE;
         }
 
-        if (getConfig().isClient()) {
-            return NodeCapabilities.COMPUTE;
-        }
-
         ChunkComponentConfig chunkConfig = p_config.getComponentConfig(ChunkComponent.class);
         BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponent.class);
+        JobComponentConfig jobComponentConfig = p_config.getComponentConfig(JobComponent.class);
 
         int capabilities = 0;
 
@@ -423,6 +423,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         if (backupConfig.isBackupActive() && backupConfig.isAvailableForBackup()) {
             capabilities |= NodeCapabilities.BACKUP_DST;
+        }
+
+        if (jobComponentConfig.isEnabled()) {
+            capabilities |= NodeCapabilities.COMPUTE;
         }
 
         LOGGER.info("Detected capabilities %s", NodeCapabilities.toString(capabilities));

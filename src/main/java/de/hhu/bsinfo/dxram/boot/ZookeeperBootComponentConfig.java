@@ -33,14 +33,17 @@ public class ZookeeperBootComponentConfig extends DXRAMModuleConfig {
      * Path for zookeeper data directory.
      */
     @Expose
-    String m_dataDir = "zookeeper_data";
+    private String m_dataDir = "zookeeper_data";
 
     /**
-     * Address and port of zookeeper
+     * Address and port of zookeeper (bootstrap peer).
      */
     @Expose
     private IPV4Unit m_connection = new IPV4Unit("127.0.0.1", 2181);
 
+    /**
+     * The ZooKeeper connection timeout.
+     */
     @Expose
     private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
 
@@ -56,9 +59,9 @@ public class ZookeeperBootComponentConfig extends DXRAMModuleConfig {
     @Expose
     private short m_switch = 0;
 
-    @Expose
-    private boolean m_isClient = false;
-
+    /**
+     * Indicates if this peer is responsible for the bootstrapping process.
+     */
     @Expose
     private boolean m_isBootstrap = false;
 
@@ -71,11 +74,6 @@ public class ZookeeperBootComponentConfig extends DXRAMModuleConfig {
 
     @Override
     protected boolean verify(final DXRAMConfig p_config) {
-        if (p_config.getEngineConfig().getRole() == NodeRole.SUPERPEER && m_isClient) {
-            LOGGER.error("Client nodes can't be superpeers");
-            return false;
-        }
-
         if (p_config.getEngineConfig().getRole() != NodeRole.SUPERPEER && m_isBootstrap) {
             LOGGER.error("Bootstrap nodes must be superpeers");
             return false;
