@@ -1,28 +1,24 @@
 package de.hhu.bsinfo.dxram.job;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import de.hhu.bsinfo.dxram.ClientInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
+import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
-@DXRAMTestConfiguration(runTestOnNodeIdx = 1,
+@DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, enableJobService = true)
         })
 public class JobServiceTest {
-    @ClientInstance
-    private DXRAM m_instance;
-
-    @Test
-    public void simpleTest() {
-        JobService jobService = m_instance.getService(JobService.class);
+    @TestInstance(runOnNodeIdx = 1)
+    public void simpleTest(final DXRAM p_instance) {
+        JobService jobService = p_instance.getService(JobService.class);
 
         JobTest job = new JobTest(5);
 

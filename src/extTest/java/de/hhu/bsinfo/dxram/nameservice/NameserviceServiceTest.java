@@ -17,29 +17,25 @@
 package de.hhu.bsinfo.dxram.nameservice;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import de.hhu.bsinfo.dxmem.data.ChunkID;
-import de.hhu.bsinfo.dxram.ClientInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
+import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
+import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
-@DXRAMTestConfiguration(runTestOnNodeIdx = 1,
+@DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
 public class NameserviceServiceTest {
-    @ClientInstance
-    private DXRAM m_instance;
-
-    @Test
-    public void testNameService() {
-        NameserviceService nameserviceService = m_instance.getService(NameserviceService.class);
+    @TestInstance(runOnNodeIdx = 1)
+    public void testNameService(final DXRAM p_instance) {
+        NameserviceService nameserviceService = p_instance.getService(NameserviceService.class);
         nameserviceService.register(ChunkID.getChunkID((short) 0x1234, 42), "TEST");
         long chunkId = nameserviceService.getChunkID("TEST", 1000);
 

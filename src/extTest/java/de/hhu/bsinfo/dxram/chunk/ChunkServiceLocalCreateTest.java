@@ -17,149 +17,145 @@
 package de.hhu.bsinfo.dxram.chunk;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import de.hhu.bsinfo.dxmem.data.ChunkByteArray;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
-import de.hhu.bsinfo.dxram.ClientInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
+import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
+import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
-@DXRAMTestConfiguration(runTestOnNodeIdx = 1,
+@DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
 public class ChunkServiceLocalCreateTest {
-    @ClientInstance
-    private DXRAM m_instance;
-
-    @Test
-    public void createSize() {
-        createSize(1, 64, false);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSize(final DXRAM p_instance) {
+        createSize(p_instance, 1, 64, false);
     }
 
-    @Test
-    public void createSize2() {
-        createSize(1, 1024 * 1024, false);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSize2(final DXRAM p_instance) {
+        createSize(p_instance, 1, 1024 * 1024, false);
     }
 
-    @Test
-    public void createSize3() {
-        createSize(1, 16 * 1024 * 1024, false);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSize3(final DXRAM p_instance) {
+        createSize(p_instance, 1, 16 * 1024 * 1024, false);
     }
 
-    @Test
-    public void createSize4() {
-        createSize(10, 16, false);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSize4(final DXRAM p_instance) {
+        createSize(p_instance, 10, 16, false);
     }
 
-    @Test
-    public void createSize5() {
-        createSize(100, 1, false);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSize5(final DXRAM p_instance) {
+        createSize(p_instance, 100, 1, false);
     }
 
-    @Test
-    public void createSize6() {
-        createSize(10, 16, true);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSize6(final DXRAM p_instance) {
+        createSize(p_instance, 10, 16, true);
     }
 
-    @Test
-    public void createSize7() {
-        createSize(100, 1, true);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSize7(final DXRAM p_instance) {
+        createSize(p_instance, 100, 1, true);
     }
 
-    @Test
-    public void createSizes() {
-        createSizes(false, new int[] {64});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSizes(final DXRAM p_instance) {
+        createSizes(p_instance, false, new int[] {64});
     }
 
-    @Test
-    public void createSizes2() {
-        createSizes(false, new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSizes2(final DXRAM p_instance) {
+        createSizes(p_instance, false, new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
     }
 
-    @Test
-    public void createSizes3() {
-        createSizes(false, new int[] {32, 64, 128, 832, 99});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSizes3(final DXRAM p_instance) {
+        createSizes(p_instance, false, new int[] {32, 64, 128, 832, 99});
     }
 
-    @Test
-    public void createSizes4() {
-        createSizes(true, new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSizes4(final DXRAM p_instance) {
+        createSizes(p_instance, true, new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
     }
 
-    @Test
-    public void createSizes5() {
-        createSizes(true, new int[] {32, 64, 128, 832, 99});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSizes5(final DXRAM p_instance) {
+        createSizes(p_instance, true, new int[] {32, 64, 128, 832, 99});
     }
 
-    @Test
-    public void createSizes6() {
-        createSizes(false, ChunkTestUtils.generateRandomSizes(1000, 1, 1000));
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSizes6(final DXRAM p_instance) {
+        createSizes(p_instance, false, ChunkTestUtils.generateRandomSizes(1000, 1, 1000));
     }
 
-    @Test
-    public void createSizes7() {
-        createSizes(true, ChunkTestUtils.generateRandomSizes(1000, 1, 1000));
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSizes7(final DXRAM p_instance) {
+        createSizes(p_instance, true, ChunkTestUtils.generateRandomSizes(1000, 1, 1000));
     }
 
-    @Test
-    public void createChunk() {
-        createChunk(false, new int[] {64});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk(final DXRAM p_instance) {
+        createChunk(p_instance, false, new int[] {64});
     }
 
-    @Test
-    public void createChunk2() {
-        createChunk(false, new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk2(final DXRAM p_instance) {
+        createChunk(p_instance, false, new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
     }
 
-    @Test
-    public void createChunk3() {
-        createChunk(false, new int[] {32, 64, 128, 832, 99});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk3(final DXRAM p_instance) {
+        createChunk(p_instance, false, new int[] {32, 64, 128, 832, 99});
     }
 
-    @Test
-    public void createChunk4() {
-        createChunk(true, new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk4(final DXRAM p_instance) {
+        createChunk(p_instance, true, new int[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16});
     }
 
-    @Test
-    public void createChunk5() {
-        createChunk(true, new int[] {32, 64, 128, 832, 99});
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk5(final DXRAM p_instance) {
+        createChunk(p_instance, true, new int[] {32, 64, 128, 832, 99});
     }
 
-    @Test
-    public void createChunk6() {
-        createChunk2(false, 1);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk6(final DXRAM p_instance) {
+        createChunk2(p_instance, false, 1);
     }
 
-    @Test
-    public void createChunk7() {
-        createChunk2(false, 20);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk7(final DXRAM p_instance) {
+        createChunk2(p_instance, false, 20);
     }
 
-    @Test
-    public void createChunk8() {
-        createChunk2(true, 20);
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk8(final DXRAM p_instance) {
+        createChunk2(p_instance, true, 20);
     }
 
-    @Test
-    public void createChunk9() {
-        createChunk(false, ChunkTestUtils.generateRandomSizes(1000, 1, 1000));
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk9(final DXRAM p_instance) {
+        createChunk(p_instance, false, ChunkTestUtils.generateRandomSizes(1000, 1, 1000));
     }
 
-    @Test
-    public void createChunk10() {
-        createChunk(true, ChunkTestUtils.generateRandomSizes(1000, 1, 1000));
+    @TestInstance(runOnNodeIdx = 1)
+    public void createChunk10(final DXRAM p_instance) {
+        createChunk(p_instance, true, ChunkTestUtils.generateRandomSizes(1000, 1, 1000));
     }
 
-    private void createSize(final int p_count, final int p_size, final boolean p_consecutive) {
-        ChunkLocalService chunkLocalService = m_instance.getService(ChunkLocalService.class);
+    private void createSize(final DXRAM p_instance, final int p_count, final int p_size, final boolean p_consecutive) {
+        ChunkLocalService chunkLocalService = p_instance.getService(ChunkLocalService.class);
 
         long[] cids = new long[p_count];
         int created = chunkLocalService.createLocal().create(cids, 0, p_count, p_size, p_consecutive);
@@ -181,8 +177,8 @@ public class ChunkServiceLocalCreateTest {
         }
     }
 
-    private void createSizes(final boolean p_consecutive, final int[] p_sizes) {
-        ChunkLocalService chunkLocalService = m_instance.getService(ChunkLocalService.class);
+    private void createSizes(final DXRAM p_instance, final boolean p_consecutive, final int[] p_sizes) {
+        ChunkLocalService chunkLocalService = p_instance.getService(ChunkLocalService.class);
 
         long[] cids = new long[p_sizes.length];
         int created = chunkLocalService.createLocal().createSizes(cids, p_consecutive, p_sizes);
@@ -204,8 +200,8 @@ public class ChunkServiceLocalCreateTest {
         }
     }
 
-    private void createChunk(final boolean p_consecutive, final int[] p_sizes) {
-        ChunkLocalService chunkLocalService = m_instance.getService(ChunkLocalService.class);
+    private void createChunk(final DXRAM p_instance, final boolean p_consecutive, final int[] p_sizes) {
+        ChunkLocalService chunkLocalService = p_instance.getService(ChunkLocalService.class);
 
         ChunkByteArray[] chunks = new ChunkByteArray[p_sizes.length];
 
@@ -233,8 +229,8 @@ public class ChunkServiceLocalCreateTest {
         }
     }
 
-    private void createChunk2(final boolean p_consecutive, final int p_count) {
-        ChunkLocalService chunkLocalService = m_instance.getService(ChunkLocalService.class);
+    private void createChunk2(final DXRAM p_instance, final boolean p_consecutive, final int p_count) {
+        ChunkLocalService chunkLocalService = p_instance.getService(ChunkLocalService.class);
 
         TestChunk[] chunks = new TestChunk[p_count];
 

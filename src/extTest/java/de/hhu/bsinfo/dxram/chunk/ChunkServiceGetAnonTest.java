@@ -18,9 +18,9 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
         })
-public class ChunkServiceGetPutAnonTest {
+public class ChunkServiceGetAnonTest {
     @TestInstance(runOnNodeIdx = 2)
-    public void putGetSimple(final DXRAM p_instance) {
+    public void getSimple(final DXRAM p_instance) {
         ChunkService chunkService = p_instance.getService(ChunkService.class);
         ChunkAnonService chunkAnonService = p_instance.getService(ChunkAnonService.class);
         short remotePeer = ChunkTestUtils.getRemotePeer(p_instance);
@@ -33,20 +33,11 @@ public class ChunkServiceGetPutAnonTest {
         Assert.assertEquals(remotePeer, ChunkID.getCreatorID(cids[0]));
 
         ChunkAnon[] chunks = new ChunkAnon[1];
-        chunks[0] = new ChunkAnon(cids[0], new byte[ChunkTestConstants.CHUNK_SIZE_4]);
-        chunks[0].getData()[0] = (byte) 0xAA;
-
-        ret = chunkAnonService.putAnon().put(chunks);
-
-        Assert.assertEquals(1, ret);
-        Assert.assertTrue(chunks[0].isIDValid());
-        Assert.assertTrue(chunks[0].isStateOk());
 
         ret = chunkAnonService.getAnon().get(chunks, cids);
 
         Assert.assertEquals(1, ret);
         Assert.assertTrue(chunks[0].isIDValid());
         Assert.assertTrue(chunks[0].isStateOk());
-        Assert.assertEquals(chunks[0].getData()[0], (byte) 0xAA);
     }
 }

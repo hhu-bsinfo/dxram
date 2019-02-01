@@ -1,21 +1,20 @@
 package de.hhu.bsinfo.dxram.ms;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxmem.data.ChunkState;
-import de.hhu.bsinfo.dxram.ClientInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
+import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
-@DXRAMTestConfiguration(runTestOnNodeIdx = 1,
+@DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER, networkRequestResponseTimeoutMs = 5000),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, masterSlaveComputeRole = ComputeRole.MASTER,
@@ -30,14 +29,11 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                         networkRequestResponseTimeoutMs = 5000),
         })
 public class MasterSlaveServiceChunkInc4Test {
-    @ClientInstance
-    private DXRAM m_instance;
-
-    @Test
-    public void simpleTest() {
-        BootService boot = m_instance.getService(BootService.class);
-        MasterSlaveComputeService computeService = m_instance.getService(MasterSlaveComputeService.class);
-        ChunkService chunkService = m_instance.getService(ChunkService.class);
+    @TestInstance(runOnNodeIdx = 1)
+    public void simpleTest(final DXRAM p_instance) {
+        BootService boot = p_instance.getService(BootService.class);
+        MasterSlaveComputeService computeService = p_instance.getService(MasterSlaveComputeService.class);
+        ChunkService chunkService = p_instance.getService(ChunkService.class);
 
         TestIncChunk chunk = new TestIncChunk();
         Assert.assertEquals(1, chunkService.create().create(boot.getNodeID(), chunk));
