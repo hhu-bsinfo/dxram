@@ -24,6 +24,9 @@ DXRAM already comes with various extTests to test the services of DXRAM (see *sr
 to start implementing your own tests either for testing new features added to DXRAM or to prototype your
 application/algorithm.
 
+The extTests require distribution build output to run. You have to create a distribution build first and provide the
+path to it in the configuration file *config.properties* in the package *de.hhu.bsinfo.dxram*.
+
 The following is a minimal example that can be treated as "Hello World" to get started with writing your own extTest:
 ```
 @RunWith(DXRAMJunitRunner.class)
