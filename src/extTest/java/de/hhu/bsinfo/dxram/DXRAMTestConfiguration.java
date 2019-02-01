@@ -33,13 +33,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 @Target(ElementType.TYPE)
 public @interface DXRAMTestConfiguration {
     /**
-     * Node index (in order they are declared in nodes list) of node to run the test on
-     *
-     * @return Node index
-     */
-    int runTestOnNodeIdx();
-
-    /**
      * List of nodes to spawn for the test (spawned in order!)
      *
      * @return List of nodes to spawn

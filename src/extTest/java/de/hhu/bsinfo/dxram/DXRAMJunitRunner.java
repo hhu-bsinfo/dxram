@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -32,8 +33,6 @@ import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.layout.PatternLayout;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
 import org.junit.runner.notification.Failure;
@@ -92,9 +91,7 @@ public class DXRAMJunitRunner extends Runner {
             m_instances[i] = createNodeInstance(props.getProperty("dxram_build_dist_out"), config, i, 22221 + i);
         }
 
-        DXRAM testInstance = getInstanceForTest(m_instances, config);
-
-        runTestOnInstance(testInstance, p_notifier);
+        runTestOnInstances(m_instances, p_notifier);
 
         cleanupNodeInstances(m_instances);
     }
@@ -164,70 +161,127 @@ public class DXRAMJunitRunner extends Runner {
     }
 
     /**
-     * Get the instance to be used for the test to run
+     * Run the test on one or multiple instances using threads
      *
      * @param p_instances
-     *         List of instances running
-     * @param p_config
-     *         Config of test
-     * @return Instance to assign to the test
-     */
-    private static DXRAM getInstanceForTest(final DXRAM[] p_instances, final DXRAMTestConfiguration p_config) {
-        return p_instances[p_config.runTestOnNodeIdx()];
-    }
-
-    /**
-     * Run the test on an instance
-     *
-     * @param p_instance
-     *         Instance to run test on
+     *         Instances to run test on
      * @param p_notifier
      *         Notifier
      */
-    private void runTestOnInstance(final DXRAM p_instance, final RunNotifier p_notifier) {
-        Set<Field> annotatedFields = findFields(m_testClass, ClientInstance.class);
-
-        if (annotatedFields.size() != 1) {
-            throw new IllegalStateException("Detected more than one ClientInstance annotation");
-        }
-
-        Field instanceField = annotatedFields.iterator().next();
-
+    private void runTestOnInstances(final DXRAM[] p_instances, final RunNotifier p_notifier) {
         try {
             Object testObject = m_testClass.newInstance();
 
-            try {
-                instanceField.setAccessible(true);
-                instanceField.set(testObject, p_instance);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-
             for (Method method : m_testClass.getMethods()) {
-                if (method.isAnnotationPresent(BeforeClass.class)) {
-                    method.invoke(testObject);
+                if (method.isAnnotationPresent(BeforeTestInstance.class)) {
+                    for (Annotation anno : method.getAnnotations()) {
+                        if (anno instanceof BeforeTestInstance) {
+                            BeforeTestInstance testInstanceAnno = (BeforeTestInstance) anno;
+
+                            method.invoke(testObject, p_instances[testInstanceAnno.runOnNodeIdx()]);
+                            break;
+                        }
+                    }
                 }
             }
 
             System.out.println("Running tests");
 
+            TestRunnerThread[] threads = new TestRunnerThread[p_instances.length];
+
             for (Method method : m_testClass.getMethods()) {
-                if (method.isAnnotationPresent(Test.class)) {
-                    Description testDescription = Description.createTestDescription(m_testClass, method.getName());
+                if (method.isAnnotationPresent(TestInstance.class)) {
+                    for (Annotation anno : method.getAnnotations()) {
+                        if (anno instanceof TestInstance) {
+                            TestInstance testInstanceAnno = (TestInstance) anno;
 
-                    p_notifier.fireTestStarted(testDescription);
+                            for (int nodeIdx : testInstanceAnno.runOnNodeIdx()) {
+                                if (threads[nodeIdx] == null) {
+                                    threads[nodeIdx] = new TestRunnerThread(nodeIdx, p_instances[nodeIdx], testObject,
+                                            p_notifier);
 
-                    try {
-                        method.invoke(testObject);
-                    } catch (final Throwable e) {
-                        p_notifier.fireTestFailure(new Failure(testDescription, e));
+                                }
+
+                                threads[nodeIdx].pushTestMethod(method);
+                            }
+                        }
                     }
-
-                    p_notifier.fireTestFinished(testDescription);
                 }
             }
-        } catch (Exception e) {
+
+            for (TestRunnerThread t : threads) {
+                if (t != null) {
+                    t.start();
+                }
+            }
+
+            for (TestRunnerThread t : threads) {
+                if (t != null) {
+                    t.join();
+                }
+            }
+        } catch (final Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Class running the test method in a separate thread
+     */
+    private static final class TestRunnerThread extends Thread {
+        private final int m_instanceIdx;
+        private final DXRAM m_instance;
+        private final Object m_testObject;
+        private final ArrayList<Method> m_testMethods;
+        private final RunNotifier m_notifier;
+
+        /**
+         * Constructor
+         *
+         * @param p_instanceIdx
+         *         Index of the instance assigned to this thread
+         * @param p_instance
+         *         DXRAM instance to pass to test method
+         * @param p_testObject
+         *         Test object to run the test on
+         * @param p_notifier
+         *         Test notifier for error signaling
+         */
+        public TestRunnerThread(final int p_instanceIdx, final DXRAM p_instance, final Object p_testObject,
+                final RunNotifier p_notifier) {
+            m_instanceIdx = p_instanceIdx;
+            m_instance = p_instance;
+            m_testObject = p_testObject;
+            m_testMethods = new ArrayList<Method>();
+            m_notifier = p_notifier;
+        }
+
+        /**
+         * Add a test method to run by this thread
+         *
+         * @param p_testMethod
+         *         Method this thread has to run
+         */
+        public void pushTestMethod(final Method p_testMethod) {
+            m_testMethods.add(p_testMethod);
+        }
+
+        @Override
+        public void run() {
+            for (Method method : m_testMethods) {
+                Description testDescription = Description.createTestDescription(m_testObject.getClass(),
+                        m_instanceIdx + " | " + method.getName());
+
+                m_notifier.fireTestStarted(testDescription);
+
+                try {
+                    method.invoke(m_testObject, m_instance);
+                } catch (final Throwable e) {
+                    m_notifier.fireTestFailure(new Failure(testDescription, e));
+                }
+
+                m_notifier.fireTestFinished(testDescription);
+            }
         }
     }
 
