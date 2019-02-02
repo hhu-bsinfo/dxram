@@ -48,6 +48,7 @@ tasks submitted to coordinated compute groups
 * [Quick start guide](doc/QuickStart.md): Setup and run DXRAM instances using our deploy scripts
 * [Using the DXRAM terminal](https://github.com/hhu-bsinfo/dxapps/): Your first steps to get familiar with the environment
 * [Run applications on DXRAM](doc/Applications.md): Run existing applications or develop your own
+* [Development: DXRAM and applications](doc/Development.md): How to develop for the DXRAM core and applications running on DXRAM
 * [Troubleshooting](doc/Troubleshooting.md)
 * [DXRAM Architecture](doc/Architecture.md)
 * [Publications involving DXRAM](http://www.cs.hhu.de/en/research-groups/operating-systems/publications.html)

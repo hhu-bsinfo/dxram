@@ -22,26 +22,30 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
 public class ZookeeperBootComponentConfig extends DXRAMModuleConfig {
+
     /**
-     * Path for zookeeper entry
+     * Path for zookeeper entry.
      */
     @Expose
     private String m_path = "/dxram";
 
     /**
-     * Address and port of zookeeper
+     * Path for zookeeper data directory.
+     */
+    @Expose
+    private String m_dataDir = "zookeeper_data";
+
+    /**
+     * Address and port of zookeeper (bootstrap peer).
      */
     @Expose
     private IPV4Unit m_connection = new IPV4Unit("127.0.0.1", 2181);
 
-    @Expose
-    private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
-
     /**
-     * Bloom filter size. Bloom filter is used to increase node ID creation performance.
+     * The ZooKeeper connection timeout.
      */
     @Expose
-    private StorageUnit m_bitfieldSize = new StorageUnit(2, StorageUnit.MB);
+    private TimeUnit m_timeout = new TimeUnit(10, TimeUnit.SEC);
 
     /**
      * The rack this node is in. Must be set if node was not in initial nodes file.
@@ -55,8 +59,11 @@ public class ZookeeperBootComponentConfig extends DXRAMModuleConfig {
     @Expose
     private short m_switch = 0;
 
+    /**
+     * Indicates if this peer is responsible for the bootstrapping process.
+     */
     @Expose
-    private boolean m_isClient = false;
+    private boolean m_isBootstrap = false;
 
     /**
      * Constructor
@@ -67,13 +74,8 @@ public class ZookeeperBootComponentConfig extends DXRAMModuleConfig {
 
     @Override
     protected boolean verify(final DXRAMConfig p_config) {
-        if (m_bitfieldSize.getBytes() < 2048 * 1024) {
-            LOGGER.warn("Bitfield size is rather small. Not all node IDs may be addressable because of high " +
-                    "false positives rate!");
-        }
-
-        if (p_config.getEngineConfig().getRole() == NodeRole.SUPERPEER && m_isClient) {
-            LOGGER.error("Client nodes can't be superpeers");
+        if (p_config.getEngineConfig().getRole() != NodeRole.SUPERPEER && m_isBootstrap) {
+            LOGGER.error("Bootstrap nodes must be superpeers");
             return false;
         }
 

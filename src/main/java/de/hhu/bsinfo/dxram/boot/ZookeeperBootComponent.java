@@ -16,18 +16,31 @@
 
 package de.hhu.bsinfo.dxram.boot;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import de.hhu.bsinfo.dxram.job.JobComponent;
+import de.hhu.bsinfo.dxram.job.JobComponentConfig;
+import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeServiceConfig;
 import de.hhu.bsinfo.dxutils.Poller;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.atomic.AtomicValue;
 import org.apache.curator.framework.recipes.atomic.DistributedAtomicInteger;
-import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.curator.retry.RetryUntilElapsed;
+import org.apache.zookeeper.server.ServerConfig;
+import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.jetbrains.annotations.Nullable;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
@@ -55,32 +68,89 @@ import de.hhu.bsinfo.dxutils.NodeID;
 @AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.BOOT,
         priorityShutdown = DXRAMComponentOrder.Shutdown.BOOT)
 public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> {
+
+    /**
+     * This node's unique id.
+     */
     private short m_id = NodeID.INVALID_ID;
+
+    /**
+     * This node's ip address.
+     */
     private String m_address;
+
+    /**
+     * This node's port.
+     */
     private int m_port;
+
+    /**
+     * This node's node role.
+     */
     private NodeRole m_role;
+
+    /**
+     * This node's capabilities.
+     */
     private int m_capabilities;
 
+    /**
+     * The node details belonging to this node.
+     */
     private NodeRegistry.NodeDetails m_details;
 
+    /**
+     * The node registry containing the cluster's node details.
+     */
     private NodeRegistry m_nodeRegistry;
 
-    private static final int INVALID_COUNTER_VALUE = -1;
-    private static final int BOOTSTRAP_COUNTER_VALUE = 1;
+    /**
+     * An atomic integer used for generating unique identifiers.
+     */
+    private DistributedAtomicInteger m_counter;
 
-    private int m_counterValue = INVALID_COUNTER_VALUE;
-
+    /**
+     * The curator client used for ZooKeeper connections.
+     */
     private CuratorFramework m_curatorClient;
 
-    private static final RetryPolicy RETRY_POLICY = new ExponentialBackoffRetry(1000, 3);
+    /**
+     * The retry policy used for ZooKeeper connections.
+     */
+    private RetryPolicy m_retryPolicy;
 
+    /**
+     * This node's unique counter value.
+     */
+    private int m_counterValue = INVALID_COUNTER_VALUE;
+
+    /**
+     * The ZooKeeper Server instance.
+     */
+    private final ZooKeeperServerMain m_zooKeeperServer = new ZooKeeperServerMain();
+
+    /**
+     * The ZooKeeper server configuration.
+     */
+    private final ServerConfig m_zooKeeperServerConfig = new ServerConfig();
+
+    /**
+     * A Thread running the ZooKeeper server asynchronously.
+     */
+    private final Thread m_zooKeeperServerThread = new Thread(() -> {
+        try {
+            m_zooKeeperServer.runFromConfig(m_zooKeeperServerConfig);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }, "ZooKeeperServer");
+
+    private static final int INVALID_COUNTER_VALUE = -1;
+    private static final int RETRY_INTERVAL = 1000;
     private static final String BASE_DIR = "/dxram";
     private static final String COUNTER_PATH = String.format("%s/counter", BASE_DIR);
     private static final String BOOTSTRAP_NODE_PATH = String.format("%s/boot", BASE_DIR);
-
     private static final InetSocketAddress INVALID_ADDRESS = new InetSocketAddress("255.255.255.255", 0xFFFF);
-
-    private DistributedAtomicInteger m_counter;
 
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
@@ -88,32 +158,42 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         m_port = p_config.getEngineConfig().getAddress().getPort();
         m_role = p_config.getEngineConfig().getRole();
         m_capabilities = detectNodeCapabilities(p_config);
+        m_retryPolicy = new RetryUntilElapsed((int) getConfig().getTimeout().getMs(), RETRY_INTERVAL);
+
+        // Start ZooKeeper server on the bootstrap node
+        if (getConfig().isBootstrap()) {
+            initializeZooKeeperServer();
+        }
+
+        LOGGER.info("Searching free port with initial value of %d", m_port);
+
+        m_port = getNextOpenPort(m_port);
 
         LOGGER.info("Initializing with address %s:%d and role %s", m_address, m_port, m_role);
 
-        String zooKeeperAddress = String.format("%s:%d", getConfig().getConnection().getIP(),
-                getConfig().getConnection().getPort());
+        establishCuratorConnection();
+        configureCurator();
 
-        LOGGER.info("Connecting to ZooKeeper at %s", zooKeeperAddress);
+        // Assign an id to this node using ZooKeeper
+        assignNodeId();
 
-        // Connect to Zookeeper
-        m_curatorClient = CuratorFrameworkFactory.newClient(zooKeeperAddress, RETRY_POLICY);
-        m_curatorClient.start();
-
-        m_nodeRegistry = new NodeRegistry(m_curatorClient);
-        m_counter = new DistributedAtomicInteger(m_curatorClient, COUNTER_PATH, RETRY_POLICY);
-
-        // Assign a globally unique counter value to this superpeer
-        if (m_role == NodeRole.SUPERPEER) {
-            assignNodeId();
-        }
-
-        if (isBootstrapNode()) {
+        if (getConfig().isBootstrap()) {
             // Start bootstrap node initialization process if this is the first superpeer
             return initializeBootstrapNode();
         } else {
             // Start normal node initialization process if this is not the first superpeer
             return initializeNormalNode();
+        }
+    }
+
+    private static int getNextOpenPort(final int p_start) {
+        int currentPort = p_start;
+        while(true) {
+            try (ServerSocket socket = new ServerSocket(currentPort)) {
+                return socket.getLocalPort();
+            } catch (IOException e) {
+                currentPort++;
+            }
         }
     }
 
@@ -137,6 +217,69 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
                 .withOnline(true)
                 .withCapabilities(m_capabilities)
                 .build();
+    }
+
+    private void configureCurator() {
+        m_nodeRegistry = new NodeRegistry(m_curatorClient);
+        m_counter = new DistributedAtomicInteger(m_curatorClient, COUNTER_PATH, m_retryPolicy);
+    }
+
+    private void establishCuratorConnection() {
+        // Create ZooKeeper connection string
+        String zooKeeperAddress = String.format("%s:%d", getConfig().getConnection().getIP(),
+                getConfig().getConnection().getPort());
+
+        LOGGER.info("Connecting to ZooKeeper at %s", zooKeeperAddress);
+
+        // Connect to Zookeeper
+        m_curatorClient = CuratorFrameworkFactory.newClient(zooKeeperAddress, m_retryPolicy);
+        m_curatorClient.start();
+
+        try {
+            // Wait until the connection is established
+            m_curatorClient.blockUntilConnected();
+        } catch (InterruptedException e) {
+            LOGGER.warn("Interrupted while waiting for ZooKeeper connection");
+        }
+    }
+
+    private String[] getZooKeeperConfiguration() {
+        return new String[] {
+                String.valueOf(getConfig().getConnection().getPort()), // ZooKeeper client port
+                getConfig().getDataDir(), // ZooKeeper data directory
+                String.valueOf(2000), // ZooKeeper tick time
+                String.valueOf(1000) // Max client connections
+        };
+    }
+
+    private void deleteZooKeeperData() {
+        LOGGER.info("Deleting ZooKeeper data directory");
+        Path path = Paths.get(getConfig().getDataDir());
+        try {
+            Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path p_file, BasicFileAttributes p_attrs) throws IOException {
+                    Files.delete(p_file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path p_dir, IOException p_exception) throws IOException {
+                    Files.delete(p_dir);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        } catch (IOException e) {
+            LOGGER.warn("Couldn't delete all files within ZooKeeper's data directory");
+        }
+    }
+
+    private void initializeZooKeeperServer() {
+        deleteZooKeeperData();
+        m_zooKeeperServerConfig.parse(getZooKeeperConfiguration());
+        LOGGER.info("Starting ZooKeeper server on port %d",
+                m_zooKeeperServerConfig.getClientPortAddress().getPort());
+        m_zooKeeperServerThread.start();
     }
 
     /**
@@ -181,11 +324,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         Poller.blockingPoll(this::getBootstrapDetails, 1, TimeUnit.SECONDS);
 
         LOGGER.info("Bootstrap node is ready");
-
-        // Assign a globally unique counter value in case this is a peer, which hasn't assigned it yet
-        if (m_counterValue == INVALID_COUNTER_VALUE) {
-            assignNodeId();
-        }
 
         m_details = buildNodeDetails();
 
@@ -260,15 +398,6 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     /**
-     * Indicates if this node is responsible for the bootstrap process.
-     *
-     * @return True if this node is the bootstrap node; false else.
-     */
-    private boolean isBootstrapNode() {
-        return m_counterValue == BOOTSTRAP_COUNTER_VALUE;
-    }
-
-    /**
      * Detects this node's capabilities.
      *
      * @return This node's capabilities.
@@ -278,12 +407,9 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return NodeCapabilities.NONE;
         }
 
-        if (getConfig().isClient()) {
-            return NodeCapabilities.COMPUTE;
-        }
-
         ChunkComponentConfig chunkConfig = p_config.getComponentConfig(ChunkComponent.class);
         BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponent.class);
+        JobComponentConfig jobComponentConfig = p_config.getComponentConfig(JobComponent.class);
 
         int capabilities = 0;
 
@@ -297,6 +423,10 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
 
         if (backupConfig.isBackupActive() && backupConfig.isAvailableForBackup()) {
             capabilities |= NodeCapabilities.BACKUP_DST;
+        }
+
+        if (jobComponentConfig.isEnabled()) {
+            capabilities |= NodeCapabilities.COMPUTE;
         }
 
         LOGGER.info("Detected capabilities %s", NodeCapabilities.toString(capabilities));

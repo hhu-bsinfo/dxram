@@ -19,9 +19,9 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
         })
-public class ChunkServiceRemoveTest {
+public class ChunkWriteLockTest {
     @TestInstance(runOnNodeIdx = 2)
-    public void simple(final DXRAM p_instance) {
+    public void writeLock(final DXRAM p_instance) {
         ChunkService chunkService = p_instance.getService(ChunkService.class);
         short remotePeer = ChunkTestUtils.getRemotePeer(p_instance);
 
@@ -32,6 +32,18 @@ public class ChunkServiceRemoveTest {
         Assert.assertTrue(chunk.isIDValid());
         Assert.assertTrue(chunk.isStateOk());
         Assert.assertEquals(remotePeer, ChunkID.getCreatorID(chunk.getID()));
+
+        ret = chunkService.lock().lock(true, true, -1, chunk);
+
+        Assert.assertEquals(1, ret);
+        Assert.assertTrue(chunk.isIDValid());
+        Assert.assertTrue(chunk.isStateOk());
+
+        ret = chunkService.lock().lock(false, true, -1, chunk);
+
+        Assert.assertEquals(1, ret);
+        Assert.assertTrue(chunk.isIDValid());
+        Assert.assertTrue(chunk.isStateOk());
 
         ret = chunkService.remove().remove(chunk);
 

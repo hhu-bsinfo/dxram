@@ -114,6 +114,14 @@ public class PushJobQueueMessage extends Message {
 
     @Override
     protected final int getPayloadLength() {
-        return Byte.BYTES + Short.BYTES + Integer.BYTES + m_job.sizeofObject();
+        int size = Byte.BYTES + Short.BYTES + Integer.BYTES;
+
+        if (m_job != null) {
+            size += m_job.sizeofObject();
+        } else {
+            size += Integer.BYTES + m_jobBlob.length;
+        }
+
+        return size;
     }
 }

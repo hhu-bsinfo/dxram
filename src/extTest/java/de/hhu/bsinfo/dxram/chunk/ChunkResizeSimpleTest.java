@@ -19,7 +19,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
         })
-public class ChunkServiceRemoveTest {
+public class ChunkResizeSimpleTest {
     @TestInstance(runOnNodeIdx = 2)
     public void simple(final DXRAM p_instance) {
         ChunkService chunkService = p_instance.getService(ChunkService.class);
@@ -27,6 +27,16 @@ public class ChunkServiceRemoveTest {
 
         ChunkByteArray chunk = new ChunkByteArray(ChunkTestConstants.CHUNK_SIZE_1);
         int ret = chunkService.create().create(remotePeer, chunk);
+
+        Assert.assertEquals(1, ret);
+        Assert.assertTrue(chunk.isIDValid());
+        Assert.assertTrue(chunk.isStateOk());
+        Assert.assertEquals(remotePeer, ChunkID.getCreatorID(chunk.getID()));
+
+        ChunkByteArray chunkNewSize = new ChunkByteArray(ChunkTestConstants.CHUNK_SIZE_2);
+        chunkNewSize.setID(chunk.getID());
+
+        ret = chunkService.resize().resize(chunkNewSize);
 
         Assert.assertEquals(1, ret);
         Assert.assertTrue(chunk.isIDValid());

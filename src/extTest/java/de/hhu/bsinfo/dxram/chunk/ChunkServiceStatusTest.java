@@ -1,31 +1,27 @@
 package de.hhu.bsinfo.dxram.chunk;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import de.hhu.bsinfo.dxram.ClientInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
+import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkServiceStatus;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
-@DXRAMTestConfiguration(runTestOnNodeIdx = 2,
+@DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
         })
 public class ChunkServiceStatusTest {
-    @ClientInstance
-    private DXRAM m_instance;
-
-    @Test
-    public void test() {
-        ChunkService chunkService = m_instance.getService(ChunkService.class);
-        short remotePeer = ChunkTestUtils.getRemotePeer(m_instance);
+    @TestInstance(runOnNodeIdx = 2)
+    public void test(final DXRAM p_instance) {
+        ChunkService chunkService = p_instance.getService(ChunkService.class);
+        short remotePeer = ChunkTestUtils.getRemotePeer(p_instance);
 
         ChunkServiceStatus statusLocal = chunkService.status().getStatus();
         ChunkServiceStatus statusRemote = chunkService.status().getStatus(remotePeer);
