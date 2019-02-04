@@ -50,8 +50,9 @@ public class JobServiceRemoteTest {
 
         JobTest job = new JobTest(5);
 
-        job.setRunnable((Serializable & Runnable) () -> {
-            System.out.println("Running within serialized lambda");
+        job.setExecutable(p_serviceAccessor -> {
+            BootService boot = p_serviceAccessor.getService(BootService.class);
+            System.out.printf("Running serialized lambda on node %04X\n", boot.getNodeID());
         });
 
         long jobId = jobService.pushJobRemote(job, otherPeer);

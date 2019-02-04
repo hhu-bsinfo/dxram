@@ -23,9 +23,7 @@ import java.io.ObjectInput;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -56,11 +54,11 @@ public abstract class AbstractJob implements Importable, Exportable {
     // external/user code
     private DXRAMServiceAccessor m_serviceAccessor;
 
-    private Runnable m_runnable = MOCK_RUNNABLE;
+    private JobExecutable m_executable = MOCK_EXECUTABLE;
 
-    private byte[] m_runnableBytes;
+    private byte[] m_executableBytes;
 
-    private boolean m_isRunnableDeserialized = false;
+    private boolean m_isExecutableDeserialized = false;
 
     /**
      * Constructor.
@@ -111,18 +109,18 @@ public abstract class AbstractJob implements Importable, Exportable {
     @Override
     public void importObject(final Importer p_importer) {
         m_id = p_importer.readLong(m_id);
-        m_runnableBytes = p_importer.readByteArray(m_runnableBytes);
+        m_executableBytes = p_importer.readByteArray(m_executableBytes);
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeLong(m_id);
-        p_exporter.writeByteArray(m_runnableBytes);
+        p_exporter.writeByteArray(m_executableBytes);
     }
 
     @Override
     public int sizeofObject() {
-        return Long.BYTES + ObjectSizeUtil.sizeofByteArray(m_runnableBytes);
+        return Long.BYTES + ObjectSizeUtil.sizeofByteArray(m_executableBytes);
     }
 
     // -------------------------------------------------------------------
@@ -213,35 +211,36 @@ public abstract class AbstractJob implements Importable, Exportable {
         }
     }
 
-    public Runnable getRunnable() {
-        if (m_isRunnableDeserialized) {
-            return m_runnable;
+    public JobExecutable getExecutable() {
+        if (m_isExecutableDeserialized) {
+            return m_executable;
         }
 
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(m_runnableBytes); ObjectInput in = new ObjectInputStream(bis)) {
-            m_runnable = (Runnable) in.readObject();
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(m_executableBytes); ObjectInput in = new ObjectInputStream(bis)) {
+            m_executable = (JobExecutable) in.readObject();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             return null;
         }
 
-        m_isRunnableDeserialized = true;
+        m_isExecutableDeserialized = true;
 
-        return m_runnable;
+        return m_executable;
     }
 
-    public void setRunnable(Runnable p_runnable) {
+    public void setExecutable(final JobExecutable p_executable) {
+        m_executable = p_executable;
         try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutput out = new ObjectOutputStream(bos)) {
-            out.writeObject(p_runnable);
-            m_runnableBytes = bos.toByteArray();
+            out.writeObject(m_executable);
+            m_executableBytes = bos.toByteArray();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     public void run() {
-        getRunnable().run();
+        getExecutable().execute(m_serviceAccessor);
     }
 
-    private static final Runnable MOCK_RUNNABLE = (Serializable & Runnable) () -> {};
+    private static final JobExecutable MOCK_EXECUTABLE = (JobExecutable) p_serviceAccessor -> {};
 }
