@@ -21,6 +21,7 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.job.AbstractJob;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Push a job to the queue of another node
@@ -32,7 +33,7 @@ public class PushJobQueueMessage extends Message {
     private byte m_callbackJobEventBitMask;
 
     // for receiving job data
-    private byte m_jobType;
+    private short m_jobType;
     private int m_jobBlobSize;
     private byte[] m_jobBlob;
 
@@ -60,6 +61,8 @@ public class PushJobQueueMessage extends Message {
         super(p_destination, DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE);
 
         m_job = p_job;
+        m_jobType = p_job.getTypeID();
+        m_jobBlobSize = p_job.sizeofObject();
         m_callbackJobEventBitMask = p_callbackJobEventBitMask;
     }
 
@@ -78,7 +81,7 @@ public class PushJobQueueMessage extends Message {
      *
      * @return Job type id
      */
-    public byte getJobType() {
+    public short getJobType() {
         return m_jobType;
     }
 
@@ -93,35 +96,26 @@ public class PushJobQueueMessage extends Message {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
-        p_exporter.writeByte(m_callbackJobEventBitMask);
-        p_exporter.writeShort(m_job.getTypeID());
-        p_exporter.writeInt(m_job.sizeofObject());
+        p_exporter.writeCompactNumber(m_job.sizeofObject());
         p_exporter.exportObject(m_job);
+        p_exporter.writeByte(m_callbackJobEventBitMask);
+        p_exporter.writeShort(m_jobType);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_callbackJobEventBitMask = p_importer.readByte(m_callbackJobEventBitMask);
-        m_jobType = p_importer.readByte(m_jobType);
-        m_jobBlobSize = p_importer.readInt(m_jobBlobSize);
-
+        m_jobBlobSize = p_importer.readCompactNumber(m_jobBlobSize);
         if (m_jobBlob == null) {
             m_jobBlob = new byte[m_jobBlobSize];
         }
 
         p_importer.readBytes(m_jobBlob);
+        m_callbackJobEventBitMask = p_importer.readByte(m_callbackJobEventBitMask);
+        m_jobType = p_importer.readShort(m_jobType);
     }
 
     @Override
     protected final int getPayloadLength() {
-        int size = Byte.BYTES + Short.BYTES + Integer.BYTES;
-
-        if (m_job != null) {
-            size += m_job.sizeofObject();
-        } else {
-            size += Integer.BYTES + m_jobBlob.length;
-        }
-
-        return size;
+        return ObjectSizeUtil.sizeofCompactedNumber(m_jobBlobSize) + m_jobBlobSize + Byte.BYTES + Short.BYTES;
     }
 }

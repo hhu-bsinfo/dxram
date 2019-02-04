@@ -1,10 +1,12 @@
 package de.hhu.bsinfo.dxram.job;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.junit.Assert;
 import org.junit.runner.RunWith;
 
+import de.hhu.bsinfo.dxram.BeforeTestInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
@@ -17,10 +19,16 @@ import de.hhu.bsinfo.dxutils.NodeID;
 @DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, enableJobService = true),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, enableJobService = true)
         })
 public class JobServiceRemoteTest {
+
+    @BeforeTestInstance(runOnNodeIdx = 1)
+    public void registerJobType(final DXRAM p_instance) {
+        p_instance.getService(JobService.class).registerJobType(JobTest.MS_TYPE_ID, JobTest.class);
+    }
+
     @TestInstance(runOnNodeIdx = 2)
     public void remoteTest(final DXRAM p_instance) {
         JobService jobService = p_instance.getService(JobService.class);
@@ -38,7 +46,13 @@ public class JobServiceRemoteTest {
 
         Assert.assertNotEquals(NodeID.INVALID_ID, otherPeer);
 
+        jobService.registerJobType(JobTest.MS_TYPE_ID, JobTest.class);
+
         JobTest job = new JobTest(5);
+
+        job.setRunnable((Serializable & Runnable) () -> {
+            System.out.println("Running within serialized lambda");
+        });
 
         long jobId = jobService.pushJobRemote(job, otherPeer);
         Assert.assertNotEquals(JobID.INVALID_ID, jobId);

@@ -10,6 +10,8 @@ public class JobTest extends AbstractJob {
 
     private int m_value;
 
+    public JobTest() {}
+
     /**
      * Constructor
      */

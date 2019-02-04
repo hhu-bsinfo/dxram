@@ -146,6 +146,7 @@ public class Worker extends Thread {
 
                 m_workerDelegate.executingJob(job);
                 job.execute();
+                job.run();
                 m_workerDelegate.finishedJob(job);
                 continue;
             }
@@ -158,6 +159,7 @@ public class Worker extends Thread {
 
                 m_workerDelegate.executingJob(job);
                 job.execute();
+                job.run();
                 m_workerDelegate.finishedJob(job);
                 continue;
             }

@@ -16,7 +16,16 @@
 
 package de.hhu.bsinfo.dxram.job;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
@@ -26,6 +35,7 @@ import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Base class for an job that can be executed by the
@@ -45,6 +55,12 @@ public abstract class AbstractJob implements Importable, Exportable {
     // nasty, but the only way to get access to services/the API for
     // external/user code
     private DXRAMServiceAccessor m_serviceAccessor;
+
+    private Runnable m_runnable = MOCK_RUNNABLE;
+
+    private byte[] m_runnableBytes;
+
+    private boolean m_isRunnableDeserialized = false;
 
     /**
      * Constructor.
@@ -95,16 +111,18 @@ public abstract class AbstractJob implements Importable, Exportable {
     @Override
     public void importObject(final Importer p_importer) {
         m_id = p_importer.readLong(m_id);
+        m_runnableBytes = p_importer.readByteArray(m_runnableBytes);
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeLong(m_id);
+        p_exporter.writeByteArray(m_runnableBytes);
     }
 
     @Override
     public int sizeofObject() {
-        return Long.BYTES;
+        return Long.BYTES + ObjectSizeUtil.sizeofByteArray(m_runnableBytes);
     }
 
     // -------------------------------------------------------------------
@@ -194,4 +212,36 @@ public abstract class AbstractJob implements Importable, Exportable {
             return null;
         }
     }
+
+    public Runnable getRunnable() {
+        if (m_isRunnableDeserialized) {
+            return m_runnable;
+        }
+
+        try (ByteArrayInputStream bis = new ByteArrayInputStream(m_runnableBytes); ObjectInput in = new ObjectInputStream(bis)) {
+            m_runnable = (Runnable) in.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+
+        m_isRunnableDeserialized = true;
+
+        return m_runnable;
+    }
+
+    public void setRunnable(Runnable p_runnable) {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutput out = new ObjectOutputStream(bos)) {
+            out.writeObject(p_runnable);
+            m_runnableBytes = bos.toByteArray();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void run() {
+        getRunnable().run();
+    }
+
+    private static final Runnable MOCK_RUNNABLE = (Serializable & Runnable) () -> {};
 }
