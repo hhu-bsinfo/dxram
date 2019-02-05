@@ -49,6 +49,7 @@ import de.hhu.bsinfo.dxram.engine.NullService;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventComponentConfig;
 import de.hhu.bsinfo.dxram.failure.FailureComponent;
+import de.hhu.bsinfo.dxram.function.FunctionService;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxram.job.JobComponent;
 import de.hhu.bsinfo.dxram.job.JobComponentConfig;
@@ -241,6 +242,7 @@ public final class DXRAM {
         p_engine.registerService(StatisticsService.class, StatisticsServiceConfig.class);
         p_engine.registerService(SynchronizationService.class, SynchronizationServiceConfig.class);
         p_engine.registerService(TemporaryStorageService.class, TemporaryStorageServiceConfig.class);
+        p_engine.registerService(FunctionService.class, DXRAMModuleConfig.class);
     }
 
     /**

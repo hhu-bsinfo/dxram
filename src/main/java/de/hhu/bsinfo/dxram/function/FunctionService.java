@@ -1,0 +1,152 @@
+package de.hhu.bsinfo.dxram.function;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.zookeeper.data.Stat;
+
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.NetworkException;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
+import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.failure.FailureComponent;
+import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionMessage;
+import de.hhu.bsinfo.dxram.function.messages.FunctionMessages;
+import de.hhu.bsinfo.dxram.function.messages.RegisterFunctionRequest;
+import de.hhu.bsinfo.dxram.function.messages.RegisterFunctionResponse;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
+
+@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
+
+    private final Map<String, DistributableFunction> m_functions = new ConcurrentHashMap<>();
+
+    private NetworkComponent m_network;
+
+    public enum Status {
+        FAILED, REGISTERED
+    }
+
+    public Status registerFunction(final short p_nodeId, final String p_name, final DistributableFunction p_function) {
+        RegisterFunctionRequest registerFunctionRequest = new RegisterFunctionRequest(p_nodeId, p_function, p_name);
+
+        LOGGER.debug("Registering function %s on node %04X", p_name, p_nodeId);
+
+        try {
+            m_network.sendSync(registerFunctionRequest);
+        } catch (NetworkException e) {
+            LOGGER.warn("Couldn't send function registration %s to node %04X", p_name, p_nodeId);
+            return Status.FAILED;
+        }
+
+        RegisterFunctionResponse response = registerFunctionRequest.getResponse(RegisterFunctionResponse.class);
+
+        return response.isRegistered() ? Status.REGISTERED : Status.FAILED;
+    }
+
+    public Status registerFunction(final String p_name, final DistributableFunction p_function) {
+        if (p_function == null) {
+            LOGGER.warn("Registered function %s must not be null", p_name);
+            return Status.FAILED;
+        }
+
+        LOGGER.debug("Registering function %s", p_name);
+
+        m_functions.put(p_name, p_function);
+
+        return Status.REGISTERED;
+    }
+
+    public void executeFunction(final String p_name) {
+        DistributableFunction function = m_functions.get(p_name);
+
+        if (function == null) {
+            LOGGER.warn("Trying to execute non-registered function %s", p_name);
+            return;
+        }
+
+        LOGGER.debug("Executing function %s", p_name);
+
+        function.execute(getParentEngine());
+    }
+
+    public void executeFunction(final short p_nodeId, final String p_name) {
+        ExecuteFunctionMessage executeFunctionMessage = new ExecuteFunctionMessage(p_nodeId, p_name);
+
+        LOGGER.debug("Executing function %s on node %04X", p_name, p_nodeId);
+
+        try {
+            m_network.sendMessage(executeFunctionMessage);
+        } catch (NetworkException e) {
+            LOGGER.warn("Couldn't send function execution %s to node %04X", p_name, p_nodeId);
+        }
+    }
+
+    @Override
+    protected void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor) {
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+    }
+
+    @Override
+    protected boolean startService(DXRAMConfig p_config) {
+        registerMessageTypes();
+        registerMessageListeners();
+
+        return true;
+    }
+
+    @Override
+    protected boolean shutdownService() {
+        return true;
+    }
+
+    @Override
+    public void onIncomingMessage(Message p_message) {
+        switch (p_message.getSubtype()) {
+            case FunctionMessages.SUBTYPE_REGISTER_FUNCTION_REQUEST:
+                handle((RegisterFunctionRequest) p_message);
+                break;
+            case FunctionMessages.SUBTYPE_EXECUTE_FUNCTION:
+                handle((ExecuteFunctionMessage) p_message);
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void handle(final RegisterFunctionRequest p_message) {
+        Status status = registerFunction(p_message.getName(), p_message.getFunction());
+
+        RegisterFunctionResponse response = new RegisterFunctionResponse(p_message, status == Status.REGISTERED);
+
+        try {
+            m_network.sendMessage(response);
+        } catch (NetworkException e) {
+            LOGGER.warn("Couldn't send registration response for function %s to node %04X", p_message.getName(), response.getDestination());
+        }
+
+    }
+
+    private void handle(final ExecuteFunctionMessage p_message) {
+        executeFunction(p_message.getName());
+    }
+
+    private void registerMessageTypes() {
+        m_network.registerMessageType(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_REGISTER_FUNCTION_REQUEST,
+                RegisterFunctionRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_REGISTER_FUNCTION_RESPONSE,
+                RegisterFunctionResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_EXECUTE_FUNCTION,
+                ExecuteFunctionMessage.class);
+    }
+
+    private void registerMessageListeners() {
+        m_network.register(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_REGISTER_FUNCTION_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_EXECUTE_FUNCTION, this);
+    }
+}

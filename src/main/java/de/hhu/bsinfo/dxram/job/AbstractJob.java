@@ -54,12 +54,6 @@ public abstract class AbstractJob implements Importable, Exportable {
     // external/user code
     private DXRAMServiceAccessor m_serviceAccessor;
 
-    private JobExecutable m_executable = MOCK_EXECUTABLE;
-
-    private byte[] m_executableBytes;
-
-    private boolean m_isExecutableDeserialized = false;
-
     /**
      * Constructor.
      */
@@ -109,18 +103,16 @@ public abstract class AbstractJob implements Importable, Exportable {
     @Override
     public void importObject(final Importer p_importer) {
         m_id = p_importer.readLong(m_id);
-        m_executableBytes = p_importer.readByteArray(m_executableBytes);
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeLong(m_id);
-        p_exporter.writeByteArray(m_executableBytes);
     }
 
     @Override
     public int sizeofObject() {
-        return Long.BYTES + ObjectSizeUtil.sizeofByteArray(m_executableBytes);
+        return Long.BYTES;
     }
 
     // -------------------------------------------------------------------
@@ -210,37 +202,4 @@ public abstract class AbstractJob implements Importable, Exportable {
             return null;
         }
     }
-
-    public JobExecutable getExecutable() {
-        if (m_isExecutableDeserialized) {
-            return m_executable;
-        }
-
-        try (ByteArrayInputStream bis = new ByteArrayInputStream(m_executableBytes); ObjectInput in = new ObjectInputStream(bis)) {
-            m_executable = (JobExecutable) in.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
-
-        m_isExecutableDeserialized = true;
-
-        return m_executable;
-    }
-
-    public void setExecutable(final JobExecutable p_executable) {
-        m_executable = p_executable;
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutput out = new ObjectOutputStream(bos)) {
-            out.writeObject(m_executable);
-            m_executableBytes = bos.toByteArray();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public void run() {
-        getExecutable().execute(m_serviceAccessor);
-    }
-
-    private static final JobExecutable MOCK_EXECUTABLE = (JobExecutable) p_serviceAccessor -> {};
 }
