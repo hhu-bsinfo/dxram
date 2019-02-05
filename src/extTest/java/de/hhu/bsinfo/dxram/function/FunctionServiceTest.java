@@ -14,6 +14,7 @@ import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.function.util.ParameterList;
 import de.hhu.bsinfo.dxram.job.JobID;
 import de.hhu.bsinfo.dxram.job.JobService;
 import de.hhu.bsinfo.dxram.job.JobTest;
@@ -31,8 +32,6 @@ import static org.junit.Assert.assertEquals;
         })
 public class FunctionServiceTest {
 
-    private static final String FUNCTION_NAME = "de.hhu.bsinfo.dxram.hello";
-
     @TestInstance(runOnNodeIdx = 2)
     public void testRemoteExecution(final DXRAM p_instance) {
 
@@ -42,20 +41,19 @@ public class FunctionServiceTest {
         short peer = bootService.getOnlinePeerNodeIDs()
                 .stream()
                 .filter(p_id -> p_id != bootService.getNodeID())
-                .findFirst().orElseGet(() -> NodeID.INVALID_ID);
+                .findFirst().orElse(NodeID.INVALID_ID);
 
         Assert.assertNotEquals(NodeID.INVALID_ID, peer);
 
-        DistributableFunction function = p_serviceAccessor -> {
-            BootService boot = p_serviceAccessor.getService(BootService.class);
-            System.out.printf("Hello, I am node %04X\n", boot.getNodeID());
-        };
+        DistributableFunction function = new IntAdderFunction();
 
-        FunctionService.Status status = functionService.registerFunction(peer, FUNCTION_NAME, function);
+        FunctionService.Status status = functionService.registerFunction(peer, IntAdderFunction.NAME, function);
 
         assertEquals(FunctionService.Status.REGISTERED, status);
 
-        functionService.executeFunction(peer, FUNCTION_NAME);
+        ParameterList params = new ParameterList(new String[]{"17", "25"});
+
+        functionService.executeFunction(peer, IntAdderFunction.NAME, params);
 
         LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
     }

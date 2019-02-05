@@ -20,6 +20,8 @@ import de.hhu.bsinfo.dxram.function.messages.FunctionMessages;
 import de.hhu.bsinfo.dxram.function.messages.RegisterFunctionRequest;
 import de.hhu.bsinfo.dxram.function.messages.RegisterFunctionResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxutils.serialization.Distributable;
+import de.hhu.bsinfo.dxutils.serialization.Exportable;
 
 @AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
@@ -62,7 +64,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
         return Status.REGISTERED;
     }
 
-    public void executeFunction(final String p_name) {
+    public void executeFunction(final String p_name, final Distributable p_input) {
         DistributableFunction function = m_functions.get(p_name);
 
         if (function == null) {
@@ -72,11 +74,11 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
 
         LOGGER.debug("Executing function %s", p_name);
 
-        function.execute(getParentEngine());
+        function.execute(getParentEngine(), p_input);
     }
 
-    public void executeFunction(final short p_nodeId, final String p_name) {
-        ExecuteFunctionMessage executeFunctionMessage = new ExecuteFunctionMessage(p_nodeId, p_name);
+    public void executeFunction(final short p_nodeId, final String p_name, final Distributable p_input) {
+        ExecuteFunctionMessage executeFunctionMessage = new ExecuteFunctionMessage(p_nodeId, p_name, p_input);
 
         LOGGER.debug("Executing function %s on node %04X", p_name, p_nodeId);
 
@@ -133,7 +135,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
     }
 
     private void handle(final ExecuteFunctionMessage p_message) {
-        executeFunction(p_message.getName());
+        executeFunction(p_message.getName(), p_message.getInput());
     }
 
     private void registerMessageTypes() {
