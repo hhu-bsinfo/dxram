@@ -30,7 +30,7 @@ run it using the DXRAM API.
 Below is an excerpt of a configuration file that puts the dxa-helloworld application into autostart to run it once
 the peer has finished initializing:
 ```
-"ApplicationServiceConfig": {
+"ApplicationService": {
 "m_autoStart": [
     {
         "m_className": "de.hhu.bsinfo.dxapp.HelloWorld",
@@ -38,7 +38,7 @@ the peer has finished initializing:
         "m_startOrderId": 0
     }
 ],
-"m_classConfig": "de.hhu.bsinfo.dxram.app.ApplicationServiceConfig"
+"m_configClassName": "de.hhu.bsinfo.dxram.app.ApplicationServiceConfig"
 },
 ```
 
