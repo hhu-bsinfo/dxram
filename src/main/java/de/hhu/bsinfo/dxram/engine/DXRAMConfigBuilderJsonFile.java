@@ -73,7 +73,8 @@ public class DXRAMConfigBuilderJsonFile implements DXRAMConfigBuilder {
                         throw new DXRAMConfigBuilderException("Creating new config file " + configFile + " failed");
                     }
                 } catch (final IOException e) {
-                    throw new DXRAMConfigBuilderException("Creating new config file " + configFile + " failed", e);
+                    throw new DXRAMConfigBuilderException("Creating new config file " + configFile + " failed: " +
+                            e.getMessage());
                 }
 
                 String jsonString = gson.toJson(p_config);
@@ -101,7 +102,8 @@ public class DXRAMConfigBuilderJsonFile implements DXRAMConfigBuilder {
                         JsonElement.class);
                 configOut = gson.fromJson(element, DXRAMConfig.class);
             } catch (final Exception e) {
-                throw new DXRAMConfigBuilderException("Loading JSON configuration " + m_path + " failed", e);
+                throw new DXRAMConfigBuilderException("Loading JSON configuration " + m_path + " failed: " +
+                        e.getMessage());
             }
         }
 
