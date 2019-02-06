@@ -1,32 +1,26 @@
 package de.hhu.bsinfo.dxram.function.messages;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
+import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.function.DistributableFunction;
-import de.hhu.bsinfo.dxram.function.util.FunctionSerializer;
-import de.hhu.bsinfo.dxram.job.messages.JobMessages;
 import de.hhu.bsinfo.dxutils.serialization.ClassUtil;
 import de.hhu.bsinfo.dxutils.serialization.Distributable;
-import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
-public class ExecuteFunctionMessage extends Message {
+public class ExecuteFunctionRequest extends Request {
 
     private String m_name;
     private String m_class;
     private Distributable m_input;
 
-    public ExecuteFunctionMessage() {
+    public ExecuteFunctionRequest() {
         super();
     }
 
-    public ExecuteFunctionMessage(final short p_destination, final String p_name, final Distributable p_input) {
-        super(p_destination, DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_EXECUTE_FUNCTION);
+    public ExecuteFunctionRequest(final short p_destination, final String p_name, final Distributable p_input) {
+        super(p_destination, DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_EXECUTE_FUNCTION_REQUEST);
 
         m_name = p_name;
         m_input = p_input;
@@ -50,6 +44,7 @@ public class ExecuteFunctionMessage extends Message {
         }
 
         p_importer.importObject(m_input);
+
     }
 
     public String getName() {

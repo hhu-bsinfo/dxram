@@ -2,6 +2,8 @@ package de.hhu.bsinfo.dxram.function;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import org.apache.zookeeper.data.Stat;
 
@@ -16,6 +18,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.failure.FailureComponent;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionMessage;
+import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionRequest;
+import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionResponse;
 import de.hhu.bsinfo.dxram.function.messages.FunctionMessages;
 import de.hhu.bsinfo.dxram.function.messages.RegisterFunctionRequest;
 import de.hhu.bsinfo.dxram.function.messages.RegisterFunctionResponse;
@@ -64,17 +68,17 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
         return Status.REGISTERED;
     }
 
-    public void executeFunction(final String p_name, final Distributable p_input) {
+    public Distributable executeFunction(final String p_name, final Distributable p_input) {
         DistributableFunction function = m_functions.get(p_name);
 
         if (function == null) {
             LOGGER.warn("Trying to execute non-registered function %s", p_name);
-            return;
+            return null;
         }
 
         LOGGER.debug("Executing function %s", p_name);
 
-        function.execute(getParentEngine(), p_input);
+        return function.execute(getParentEngine(), p_input);
     }
 
     public void executeFunction(final short p_nodeId, final String p_name, final Distributable p_input) {
@@ -87,6 +91,27 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
         } catch (NetworkException e) {
             LOGGER.warn("Couldn't send function execution %s to node %04X", p_name, p_nodeId);
         }
+    }
+
+    public <T extends Distributable> T executeFunctionSync(final short p_nodeId, final String p_name, final Distributable p_input) {
+        ExecuteFunctionRequest executeFunctionRequest = new ExecuteFunctionRequest(p_nodeId, p_name, p_input);
+
+        LOGGER.debug("Executing function %s on node %04X", p_name, p_nodeId);
+
+        try {
+            m_network.sendSync(executeFunctionRequest);
+        } catch (NetworkException e) {
+            LOGGER.warn("Couldn't send function execution %s to node %04X", p_name, p_nodeId);
+            return null;
+        }
+
+        ExecuteFunctionResponse response = executeFunctionRequest.getResponse(ExecuteFunctionResponse.class);
+
+        if (response.hasResult()) {
+            return (T) response.getResult();
+        }
+
+        return null;
     }
 
     @Override
@@ -113,6 +138,9 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
             case FunctionMessages.SUBTYPE_REGISTER_FUNCTION_REQUEST:
                 handle((RegisterFunctionRequest) p_message);
                 break;
+            case FunctionMessages.SUBTYPE_EXECUTE_FUNCTION_REQUEST:
+                handle((ExecuteFunctionRequest) p_message);
+                break;
             case FunctionMessages.SUBTYPE_EXECUTE_FUNCTION:
                 handle((ExecuteFunctionMessage) p_message);
                 break;
@@ -134,6 +162,18 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
 
     }
 
+    private void handle(final ExecuteFunctionRequest p_message) {
+        Distributable result = executeFunction(p_message.getName(), p_message.getInput());
+
+        ExecuteFunctionResponse response = new ExecuteFunctionResponse(p_message, result);
+
+        try {
+            m_network.sendMessage(response);
+        } catch (NetworkException e) {
+            LOGGER.warn("Couldn't send result for function %s to node %04X", p_message.getName(), response.getDestination());
+        }
+    }
+
     private void handle(final ExecuteFunctionMessage p_message) {
         executeFunction(p_message.getName(), p_message.getInput());
     }
@@ -143,12 +183,17 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
                 RegisterFunctionRequest.class);
         m_network.registerMessageType(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_REGISTER_FUNCTION_RESPONSE,
                 RegisterFunctionResponse.class);
+        m_network.registerMessageType(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_EXECUTE_FUNCTION_REQUEST,
+                ExecuteFunctionRequest.class);
+        m_network.registerMessageType(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_EXECUTE_FUNCTION_RESPONSE,
+                ExecuteFunctionResponse.class);
         m_network.registerMessageType(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_EXECUTE_FUNCTION,
                 ExecuteFunctionMessage.class);
     }
 
     private void registerMessageListeners() {
         m_network.register(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_REGISTER_FUNCTION_REQUEST, this);
+        m_network.register(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_EXECUTE_FUNCTION_REQUEST, this);
         m_network.register(DXRAMMessageTypes.FUNCTION_MESSAGE_TYPE, FunctionMessages.SUBTYPE_EXECUTE_FUNCTION, this);
     }
 }

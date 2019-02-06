@@ -1,5 +1,8 @@
 package de.hhu.bsinfo.dxram.function.util;
 
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 import de.hhu.bsinfo.dxutils.serialization.Distributable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
@@ -51,6 +54,10 @@ public class ParameterList implements Distributable {
 
     public String[] getParameters() {
         return m_parameters;
+    }
+
+    public Stream<String> stream() {
+        return Arrays.stream(m_parameters);
     }
 
     public String get(final int p_index) {

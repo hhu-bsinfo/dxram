@@ -46,15 +46,18 @@ public class FunctionServiceTest {
         Assert.assertNotEquals(NodeID.INVALID_ID, peer);
 
         DistributableFunction function = new IntAdderFunction();
-
         FunctionService.Status status = functionService.registerFunction(peer, IntAdderFunction.NAME, function);
-
         assertEquals(FunctionService.Status.REGISTERED, status);
 
-        ParameterList params = new ParameterList(new String[]{"17", "25"});
+        ParameterList params, result;
 
-        functionService.executeFunction(peer, IntAdderFunction.NAME, params);
+        params = new ParameterList(new String[]{"17", "25"});
+        result = functionService.executeFunctionSync(peer, IntAdderFunction.NAME, params);
 
-        LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(1));
+        assertEquals("42", result.get(0));
+
+        params = new ParameterList(new String[]{"1", "2", "3", "4", "5", "6", "7", "8"});
+        result = functionService.executeFunctionSync(peer, IntAdderFunction.NAME, params);
+        assertEquals("36", result.get(0));
     }
 }
