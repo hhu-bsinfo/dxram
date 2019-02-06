@@ -94,14 +94,18 @@ public final class DXRAM {
     private DXRAMEngine m_engine;
     private ShutdownThread m_shutdownHook;
 
+    public static final String EXTENDED_TEST_PROPERTY = "extendedTest";
+
     /**
      * Constructor.
      */
     public DXRAM() {
         Locale.setDefault(new Locale("en", "US"));
 
-        printBuildInfo();
-        printInstanceInfo();
+        if (!isRunWithinTest()) {
+            printBuildInfo();
+            printInstanceInfo();
+        }
 
         m_engine = new DXRAMEngine(BuildConfig.DXRAM_VERSION);
         registerComponents(m_engine);
@@ -145,6 +149,10 @@ public final class DXRAM {
         if (p_autoShutdown) {
             m_shutdownHook = new ShutdownThread(this);
             Runtime.getRuntime().addShutdownHook(m_shutdownHook);
+        }
+
+        if (isRunWithinTest()) {
+            return true;
         }
 
         printNodeInfo();
@@ -312,6 +320,10 @@ public final class DXRAM {
         }
 
         System.out.println(builder);
+    }
+
+    public static boolean isRunWithinTest() {
+        return System.getProperty(EXTENDED_TEST_PROPERTY) != null;
     }
 
     /**
