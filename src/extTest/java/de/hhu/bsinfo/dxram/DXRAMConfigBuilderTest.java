@@ -1,5 +1,8 @@
 package de.hhu.bsinfo.dxram;
 
+import java.io.File;
+import java.nio.file.FileSystem;
+
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
@@ -61,6 +64,7 @@ class DXRAMConfigBuilderTest implements DXRAMConfigBuilder {
         if (m_nodeIdx == 0) {
             ZookeeperBootComponentConfig bootConfig = p_config.getComponentConfig(ZookeeperBootComponent.class);
             bootConfig.setBootstrap(true);
+            bootConfig.setDataDir(m_dxramBuildDistDir + File.separator + bootConfig.getDataDir());
         }
 
         BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponent.class);
