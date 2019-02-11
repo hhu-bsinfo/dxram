@@ -4,6 +4,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.operation.CreateLocal;
 import de.hhu.bsinfo.dxram.chunk.operation.GetLocal;
+import de.hhu.bsinfo.dxram.chunk.operation.ReserveLocal;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
@@ -31,6 +32,7 @@ public class ChunkLocalService extends AbstractDXRAMService<DXRAMModuleConfig> {
     // chunk operations of service
     private CreateLocal m_createLocal;
     private GetLocal m_getLocal;
+    private ReserveLocal m_reserveLocal;
 
     /**
      * Get the createLocal operation
@@ -50,6 +52,15 @@ public class ChunkLocalService extends AbstractDXRAMService<DXRAMModuleConfig> {
         return m_getLocal;
     }
 
+    /**
+     * Get the ReserveLocal operation
+     *
+     * @return Operation
+     */
+    public ReserveLocal reserveLocal() {
+        return m_reserveLocal;
+    }
+
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
@@ -64,6 +75,7 @@ public class ChunkLocalService extends AbstractDXRAMService<DXRAMModuleConfig> {
     protected boolean startService(final DXRAMConfig p_config) {
         m_createLocal = new CreateLocal(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_getLocal = new GetLocal(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
+        m_reserveLocal = new ReserveLocal(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
 
         return true;
     }
