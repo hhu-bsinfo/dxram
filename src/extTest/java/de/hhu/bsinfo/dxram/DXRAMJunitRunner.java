@@ -52,6 +52,11 @@ public class DXRAMJunitRunner extends Runner {
 
     private Class m_testClass;
 
+    private static final String LOG_LEVEL_PROPERTY = "log_level";
+    private static final String WORKSPACE_PROPERTY = "workspace";
+
+    private static final String DEFAULT_LOG_LEVEL = "debug";
+
     /**
      * Constructor
      *
@@ -71,7 +76,12 @@ public class DXRAMJunitRunner extends Runner {
 
     @Override
     public void run(final RunNotifier p_notifier) {
-        configureLogger();
+
+        System.setProperty(DXRAM.EXTENDED_TEST_PROPERTY, "");
+
+        Properties props = getConfigProperties();
+
+        configureLogger(props.getProperty(LOG_LEVEL_PROPERTY, DEFAULT_LOG_LEVEL));
 
         DXRAMTestConfiguration config = (DXRAMTestConfiguration) m_testClass.getAnnotation(
                 DXRAMTestConfiguration.class);
@@ -81,14 +91,12 @@ public class DXRAMJunitRunner extends Runner {
                     String.format("DXRAMTestConfiguration annotation not found (%s)", m_testClass.getSimpleName()));
         }
 
-        Properties props = getConfigProperties();
-
         m_instances = new DXRAM[config.nodes().length];
 
-        System.out.println("Creating " + m_instances.length + " DXRAM instances");
+        System.out.printf("\n  >> Creating %d DXRAM instances\n\n", m_instances.length);
 
         for (int i = 0; i < m_instances.length; i++) {
-            m_instances[i] = createNodeInstance(props.getProperty("dxram_build_dist_out"), config, i, 22221 + i);
+            m_instances[i] = createNodeInstance(props.getProperty(WORKSPACE_PROPERTY), config, i, 22221 + i);
         }
 
         runTestOnInstances(m_instances, p_notifier);
@@ -99,7 +107,7 @@ public class DXRAMJunitRunner extends Runner {
     /**
      * Configure the logger (log4j) for the test to run
      */
-    private void configureLogger() {
+    private void configureLogger(final String p_logLevel) {
         LoggerContext lc = (LoggerContext) LogManager.getContext(false);
         Appender appender = LogAppenderAsssert.createAppender("unitTest", PatternLayout.createDefaultLayout(), null);
         appender.start();
@@ -107,7 +115,7 @@ public class DXRAMJunitRunner extends Runner {
         lc.getRootLogger().addAppender(lc.getConfiguration().getAppender(appender.getName()));
         lc.updateLoggers();
 
-        Configurator.setRootLevel(Level.DEBUG);
+        Configurator.setRootLevel(Level.valueOf(p_logLevel));
     }
 
     /**
@@ -152,7 +160,7 @@ public class DXRAMJunitRunner extends Runner {
      *         Instances to cleanup
      */
     private void cleanupNodeInstances(final DXRAM[] p_instances) {
-        System.out.println("Cleanup DXRAM instances: " + p_instances.length);
+        System.out.printf("\n  >> Cleaning up %d DXRAM instances\n\n", p_instances.length);
 
         // cleanup in reverse order: superpeers have to soft shutdown last
         for (int i = p_instances.length - 1; i >= 0; i--) {
@@ -185,7 +193,7 @@ public class DXRAMJunitRunner extends Runner {
                 }
             }
 
-            System.out.println("Running tests");
+            System.out.print("\n  >> Running tests\n\n");
 
             TestRunnerThread[] threads = new TestRunnerThread[p_instances.length];
 

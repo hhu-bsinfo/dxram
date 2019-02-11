@@ -49,6 +49,7 @@ import de.hhu.bsinfo.dxram.engine.NullService;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventComponentConfig;
 import de.hhu.bsinfo.dxram.failure.FailureComponent;
+import de.hhu.bsinfo.dxram.function.FunctionService;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxram.job.JobComponent;
 import de.hhu.bsinfo.dxram.job.JobComponentConfig;
@@ -93,14 +94,18 @@ public final class DXRAM {
     private DXRAMEngine m_engine;
     private ShutdownThread m_shutdownHook;
 
+    public static final String EXTENDED_TEST_PROPERTY = "extendedTest";
+
     /**
      * Constructor.
      */
     public DXRAM() {
         Locale.setDefault(new Locale("en", "US"));
 
-        printBuildInfo();
-        printInstanceInfo();
+        if (!isRunWithinTest()) {
+            printBuildInfo();
+            printInstanceInfo();
+        }
 
         m_engine = new DXRAMEngine(BuildConfig.DXRAM_VERSION);
         registerComponents(m_engine);
@@ -144,6 +149,10 @@ public final class DXRAM {
         if (p_autoShutdown) {
             m_shutdownHook = new ShutdownThread(this);
             Runtime.getRuntime().addShutdownHook(m_shutdownHook);
+        }
+
+        if (isRunWithinTest()) {
+            return true;
         }
 
         printNodeInfo();
@@ -241,6 +250,7 @@ public final class DXRAM {
         p_engine.registerService(StatisticsService.class, StatisticsServiceConfig.class);
         p_engine.registerService(SynchronizationService.class, SynchronizationServiceConfig.class);
         p_engine.registerService(TemporaryStorageService.class, TemporaryStorageServiceConfig.class);
+        p_engine.registerService(FunctionService.class, DXRAMModuleConfig.class);
     }
 
     /**
@@ -310,6 +320,10 @@ public final class DXRAM {
         }
 
         System.out.println(builder);
+    }
+
+    public static boolean isRunWithinTest() {
+        return System.getProperty(EXTENDED_TEST_PROPERTY) != null;
     }
 
     /**

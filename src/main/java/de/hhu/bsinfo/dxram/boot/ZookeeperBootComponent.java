@@ -255,6 +255,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     private void deleteZooKeeperData() {
         LOGGER.info("Deleting ZooKeeper data directory");
         Path path = Paths.get(getConfig().getDataDir());
+
+        if (!Files.exists(path)) {
+            return;
+        }
+
         try {
             Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
                 @Override

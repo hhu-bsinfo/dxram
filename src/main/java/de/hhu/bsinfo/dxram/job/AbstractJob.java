@@ -16,6 +16,13 @@
 
 package de.hhu.bsinfo.dxram.job;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -26,6 +33,7 @@ import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Base class for an job that can be executed by the
