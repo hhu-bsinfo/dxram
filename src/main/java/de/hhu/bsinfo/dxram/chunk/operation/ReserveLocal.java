@@ -3,10 +3,14 @@ package de.hhu.bsinfo.dxram.chunk.operation;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.chunk.ChunkLocalService;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
+import de.hhu.bsinfo.dxutils.stats.ThroughputPool;
+import de.hhu.bsinfo.dxutils.stats.Value;
 
 /**
  * Reserve the local chunk ids without allocating memory. (local only)
@@ -15,6 +19,13 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  * @author Ruslan Curbanov, ruslan.curbanov@uni-duesseldorf.de, 11.02.2019
  */
 public class ReserveLocal extends AbstractOperation {
+
+	private static final ThroughputPool SOP_RESERVE =
+            new ThroughputPool(ChunkLocalService.class, "Reserve", Value.Base.B_10);
+
+    static {
+        StatisticsManager.get().registerOperation(ChunkLocalService.class, SOP_RESERVE);
+    }
 
     /**
      * Constructor
@@ -48,8 +59,11 @@ public class ReserveLocal extends AbstractOperation {
      * @return New CID
      */
     public long reserve() {
+    	SOP_RESERVE.start();
     	m_logger.trace("reserve a single CID ...");
-        return m_chunk.getMemory().reserve().reserve();
+        final long reserved_cid = m_chunk.getMemory().reserve().reserve();
+        SOP_RESERVE.stop(1);
+        return reserved_cid;
     }
 
     /**
@@ -64,8 +78,10 @@ public class ReserveLocal extends AbstractOperation {
      *         Number of CIDs to reserve
      */
     public void reserve(final long[] p_array, final int p_offset, final int p_count) {
+    	SOP_RESERVE.start();
         m_logger.trace("reserve[offset %d, count %d] ...", p_offset, p_count);
         m_chunk.getMemory().reserve().reserve(p_array, p_offset, p_count);
+        SOP_RESERVE.stop(p_count);
     }
 
     /**
@@ -77,7 +93,10 @@ public class ReserveLocal extends AbstractOperation {
      * @return Array with CIDs reserved
      */
     public long[] reserve(final int p_count) {
+    	SOP_RESERVE.start();
     	m_logger.trace("reserve[count %d] ...", p_count);
-        return m_chunk.getMemory().reserve().reserve(p_count);
+    	final long reserved_cid[] = m_chunk.getMemory().reserve().reserve(p_count);
+    	SOP_RESERVE.stop(p_count);
+    	return reserved_cid;
     }
 }
