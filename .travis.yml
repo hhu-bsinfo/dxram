@@ -4,9 +4,9 @@ install: true
 stages:
   - name: build
   - name: snapshot
-    if: branch = development
+    if: branch = development AND type = push
   - name: release
-    if: branch = master
+    if: branch = master AND type = push
 
 jobs:
   include:
