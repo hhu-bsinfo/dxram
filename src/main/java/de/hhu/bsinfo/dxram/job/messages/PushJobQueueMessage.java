@@ -105,10 +105,7 @@ public class PushJobQueueMessage extends Message {
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
         m_jobBlobSize = p_importer.readCompactNumber(m_jobBlobSize);
-        if (m_jobBlob == null) {
-            m_jobBlob = new byte[m_jobBlobSize];
-        }
-
+        m_jobBlob = new byte[m_jobBlobSize];
         p_importer.readBytes(m_jobBlob);
         m_callbackJobEventBitMask = p_importer.readByte(m_callbackJobEventBitMask);
         m_jobType = p_importer.readShort(m_jobType);
@@ -116,6 +113,16 @@ public class PushJobQueueMessage extends Message {
 
     @Override
     protected final int getPayloadLength() {
-        return ObjectSizeUtil.sizeofCompactedNumber(m_jobBlobSize) + m_jobBlobSize + Byte.BYTES + Short.BYTES;
+        int size = 0;
+
+        if (m_job != null) {
+            int jobSize = m_job.sizeofObject();
+
+            size += ObjectSizeUtil.sizeofCompactedNumber(jobSize) + jobSize;
+        } else {
+            size += ObjectSizeUtil.sizeofCompactedNumber(m_jobBlobSize) + m_jobBlobSize;
+        }
+
+        return size + Byte.BYTES + Short.BYTES;
     }
 }
