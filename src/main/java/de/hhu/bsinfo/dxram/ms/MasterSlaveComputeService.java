@@ -45,8 +45,11 @@ import de.hhu.bsinfo.dxram.ms.messages.SubmitTaskRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SubmitTaskResponse;
 import de.hhu.bsinfo.dxram.ms.messages.TaskExecutionFinishedMessage;
 import de.hhu.bsinfo.dxram.ms.messages.TaskExecutionStartedMessage;
+import de.hhu.bsinfo.dxram.ms.script.TaskScript;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptGsonContext;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
@@ -66,6 +69,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
     private NameserviceComponent m_nameservice;
     private AbstractBootComponent m_boot;
     private LookupComponent m_lookup;
+    private PluginComponent m_plugin;
 
     private AbstractComputeMSBase m_computeMSInstance;
 
@@ -81,19 +85,37 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
      *         Arguments to provide to the task object
      * @return A task instance
      */
-    public static Task createTaskInstance(final String p_taskName, final Object... p_args) {
+    public Task createTaskInstance(final String p_taskName, final Object... p_args) {
         Class<?> clazz;
+
         try {
-            clazz = Class.forName(p_taskName);
+            clazz = m_plugin.getClassByName(p_taskName);
         } catch (final ClassNotFoundException ignored) {
-            throw new RuntimeException("Cannot find task class " + p_taskName);
+            LOGGER.error("Cannot find task class: %s", p_taskName);
+            return null;
+        }
+
+        // check if class implements Task interface
+        boolean impl = false;
+
+        for (Class<?> iface : clazz.getInterfaces()) {
+            if (iface.equals(Task.class)) {
+                impl = true;
+                break;
+            }
+        }
+
+        if (!impl) {
+            LOGGER.error("Class '%s' does not implement the Task interface");
+            return null;
         }
 
         try {
             return (Task) clazz.getConstructor().newInstance(p_args);
         } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException |
                 IllegalArgumentException | InvocationTargetException e) {
-            throw new RuntimeException("Cannot create instance of Task " + p_taskName);
+            LOGGER.error("Cannot create instance of Task '%s': %s", p_taskName, e);
+            return null;
         }
     }
 
@@ -104,8 +126,8 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
      *         File to read
      * @return Read task script or null on read failure
      */
-    public static TaskScript readTaskScriptFromJsonFile(final String p_taskScriptFileName) {
-        Gson gson = TaskScriptGsonContext.createGsonInstance();
+    public TaskScript readTaskScriptFromJsonFile(final String p_taskScriptFileName) {
+        Gson gson = TaskScriptGsonContext.createGsonInstance(m_plugin);
 
         try {
             return gson.fromJson(new String(Files.readAllBytes(Paths.get(p_taskScriptFileName))), TaskScript.class);
@@ -180,16 +202,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
 
         // get the node id of the master node of the group
         short masterNodeId = NodeID.INVALID_ID;
-        {
-            long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + p_computeGroupId, 0);
-            if (tmp == -1) {
+        long tmp = m_nameservice.getChunkID(AbstractComputeMSBase.NAMESERVICE_ENTRY_IDENT + p_computeGroupId, 0);
 
-                LOGGER.error("Cannot find master node of compute gropu id %d", p_computeGroupId);
-
-                return null;
-            }
-            masterNodeId = ChunkID.getCreatorID(tmp);
+        if (tmp == -1) {
+            LOGGER.error("Cannot find master node of compute gropu id %d", p_computeGroupId);
+            return null;
         }
+
+        masterNodeId = ChunkID.getCreatorID(tmp);
 
         GetMasterStatusRequest request = new GetMasterStatusRequest(masterNodeId);
 
@@ -203,6 +223,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         }
 
         GetMasterStatusResponse response = (GetMasterStatusResponse) request.getResponse();
+
         if (response.getStatus() != 0) {
 
             LOGGER.error("Cannot get status on non master node 0x%X", masterNodeId);
@@ -352,15 +373,19 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
                     case MasterSlaveMessages.SUBTYPE_SUBMIT_TASK_REQUEST:
                         incomingSubmitTaskRequest((SubmitTaskRequest) p_message);
                         break;
+
                     case MasterSlaveMessages.SUBTYPE_GET_MASTER_STATUS_REQUEST:
                         incomingGetMasterStatusRequest((GetMasterStatusRequest) p_message);
                         break;
+
                     case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_STARTED_MESSAGE:
                         incomingTaskExecutionStartedMessage((TaskExecutionStartedMessage) p_message);
                         break;
+
                     case MasterSlaveMessages.SUBTYPE_TASK_EXECUTION_FINISHED_MESSAGE:
                         incomingTaskExecutionFinishedMessage((TaskExecutionFinishedMessage) p_message);
                         break;
+
                     default:
                         break;
                 }
@@ -374,6 +399,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_plugin = p_componentAccessor.getComponent(PluginComponent.class);
     }
 
     @Override
@@ -407,18 +433,21 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         switch (ComputeRole.toComputeRole(getConfig().getRole())) {
             case MASTER:
                 m_computeMSInstance = new ComputeMaster(getConfig().getComputeGroupId(),
-                        getConfig().getPingInterval().getMs(), getParentEngine(), m_network,
-                        m_nameservice, m_boot, m_lookup);
+                        getConfig().getPingInterval().getMs(), getParentEngine(), m_network, m_nameservice, m_boot,
+                        m_lookup, m_plugin);
                 break;
+
             case SLAVE:
                 m_computeMSInstance =
                         new ComputeSlave(getConfig().getComputeGroupId(), getConfig().getPingInterval().getMs(),
-                                getParentEngine(), m_network, m_nameservice,
-                                m_boot, m_lookup);
+                                getParentEngine(), m_network, m_nameservice, m_boot, m_lookup, m_plugin);
                 break;
+
             case NONE:
-                m_computeMSInstance = new ComputeNone(getParentEngine(), m_network, m_nameservice, m_boot, m_lookup);
+                m_computeMSInstance = new ComputeNone(getParentEngine(), m_network, m_nameservice, m_boot, m_lookup,
+                        m_plugin);
                 break;
+
             default:
                 assert false;
                 break;
@@ -449,22 +478,14 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
 
         LOGGER.debug("Incoming remote submit task script request %s", p_request);
 
-        // check if we were able to create an instance (missing task class registration)
-        if (p_request.getTaskScript() == null) {
-
-            LOGGER.error("Creating instance for task script of request %s failed, most likely non" +
-                    " registered task payload type", p_request);
-
-            response = new SubmitTaskResponse(p_request, (short) -1, -1, (byte) 3);
-            return;
-        }
-
         if (m_computeMSInstance.getRole() != ComputeRole.MASTER) {
-
             LOGGER.error("Cannot submit remote task script %s on non master node type", p_request.getTaskScript());
 
             response = new SubmitTaskResponse(p_request, (short) -1, -1, (byte) 1);
         } else {
+            // complete reflection of generic task objects
+            m_computeMSInstance.reflectIncomingNodeDataInstances(p_request.getTaskScript());
+
             TaskScriptState taskScriptState = new TaskScriptState(p_request.getTaskScript());
             taskScriptState.assignTaskId(m_taskIdCounter.getAndIncrement());
             taskScriptState.setNodeIdSubmitted(p_request.getSource());
@@ -485,9 +506,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
         try {
             m_network.sendMessage(response);
         } catch (final NetworkException e) {
-
             LOGGER.error("Sending response to submit task request to master %s failed", p_request);
-
         }
     }
 

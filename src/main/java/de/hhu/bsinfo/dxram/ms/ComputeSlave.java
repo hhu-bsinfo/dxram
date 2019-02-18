@@ -38,12 +38,19 @@ import de.hhu.bsinfo.dxram.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxram.ms.messages.SignalMessage;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinResponse;
+import de.hhu.bsinfo.dxram.ms.script.TaskScript;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNode;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNodeAbort;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNodeData;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNodeResultCondition;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNodeResultSwitch;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
- * Implementation of a slave. The slave waits for tasks for execution from the master
+ * Implementation of a slave. The slave waits for tasks for execution from the master.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
@@ -61,7 +68,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
     private int m_masterExecutionBarrierId;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param p_computeGroupId
      *         Compute group id the instance is assigned to.
@@ -77,13 +84,15 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
      *         BootComponent
      * @param p_lookup
      *         LookupComponent
+     * @param p_plugin
+     *         PluginComponent
      */
     ComputeSlave(final short p_computeGroupId, final long p_pingIntervalMs,
             final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
             final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot,
-            final LookupComponent p_lookup) {
+            final LookupComponent p_lookup, final PluginComponent p_plugin) {
         super(ComputeRole.SLAVE, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice,
-                p_boot, p_lookup);
+                p_boot, p_lookup, p_plugin);
 
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
                 MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
@@ -274,6 +283,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         Integer result = 0;
         for (TaskScriptNode node : m_taskScript.getTasks()) {
             result = executeTaskScriptNode(node, result);
+
             if (result == null) {
                 result = 0;
                 break;
@@ -311,7 +321,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
     /**
      * Execute a sync step with the master. This is called after execution
-     * of a single task statement of a task script
+     * of a single task statement of a task script.
      */
     private void syncStepMaster() {
         LOGGER.debug("Sync step with master 0x%X ...", m_masterNodeId);
@@ -320,7 +330,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
     }
 
     /**
-     * Execute the give task script node
+     * Execute the give task script node.
      *
      * @param p_taskScriptNode
      *         Script node to execute
@@ -332,8 +342,8 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
         Integer result = p_prevReturnCode;
 
         if (result != null) {
-            if (p_taskScriptNode instanceof TaskResultCondition) {
-                TaskResultCondition condition = (TaskResultCondition) p_taskScriptNode;
+            if (p_taskScriptNode instanceof TaskScriptNodeResultCondition) {
+                TaskScriptNodeResultCondition condition = (TaskScriptNodeResultCondition) p_taskScriptNode;
 
                 LOGGER.debug("Executing condition: %s", condition);
 
@@ -358,8 +368,8 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
                     result = -1;
                 }
                 syncStepMaster();
-            } else if (p_taskScriptNode instanceof TaskResultSwitch) {
-                TaskResultSwitch resSwitch = (TaskResultSwitch) p_taskScriptNode;
+            } else if (p_taskScriptNode instanceof TaskScriptNodeResultSwitch) {
+                TaskScriptNodeResultSwitch resSwitch = (TaskScriptNodeResultSwitch) p_taskScriptNode;
 
                 LOGGER.debug("Executing switch: %s", resSwitch);
 
@@ -372,13 +382,16 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
                         break;
                     }
                 }
-            } else if (p_taskScriptNode instanceof TaskAbort) {
-                TaskAbort abort = (TaskAbort) p_taskScriptNode;
+            } else if (p_taskScriptNode instanceof TaskScriptNodeAbort) {
+                TaskScriptNodeAbort abort = (TaskScriptNodeAbort) p_taskScriptNode;
 
                 LOGGER.debug("Executing abort: %s", abort);
 
                 System.out.printf("Aborting task script: %s\n", abort.getAbortMsg());
                 result = null;
+            } else if (p_taskScriptNode instanceof TaskScriptNodeData) {
+                throw new IllegalStateException("Script node type TaskScriptNodeData not allowed here. Must be " +
+                        "converted to proper task instances");
             } else {
                 throw new RuntimeException("Unhandled script node type " + p_taskScriptNode.getClass().getName());
             }
@@ -388,7 +401,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
     }
 
     /**
-     * Handle an incoming ExecuteTaskScriptScriptRequest
+     * Handle an incoming ExecuteTaskScriptScriptRequest.
      *
      * @param p_message
      *         ExecuteTaskScriptScriptRequest
@@ -399,6 +412,10 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
 
         if (m_executeTaskScriptLock.tryLock() && m_state == State.STATE_IDLE) {
             taskScript = p_message.getTaskScript();
+
+            // complete reflection of generic task objects
+            reflectIncomingNodeDataInstances(taskScript);
+
             response = new ExecuteTaskScriptResponse(p_message, (byte) 0);
 
             m_executeTaskScriptLock.unlock();
@@ -424,7 +441,7 @@ class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, Tas
     }
 
     /**
-     * Handle a SignalMessage
+     * Handle a SignalMessage.
      *
      * @param p_message
      *         SignalMessage

@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.ms;
+package de.hhu.bsinfo.dxram.ms.script;
 
 import com.google.gson.annotations.Expose;
 
@@ -26,31 +26,64 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
 
 /**
  * Switch state to allow execution of a task script taking different paths
- * depending on the return code of the previous task
+ * depending on the return code of the previous task.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 15.01.2017
  */
-final class TaskResultSwitch implements TaskScriptNode {
+public final class TaskScriptNodeResultSwitch implements TaskScriptNode {
     @Expose
     private Case[] m_switchCases = new Case[0];
     @Expose
     private Case m_switchCaseDefault = new Case();
 
+    private int m_tmpLen;
+
     /**
-     * Default constructor
+     * Default constructor.
      */
-    public TaskResultSwitch() {
+    public TaskScriptNodeResultSwitch() {
 
     }
 
     /**
-     * Evaluate the switch state based on the previous task's return code
+     * Constructor.
+     *
+     * @param p_default
+     *         Default case to execute if no other case matches.
+     * @param p_cases
+     *         Cases of the switch structure.
+     */
+    public TaskScriptNodeResultSwitch(final Case p_default, final Case... p_cases) {
+        m_switchCases = p_cases;
+        m_switchCaseDefault = p_default;
+    }
+
+    /**
+     * Get the non-default switch cases.
+     *
+     * @return Cases
+     */
+    public Case[] getSwitchCases() {
+        return m_switchCases;
+    }
+
+    /**
+     * Get the default case.
+     *
+     * @return Case
+     */
+    public Case getDefaultSwitchCase() {
+        return m_switchCaseDefault;
+    }
+
+    /**
+     * Evaluate the switch state based on the previous task's return code.
      *
      * @param p_prevTaskReturnCode
      *         Return code of the previous task
      * @return TaskScript which is the result of the evaluated switch state for further execution
      */
-    TaskScript evaluate(final int p_prevTaskReturnCode) {
+    public TaskScript evaluate(final int p_prevTaskReturnCode) {
         for (Case esac : m_switchCases) {
             if (esac.getCaseValue() == p_prevTaskReturnCode) {
                 return esac.getCase();
@@ -62,30 +95,36 @@ final class TaskResultSwitch implements TaskScriptNode {
 
     @Override
     public String toString() {
-        return "TaskResultSwitch[" + m_switchCases.length + " cases]";
+        return "TaskScriptNodeResultSwitch[" + m_switchCases.length + " cases]";
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
         p_exporter.writeInt(m_switchCases.length);
+
         for (Case esac : m_switchCases) {
             p_exporter.exportObject(esac);
         }
+
         p_exporter.exportObject(m_switchCaseDefault);
     }
 
     @Override
     public void importObject(final Importer p_importer) {
-        int length = p_importer.readInt(0);
+        m_tmpLen = p_importer.readInt(m_tmpLen);
+
         if (m_switchCases.length == 0) {
-            m_switchCases = new Case[length];
+            m_switchCases = new Case[m_tmpLen];
         }
+
         for (int i = 0; i < m_switchCases.length; i++) {
             if (m_switchCases[i] == null) {
                 m_switchCases[i] = new Case();
             }
+
             p_importer.importObject(m_switchCases[i]);
         }
+
         p_importer.importObject(m_switchCaseDefault);
     }
 
@@ -94,18 +133,20 @@ final class TaskResultSwitch implements TaskScriptNode {
         int size = 0;
 
         size += Integer.BYTES;
+
         for (Case esac : m_switchCases) {
             size += esac.sizeofObject();
         }
 
         size += m_switchCaseDefault.sizeofObject();
+
         return size;
     }
 
     /**
      * Class for a switch case
      */
-    private static class Case implements Importable, Exportable {
+    public static class Case implements Importable, Exportable {
         @Expose
         private int m_caseValue = 0;
         @Expose
@@ -116,6 +157,15 @@ final class TaskResultSwitch implements TaskScriptNode {
          */
         Case() {
 
+        }
+
+        /**
+         * Get the task script associated with the case.
+         *
+         * @return TaskScript
+         */
+        public TaskScript getScriptCase() {
+            return m_case;
         }
 
         /**
@@ -145,9 +195,11 @@ final class TaskResultSwitch implements TaskScriptNode {
         @Override
         public void importObject(final Importer p_importer) {
             m_caseValue = p_importer.readInt(m_caseValue);
+
             if (m_case.getTasks()[0] instanceof EmptyTask) {
                 m_case = new TaskScript();
             }
+
             p_importer.importObject(m_case);
         }
 

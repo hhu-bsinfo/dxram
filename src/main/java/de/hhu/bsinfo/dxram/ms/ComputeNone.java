@@ -21,6 +21,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 
 /**
  * None/Null implementation of the compute base. This node does not participate in any
@@ -43,11 +44,13 @@ class ComputeNone extends AbstractComputeMSBase {
      *         BootComponent
      * @param p_lookup
      *         LookupComponent
+     * @param p_plugin
+     *         PluginComponent
      */
     ComputeNone(final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
             final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot,
-            final LookupComponent p_lookup) {
-        super(ComputeRole.NONE, (short) -1, 0, p_serviceAccessor, p_network, p_nameservice, p_boot, p_lookup);
+            final LookupComponent p_lookup, final PluginComponent p_plugin) {
+        super(ComputeRole.NONE, (short) -1, 0, p_serviceAccessor, p_network, p_nameservice, p_boot, p_lookup, p_plugin);
     }
 
     @Override

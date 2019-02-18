@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.ms;
+package de.hhu.bsinfo.dxram.ms.script;
 
 import java.lang.reflect.Type;
 
@@ -28,55 +28,65 @@ import com.google.gson.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxram.ms.Task;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 import de.hhu.bsinfo.dxutils.StorageUnitGsonSerializer;
 import de.hhu.bsinfo.dxutils.TimeUnitGsonSerializer;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
- * Gson context for handling serialization and deserialization of task scripts
+ * Gson context for handling serialization and deserialization of task scripts.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 15.01.2017
  */
-final class TaskScriptGsonContext {
-
+public final class TaskScriptGsonContext {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TaskScriptGsonContext.class.getSimpleName());
 
     /**
-     * Static class
+     * Static class.
      */
     private TaskScriptGsonContext() {
 
     }
 
     /**
-     * Create a Gson instance with all adapters attached for serialization/deserialization
+     * Create a Gson instance with all adapters attached for serialization/deserialization.
      *
+     * @param p_pluginComponent
+     *         Reference to plugin component for task reflection.
      * @return Gson context
      */
-    static Gson createGsonInstance() {
+    public static Gson createGsonInstance(final PluginComponent p_pluginComponent) {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
-                .registerTypeAdapter(TaskScriptNode.class, new TaskScriptNodeSerializer())
+                .registerTypeAdapter(TaskScriptNode.class, new TaskScriptNodeSerializer(p_pluginComponent))
                 .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer())
                 .registerTypeAdapter(TimeUnit.class, new TimeUnitGsonSerializer()).create();
     }
 
     /**
-     * Gson deserializer for TaskScriptNodes
+     * Gson deserializer for TaskScriptNodes.
      */
     private static class TaskScriptNodeSerializer implements JsonDeserializer<TaskScriptNode> {
+        private PluginComponent m_pluginComponent;
+
+        public TaskScriptNodeSerializer(final PluginComponent p_pluginComponent) {
+            m_pluginComponent = p_pluginComponent;
+        }
+
         @Override
         public TaskScriptNode deserialize(final JsonElement p_jsonElement, final Type p_type,
                 final JsonDeserializationContext p_jsonDeserializationContext) {
 
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
 
-            if (jsonObj.has("m_task")) {
-                String className = jsonObj.get("m_task").getAsString();
+            if (jsonObj.has("m_name")) {
+                String className = jsonObj.get("m_name").getAsString();
 
                 Class<?> clazz;
+
                 try {
-                    clazz = Class.forName(className);
+                    clazz = m_pluginComponent.getClassByName(className);
                 } catch (final ClassNotFoundException ignore) {
                     LOGGER.fatal("Could not find task for class name '%s', check your task script", className);
                     return null;
@@ -84,6 +94,7 @@ final class TaskScriptGsonContext {
 
                 // check if class implements the Task interface
                 boolean impl = false;
+
                 for (Class<?> iface : clazz.getInterfaces()) {
                     if (iface.equals(Task.class)) {
                         impl = true;
@@ -99,13 +110,13 @@ final class TaskScriptGsonContext {
                 return p_jsonDeserializationContext.deserialize(p_jsonElement, clazz);
             }
             if (jsonObj.has("m_cond")) {
-                return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskResultCondition.class);
+                return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskScriptNodeResultCondition.class);
             }
             if (jsonObj.has("m_switchCases")) {
-                return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskResultSwitch.class);
+                return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskScriptNodeResultSwitch.class);
             }
             if (jsonObj.has("m_abortMsg")) {
-                return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskAbort.class);
+                return p_jsonDeserializationContext.deserialize(p_jsonElement, TaskScriptNodeAbort.class);
             }
 
             return null;

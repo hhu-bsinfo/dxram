@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.ms.TaskScript;
+import de.hhu.bsinfo.dxram.ms.script.TaskScript;
 
 /**
  * Submit a task script to a remote master compute node.

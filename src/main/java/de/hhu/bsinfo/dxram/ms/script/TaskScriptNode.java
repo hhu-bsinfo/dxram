@@ -14,16 +14,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.ms;
+package de.hhu.bsinfo.dxram.ms.script;
 
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
 
-/**
- * Common interface for all nodes in a task script execution flow
- *
- * @author Stefan Nothaas, stefan.nothaas@hhu.de, 15.01.2017
- */
 public interface TaskScriptNode extends Importable, Exportable {
 
 }

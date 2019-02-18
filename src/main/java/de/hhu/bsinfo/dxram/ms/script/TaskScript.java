@@ -14,9 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.ms;
-
-import java.lang.reflect.InvocationTargetException;
+package de.hhu.bsinfo.dxram.ms.script;
 
 import com.google.gson.annotations.Expose;
 
@@ -32,7 +30,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
 public final class TaskScript implements Importable, Exportable {
-    static final int NUM_SLAVES_ARBITRARY = 0;
+    public static final int NUM_SLAVES_ARBITRARY = 0;
 
     @Expose
     private int m_minSlaves = NUM_SLAVES_ARBITRARY;
@@ -43,16 +41,18 @@ public final class TaskScript implements Importable, Exportable {
     @Expose
     private TaskScriptNode[] m_tasks = new TaskScriptNode[0];
 
+    private int m_tmpLen;
+
     /**
-     * Constructor
-     * Empty task script
+     * Constructor.
+     * Empty task script.
      */
     public TaskScript() {
 
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param p_tasks
      *         List of tasks forming the script
@@ -62,7 +62,7 @@ public final class TaskScript implements Importable, Exportable {
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param p_minSlaves
      *         Minimum number of slaves required to run this task script
@@ -78,7 +78,7 @@ public final class TaskScript implements Importable, Exportable {
     }
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param p_minSlaves
      *         Minimum number of slaves required to run this task script
@@ -136,8 +136,13 @@ public final class TaskScript implements Importable, Exportable {
         p_exporter.writeString(m_name);
         p_exporter.writeInt(m_tasks.length);
 
+        // export tasks as TaskScriptNodeData manually to not depend on reflection when importing them in importObject
         for (int i = 0; i < m_tasks.length; i++) {
+            // string
             p_exporter.writeString(m_tasks[i].getClass().getName());
+
+            // as "byte array"
+            p_exporter.writeCompactNumber(m_tasks[i].sizeofObject());
             p_exporter.exportObject(m_tasks[i]);
         }
     }
@@ -147,28 +152,17 @@ public final class TaskScript implements Importable, Exportable {
         m_minSlaves = p_importer.readInt(m_minSlaves);
         m_maxSlaves = p_importer.readInt(m_maxSlaves);
         m_name = p_importer.readString(m_name);
-        int length = p_importer.readInt(0);
+
+        m_tmpLen = p_importer.readInt(m_tmpLen);
+
         if (m_tasks.length == 0) {
-            m_tasks = new TaskScriptNode[length];
+            m_tasks = new TaskScriptNode[m_tmpLen];
         }
 
+        // import as TaskScriptNodeData and use reflection to create proper objects later (not possible here)
         for (int i = 0; i < m_tasks.length; i++) {
-            String taskName = p_importer.readString(null);
-
-            if (taskName != null) {
-                Class<?> clazz;
-                try {
-                    clazz = Class.forName(taskName);
-                } catch (final ClassNotFoundException ignored) {
-                    throw new RuntimeException("Cannot find task class " + taskName);
-                }
-
-                try {
-                    m_tasks[i] = (TaskScriptNode) clazz.getConstructor().newInstance();
-                } catch (final NoSuchMethodException | SecurityException | InstantiationException |
-                        IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                    throw new RuntimeException("Cannot create instance of Task, maybe missing default constructor", e);
-                }
+            if (m_tasks[i] == null) {
+                m_tasks[i] = new TaskScriptNodeData();
             }
 
             p_importer.importObject(m_tasks[i]);
@@ -182,7 +176,14 @@ public final class TaskScript implements Importable, Exportable {
         size += 2 * Integer.BYTES + ObjectSizeUtil.sizeofString(m_name) + Integer.BYTES;
 
         for (int i = 0; i < m_tasks.length; i++) {
-            size += ObjectSizeUtil.sizeofString(m_tasks[i].getClass().getName()) + m_tasks[i].sizeofObject();
+            if (m_tasks[i] instanceof TaskScriptNodeData) {
+                size += m_tasks[i].sizeofObject();
+            } else {
+                int objSize = m_tasks[i].sizeofObject();
+
+                size += ObjectSizeUtil.sizeofString(m_tasks[i].getClass().getName()) +
+                        ObjectSizeUtil.sizeofCompactedNumber(objSize) + objSize;
+            }
         }
 
         return size;

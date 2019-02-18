@@ -6,7 +6,6 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.TestInstance;
-import de.hhu.bsinfo.dxram.ms.tasks.EmptyTask;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
@@ -21,7 +20,7 @@ public class MasterSlaveServiceSimple1Test {
     public void simpleTest(final DXRAM p_instance) {
         MasterSlaveComputeService computeService = p_instance.getService(MasterSlaveComputeService.class);
 
-        EmptyTask task = new EmptyTask();
+        Task task = computeService.createTaskInstance("de.hhu.bsinfo.dxapp.HelloTask");
         TaskScript script = new TaskScript(task);
 
         TaskScriptState state = computeService.submitTaskScript(script);

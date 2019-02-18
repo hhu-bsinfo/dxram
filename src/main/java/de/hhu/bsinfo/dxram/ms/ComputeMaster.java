@@ -43,8 +43,10 @@ import de.hhu.bsinfo.dxram.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxram.ms.messages.SignalMessage;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinResponse;
+import de.hhu.bsinfo.dxram.ms.script.TaskScript;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
@@ -69,7 +71,7 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
     private volatile int m_taskScriptsProcessed;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param p_computeGroupId
      *         Compute group id the instance is assigned to.
@@ -85,13 +87,15 @@ class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
      *         BootComponent
      * @param p_lookup
      *         LookupComponent
+     * @param p_plugin
+     *         PluginComponent
      */
     ComputeMaster(final short p_computeGroupId, final long p_pingIntervalMs,
             final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
             final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot,
-            final LookupComponent p_lookup) {
+            final LookupComponent p_lookup, final PluginComponent p_plugin) {
         super(ComputeRole.MASTER, p_computeGroupId, p_pingIntervalMs, p_serviceAccessor, p_network, p_nameservice,
-                p_boot, p_lookup);
+                p_boot, p_lookup, p_plugin);
 
         p_network.register(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE, MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST,
                 this);

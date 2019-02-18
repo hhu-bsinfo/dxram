@@ -21,7 +21,7 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.ms.TaskContextData;
-import de.hhu.bsinfo.dxram.ms.TaskScript;
+import de.hhu.bsinfo.dxram.ms.script.TaskScript;
 
 /**
  * Request to execute a task script on another slave compute node.

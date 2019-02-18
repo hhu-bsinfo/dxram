@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-package de.hhu.bsinfo.dxram.ms;
+package de.hhu.bsinfo.dxram.ms.script;
 
 import com.google.gson.annotations.Expose;
 
@@ -24,28 +24,37 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Task script node to completely abort the current task script
- * (on errors for example)
+ * (on errors for example).
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 15.01.2017
  */
-final class TaskAbort implements TaskScriptNode {
-
+public final class TaskScriptNodeAbort implements TaskScriptNode {
     @Expose
     private String m_abortMsg = "";
 
     /**
-     * Default constructor
+     * Default constructor.
      */
-    public TaskAbort() {
+    public TaskScriptNodeAbort() {
 
     }
 
     /**
-     * Get the abort message
+     * Constructor.
      *
-     * @return Abort message
+     * @param p_abortMsg
+     *         Abort message to print.
      */
-    String getAbortMsg() {
+    public TaskScriptNodeAbort(final String p_abortMsg) {
+        m_abortMsg = p_abortMsg;
+    }
+
+    /**
+     * Get the abort message.
+     *
+     * @return Abort message.
+     */
+    public String getAbortMsg() {
         return m_abortMsg;
     }
 

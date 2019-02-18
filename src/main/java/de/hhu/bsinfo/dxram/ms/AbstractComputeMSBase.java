@@ -16,6 +16,9 @@
 
 package de.hhu.bsinfo.dxram.ms;
 
+import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,8 +31,15 @@ import de.hhu.bsinfo.dxram.ms.messages.ExecuteTaskScriptResponse;
 import de.hhu.bsinfo.dxram.ms.messages.MasterSlaveMessages;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinRequest;
 import de.hhu.bsinfo.dxram.ms.messages.SlaveJoinResponse;
+import de.hhu.bsinfo.dxram.ms.script.TaskScript;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNode;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNodeData;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNodeResultCondition;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNodeResultSwitch;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
+import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 
 /**
  * Base class for the master slave compute framework.
@@ -59,6 +69,7 @@ abstract class AbstractComputeMSBase extends Thread {
     protected NameserviceComponent m_nameservice;
     protected AbstractBootComponent m_boot;
     protected LookupComponent m_lookup;
+    protected PluginComponent m_plugin;
 
     protected volatile State m_state = State.STATE_SETUP;
     protected ComputeRole m_role;
@@ -86,11 +97,13 @@ abstract class AbstractComputeMSBase extends Thread {
      *         BootComponent
      * @param p_lookup
      *         LookupComponent
+     * @param p_plugin
+     *         PluginCompoennt
      */
     AbstractComputeMSBase(final ComputeRole p_role, final short p_computeGroupId, final long p_pingIntervalMs,
-            final DXRAMServiceAccessor p_serviceAccessor,
-            final NetworkComponent p_network, final NameserviceComponent p_nameservice,
-            final AbstractBootComponent p_boot, final LookupComponent p_lookup) {
+            final DXRAMServiceAccessor p_serviceAccessor, final NetworkComponent p_network,
+            final NameserviceComponent p_nameservice, final AbstractBootComponent p_boot,
+            final LookupComponent p_lookup, final PluginComponent p_plugin) {
         super("ComputeMS-" + p_role + '-' + p_computeGroupId);
 
         LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
@@ -107,6 +120,7 @@ abstract class AbstractComputeMSBase extends Thread {
         m_nameservice = p_nameservice;
         m_boot = p_boot;
         m_lookup = p_lookup;
+        m_plugin = p_plugin;
 
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
                 MasterSlaveMessages.SUBTYPE_SLAVE_JOIN_REQUEST, SlaveJoinRequest.class);
@@ -118,6 +132,62 @@ abstract class AbstractComputeMSBase extends Thread {
         m_network.registerMessageType(DXRAMMessageTypes.MASTERSLAVE_MESSAGES_TYPE,
                 MasterSlaveMessages.SUBTYPE_EXECUTE_TASK_RESPONSE,
                 ExecuteTaskScriptResponse.class);
+    }
+
+    /**
+     * Shut down this compute node.
+     */
+    public abstract void shutdown();
+
+    /**
+     * Use the plugin manager to replace any generic data nodes with proper node instances. This is required
+     * after receiving a task script from a remote node.
+     *
+     * @param p_taskScript
+     *         Task script to process and apply reflection to generic task node instances.
+     */
+    public void reflectIncomingNodeDataInstances(final TaskScript p_taskScript) {
+        TaskScriptNode[] tasks = p_taskScript.getTasks();
+
+        for (int i = 0; i < tasks.length; i++) {
+            if (tasks[i] instanceof TaskScriptNodeData) {
+                TaskScriptNodeData genericNode = (TaskScriptNodeData) tasks[i];
+
+                Class clazz;
+
+                try {
+                    clazz = m_plugin.getClassByName(genericNode.getName());
+                } catch (final ClassNotFoundException e) {
+                    throw new IllegalStateException(e);
+                }
+
+                try {
+                    tasks[i] = (TaskScriptNode) clazz.getConstructor().newInstance();
+                } catch (final InstantiationException | IllegalAccessException | InvocationTargetException |
+                        NoSuchMethodException e) {
+                    throw new IllegalStateException(e);
+                }
+
+                // de-serialize byte array data to object
+                if (genericNode.getData().length > 0) {
+                    ByteBufferImExporter importer = new ByteBufferImExporter(ByteBuffer.wrap(genericNode.getData()));
+                    importer.importObject(tasks[i]);
+                }
+            } else if (tasks[i] instanceof TaskScriptNodeResultCondition) {
+                TaskScriptNodeResultCondition conditionNode = (TaskScriptNodeResultCondition) tasks[i];
+
+                reflectIncomingNodeDataInstances(conditionNode.getScriptTrueCase());
+                reflectIncomingNodeDataInstances(conditionNode.getScriptFalseCase());
+            } else if (tasks[i] instanceof TaskScriptNodeResultSwitch) {
+                TaskScriptNodeResultSwitch caseNode = (TaskScriptNodeResultSwitch) tasks[i];
+
+                reflectIncomingNodeDataInstances(caseNode.getDefaultSwitchCase().getScriptCase());
+
+                for (TaskScriptNodeResultSwitch.Case caze : caseNode.getSwitchCases()) {
+                    reflectIncomingNodeDataInstances(caze.getScriptCase());
+                }
+            }
+        }
     }
 
     /**
@@ -146,11 +216,6 @@ abstract class AbstractComputeMSBase extends Thread {
     short getComputeGroupId() {
         return m_computeGroupId;
     }
-
-    /**
-     * Shut down this compute node.
-     */
-    public abstract void shutdown();
 
     /**
      * Get the service accessor of DXRAM to be passed to the tasks being executed

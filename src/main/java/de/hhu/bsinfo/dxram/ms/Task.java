@@ -16,6 +16,8 @@
 
 package de.hhu.bsinfo.dxram.ms;
 
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNode;
+
 /**
  * Base class for all tasks to be implemented. This holds optional data the task
  * needs for execution as well as the code getting executed for the task.
