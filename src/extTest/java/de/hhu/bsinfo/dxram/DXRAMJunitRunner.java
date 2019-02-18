@@ -70,13 +70,11 @@ public class DXRAMJunitRunner extends Runner {
 
     @Override
     public Description getDescription() {
-        return Description
-                .createTestDescription(m_testClass, "DXRAM instance test runner");
+        return Description.createTestDescription(m_testClass, "DXRAM instance test runner");
     }
 
     @Override
     public void run(final RunNotifier p_notifier) {
-
         System.setProperty(DXRAM.EXTENDED_TEST_PROPERTY, "");
 
         Properties props = getConfigProperties();
@@ -93,7 +91,9 @@ public class DXRAMJunitRunner extends Runner {
 
         m_instances = new DXRAM[config.nodes().length];
 
-        System.out.printf("\n  >> Creating %d DXRAM instances\n\n", m_instances.length);
+        System.out.println("============================================");
+        System.out.printf(">>> Creating %d DXRAM instances\n", m_instances.length);
+        System.out.println("============================================");
 
         for (int i = 0; i < m_instances.length; i++) {
             m_instances[i] = createNodeInstance(props.getProperty(WORKSPACE_PROPERTY), config, i, 22221 + i);
@@ -160,7 +160,9 @@ public class DXRAMJunitRunner extends Runner {
      *         Instances to cleanup
      */
     private void cleanupNodeInstances(final DXRAM[] p_instances) {
-        System.out.printf("\n  >> Cleaning up %d DXRAM instances\n\n", p_instances.length);
+        System.out.println("============================================");
+        System.out.printf(">>> Cleaning up %d DXRAM instances\n", p_instances.length);
+        System.out.println("============================================");
 
         // cleanup in reverse order: superpeers have to soft shutdown last
         for (int i = p_instances.length - 1; i >= 0; i--) {
@@ -186,14 +188,19 @@ public class DXRAMJunitRunner extends Runner {
                         if (anno instanceof BeforeTestInstance) {
                             BeforeTestInstance testInstanceAnno = (BeforeTestInstance) anno;
 
-                            method.invoke(testObject, p_instances[testInstanceAnno.runOnNodeIdx()]);
+                            for (int nodeIdx : testInstanceAnno.runOnNodeIdx()) {
+                                method.invoke(testObject, p_instances[nodeIdx]);
+                            }
+
                             break;
                         }
                     }
                 }
             }
 
-            System.out.print("\n  >> Running tests\n\n");
+            System.out.println("============================================");
+            System.out.println("!!! Running tests (parallel) !!!");
+            System.out.println("============================================");
 
             TestRunnerThread[] threads = new TestRunnerThread[p_instances.length];
 
@@ -228,6 +235,10 @@ public class DXRAMJunitRunner extends Runner {
                     t.join();
                 }
             }
+
+            System.out.println("============================================");
+            System.out.println("!!! Finished running tests !!!");
+            System.out.println("============================================");
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
