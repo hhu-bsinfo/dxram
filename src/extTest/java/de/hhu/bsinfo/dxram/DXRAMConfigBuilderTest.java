@@ -1,7 +1,6 @@
 package de.hhu.bsinfo.dxram;
 
 import java.io.File;
-import java.nio.file.FileSystem;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
@@ -17,6 +16,8 @@ import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeService;
 import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeServiceConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponentConfig;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponentConfig;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
@@ -56,7 +57,7 @@ class DXRAMConfigBuilderTest implements DXRAMConfigBuilder {
 
     @Override
     public DXRAMConfig build(final DXRAMConfig p_config) {
-        p_config.getEngineConfig().setJniPath(m_dxramBuildDistDir + "/jni");
+        p_config.getEngineConfig().setJniPath(m_dxramBuildDistDir + File.separator + "jni");
 
         p_config.getEngineConfig().setRole(m_config.nodes()[m_nodeIdx].nodeRole().toString());
         p_config.getEngineConfig().setAddress(new IPV4Unit("127.0.0.1", m_nodePort));
@@ -66,6 +67,9 @@ class DXRAMConfigBuilderTest implements DXRAMConfigBuilder {
             bootConfig.setBootstrap(true);
             bootConfig.setDataDir(m_dxramBuildDistDir + File.separator + bootConfig.getDataDir());
         }
+
+        PluginComponentConfig pluginConfig = p_config.getComponentConfig(PluginComponent.class);
+        pluginConfig.setPluginsPath(m_dxramBuildDistDir + File.separator + "plugin");
 
         BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponent.class);
         backupConfig.setBackupActive(m_config.nodes()[m_nodeIdx].backupActive());
