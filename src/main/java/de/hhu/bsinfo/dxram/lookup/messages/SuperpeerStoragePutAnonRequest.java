@@ -22,6 +22,7 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Request to put data into the superpeer storage.
@@ -91,7 +92,10 @@ public class SuperpeerStoragePutAnonRequest extends Request {
         if (m_chunk != null) {
             size += Long.BYTES + m_chunk.sizeofObject() + Byte.BYTES;
         } else {
-            size += Long.BYTES + m_data.sizeofObject() + Byte.BYTES;
+            // that's serialized without any length field information
+            int byteArrayChunkSize = m_data.sizeofObject();
+            size += Long.BYTES + ObjectSizeUtil.sizeofCompactedNumber(byteArrayChunkSize) + m_data.sizeofObject() +
+                    Byte.BYTES;
         }
 
         return size;
