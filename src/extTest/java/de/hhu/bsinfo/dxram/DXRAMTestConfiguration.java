@@ -33,6 +33,14 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 @Target(ElementType.TYPE)
 public @interface DXRAMTestConfiguration {
     /**
+     * Timeout for the test in milliseconds. If the test did not complete within the given deadline, abort
+     * and report as failed.
+     *
+     * @return Timeout in ms. -1 for no timeout.
+     */
+    int timeoutMs() default -1;
+
+    /**
      * List of nodes to spawn for the test (spawned in order!)
      *
      * @return List of nodes to spawn

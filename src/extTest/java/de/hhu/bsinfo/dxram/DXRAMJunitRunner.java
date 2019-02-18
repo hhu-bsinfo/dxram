@@ -99,7 +99,7 @@ public class DXRAMJunitRunner extends Runner {
             m_instances[i] = createNodeInstance(props.getProperty(WORKSPACE_PROPERTY), config, i, 22221 + i);
         }
 
-        runTestOnInstances(m_instances, p_notifier);
+        runTestOnInstances(m_instances, config.timeoutMs(), p_notifier);
 
         cleanupNodeInstances(m_instances);
     }
@@ -175,10 +175,12 @@ public class DXRAMJunitRunner extends Runner {
      *
      * @param p_instances
      *         Instances to run test on
+     * @param p_timeoutMs
+     *         Timeout for the test in ms. -1 for no timeout.
      * @param p_notifier
      *         Notifier
      */
-    private void runTestOnInstances(final DXRAM[] p_instances, final RunNotifier p_notifier) {
+    private void runTestOnInstances(final DXRAM[] p_instances, final int p_timeoutMs, final RunNotifier p_notifier) {
         try {
             Object testObject = m_testClass.newInstance();
 
@@ -230,10 +232,39 @@ public class DXRAMJunitRunner extends Runner {
                 }
             }
 
-            for (TestRunnerThread t : threads) {
-                if (t != null) {
-                    t.join();
+            long startTimeMs = System.currentTimeMillis();
+
+            while (true) {
+                boolean allDead = true;
+
+                for (TestRunnerThread t : threads) {
+                    if (t != null) {
+                        if (t.isAlive()) {
+                            allDead = false;
+                            break;
+                        }
+                    }
                 }
+
+                if (p_timeoutMs >= 0) {
+                    if (System.currentTimeMillis() - startTimeMs >= p_timeoutMs) {
+                        Exception e = new RuntimeException("Test timeout, " + p_timeoutMs + " ms.");
+
+                        System.out.println("============================================");
+                        System.out.println("!!! Test timeout !!!");
+                        System.out.println("============================================");
+
+                        p_notifier.fireTestFailure(new Failure(Description.createTestDescription(getClass(), "Timeout"),
+                                e));
+                        throw e;
+                    }
+                }
+
+                if (allDead) {
+                    break;
+                }
+
+                Thread.sleep(100);
             }
 
             System.out.println("============================================");
