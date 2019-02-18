@@ -1,6 +1,8 @@
 package de.hhu.bsinfo.dxram.app;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
@@ -9,6 +11,8 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
+import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 
 /**
  * Component to run applications locally on the DXRAM instance with access to all exposed services
@@ -18,8 +22,10 @@ import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 @AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
 @AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.APPLICATION,
         priorityShutdown = DXRAMComponentOrder.Shutdown.APPLICATION)
-public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComponentConfig> {
-    private ApplicationLoader m_loader;
+public class ApplicationComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
+    private PluginComponent m_plugin;
+
+    private final HashMap<String, Class<? extends AbstractApplication>> m_applicationClasses = new HashMap<>();
     private ApplicationRunner m_runner;
 
     /**
@@ -52,7 +58,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
      * @return List of application classes loaded
      */
     public List<String> getLoadedApplicationClasses() {
-        return m_loader.getLoadedApplicationClasses();
+        return new ArrayList<>(m_applicationClasses.keySet());
     }
 
     /**
@@ -76,20 +82,24 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
      *         Application class to register
      */
     public void registerApplicationClass(final Class<? extends AbstractApplication> p_class) {
-        m_loader.registerApplicationClass(p_class);
+        m_applicationClasses.put(p_class.getName(), p_class);
     }
 
     @Override
     protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-
+        m_plugin = p_componentAccessor.getComponent(PluginComponent.class);
     }
 
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
-        ApplicationComponentConfig applicationConfig = p_config.getComponentConfig(ApplicationComponent.class);
+        List<Class<? extends AbstractApplication>> applicationClasses = m_plugin.getAllSubClasses(
+                AbstractApplication.class);
 
-        m_loader = new ApplicationLoader(applicationConfig.getApplicationPath());
-        m_runner = new ApplicationRunner(m_loader, getParentEngine().getVersion(), getParentEngine());
+        for (Class<? extends AbstractApplication> clazz : applicationClasses) {
+            m_applicationClasses.put(clazz.getName(), clazz);
+        }
+
+        m_runner = new ApplicationRunner(m_applicationClasses, getParentEngine().getVersion(), getParentEngine());
 
         return true;
     }
@@ -98,7 +108,8 @@ public class ApplicationComponent extends AbstractDXRAMComponent<ApplicationComp
     protected boolean shutdownComponent() {
         m_runner.shutdown();
         m_runner = null;
-        m_loader = null;
+
+        m_applicationClasses.clear();
 
         return true;
     }

@@ -37,8 +37,9 @@ public final class DXRAMComponentOrder {
         public static final short NULL = 1;
         public static final short LOGGER = 2;
         public static final short EVENT = 3;
-        public static final short BOOT = 4;
-        public static final short NETWORK = 5;
+        public static final short PLUGIN = 4;
+        public static final short BOOT = 5;
+        public static final short NETWORK = 6;
         public static final short LOOKUP = 7;
         public static final short FAILURE = 8;
         public static final short CHUNK = 9;
@@ -73,7 +74,8 @@ public final class DXRAMComponentOrder {
         public static final short CHUNK = -8;
         public static final short FAILURE = -7;
         public static final short LOOKUP = -6;
-        public static final short NETWORK = -4;
+        public static final short NETWORK = -5;
+        public static final short PLUGIN = -4;
         public static final short EVENT = -3;
         public static final short LOGGER = -2;
         public static final short NULL = -1;

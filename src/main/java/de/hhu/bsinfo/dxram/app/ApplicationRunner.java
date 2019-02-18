@@ -1,6 +1,10 @@
 package de.hhu.bsinfo.dxram.app;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -8,7 +12,6 @@ import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
 import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 
@@ -20,7 +23,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 public class ApplicationRunner implements ApplicationCallbackHandler {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ApplicationRunner.class.getSimpleName());
 
-    private final ApplicationLoader m_loader;
+    private final HashMap<String, Class<? extends AbstractApplication>> m_applicationClasses;
     private final DXRAMVersion m_dxramVersion;
     private final DXRAMServiceAccessor m_dxramServiceAccessor;
 
@@ -33,16 +36,16 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
     /**
      * Constructor
      *
-     * @param p_loader
-     *         Instance of loader to use
+     * @param p_applicationClasses
+     *         Map of available application classes
      * @param p_dxramVersion
      *         Version of DXRAM running on
      * @param p_dxramServiceAccessor
      *         DXRAM service accessor
      */
-    ApplicationRunner(final ApplicationLoader p_loader, final DXRAMVersion p_dxramVersion,
-            final DXRAMServiceAccessor p_dxramServiceAccessor) {
-        m_loader = p_loader;
+    ApplicationRunner(final HashMap<String, Class<? extends AbstractApplication>> p_applicationClasses,
+            final DXRAMVersion p_dxramVersion, final DXRAMServiceAccessor p_dxramServiceAccessor) {
+        m_applicationClasses = p_applicationClasses;
         m_dxramVersion = p_dxramVersion;
         m_dxramServiceAccessor = p_dxramServiceAccessor;
 
@@ -68,7 +71,7 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
             return false;
         }
 
-        Class<? extends AbstractApplication> appClass = m_loader.getApplicationClass(p_class);
+        Class<? extends AbstractApplication> appClass = m_applicationClasses.get(p_class);
 
         if (appClass == null) {
             LOGGER.warn("Application class %s was not found", p_class);

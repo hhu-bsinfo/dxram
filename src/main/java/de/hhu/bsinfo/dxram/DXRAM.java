@@ -21,7 +21,6 @@ import java.util.Locale;
 
 import de.hhu.bsinfo.dxmonitor.info.InstanceInfo;
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
-import de.hhu.bsinfo.dxram.app.ApplicationComponentConfig;
 import de.hhu.bsinfo.dxram.app.ApplicationService;
 import de.hhu.bsinfo.dxram.app.ApplicationServiceConfig;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
@@ -73,6 +72,8 @@ import de.hhu.bsinfo.dxram.nameservice.NameserviceService;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponentConfig;
 import de.hhu.bsinfo.dxram.net.NetworkService;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponentConfig;
 import de.hhu.bsinfo.dxram.recovery.RecoveryService;
 import de.hhu.bsinfo.dxram.stats.StatisticsService;
 import de.hhu.bsinfo.dxram.stats.StatisticsServiceConfig;
@@ -205,7 +206,7 @@ public final class DXRAM {
      *         DXRAM engine instance to register components at
      */
     private static void registerComponents(final DXRAMEngine p_engine) {
-        p_engine.registerComponent(ApplicationComponent.class, ApplicationComponentConfig.class);
+        p_engine.registerComponent(ApplicationComponent.class, DXRAMModuleConfig.class);
         p_engine.registerComponent(BackupComponent.class, BackupComponentConfig.class);
         p_engine.registerComponent(ChunkBackupComponent.class, DXRAMModuleConfig.class);
         p_engine.registerComponent(ChunkComponent.class, ChunkComponentConfig.class);
@@ -220,6 +221,7 @@ public final class DXRAM {
         p_engine.registerComponent(NameserviceComponent.class, NameserviceComponentConfig.class);
         p_engine.registerComponent(NetworkComponent.class, NetworkComponentConfig.class);
         p_engine.registerComponent(NullComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(PluginComponent.class, PluginComponentConfig.class);
         p_engine.registerComponent(ZookeeperBootComponent.class, ZookeeperBootComponentConfig.class);
     }
 
