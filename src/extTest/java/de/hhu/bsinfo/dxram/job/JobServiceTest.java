@@ -20,7 +20,7 @@ public class JobServiceTest {
     public void simpleTest(final DXRAM p_instance) {
         JobService jobService = p_instance.getService(JobService.class);
 
-        JobTest job = new JobTest(5);
+        JobIncTest job = new JobIncTest(5);
 
         long jobId = jobService.pushJob(job);
         Assert.assertNotEquals(JobID.INVALID_ID, jobId);
