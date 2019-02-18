@@ -10,6 +10,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
+
 package de.hhu.bsinfo.dxram.tmp;
 
 import org.junit.Assert;
@@ -24,7 +25,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
  * @author Ruslan Curbanov, ruslan.curbanov@uni-duesseldorf.de, 15.02.2019
- *
  */
 @RunWith(DXRAMJunitRunner.class)
 @DXRAMTestConfiguration(
@@ -34,8 +34,8 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
         })
 public class TemporaryStorageServiceTest {
 
-	@TestInstance(runOnNodeIdx = 1)
-	public void createSimple(final DXRAM p_instance) {
+    @TestInstance(runOnNodeIdx = 1)
+    public void createSimple(final DXRAM p_instance) {
         TemporaryStorageService tmpStorageService = p_instance.getService(TemporaryStorageService.class);
 
         int id = 123;
