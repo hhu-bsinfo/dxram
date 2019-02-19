@@ -71,13 +71,6 @@ public abstract class AbstractJob implements Importable, Exportable {
     }
 
     /**
-     * Get the type ID of this Job object.
-     *
-     * @return Type ID.
-     */
-    public abstract short getTypeID();
-
-    /**
      * Execute this job.
      */
     public abstract void execute();

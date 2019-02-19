@@ -27,18 +27,11 @@ import org.apache.logging.log4j.Logger;
 public class JobNull extends AbstractJob {
     private static final Logger LOGGER = LogManager.getFormatterLogger(JobNull.class.getSimpleName());
 
-    public static final short MS_TYPE_ID = 0;
-
     /**
-     * Constructor
+     * Constructor.
      */
     public JobNull() {
 
-    }
-
-    @Override
-    public short getTypeID() {
-        return MS_TYPE_ID;
     }
 
     @Override

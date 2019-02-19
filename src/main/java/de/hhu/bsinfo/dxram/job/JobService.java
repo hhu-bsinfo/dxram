@@ -16,7 +16,9 @@
 
 package de.hhu.bsinfo.dxram.job;
 
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +42,7 @@ import de.hhu.bsinfo.dxram.job.messages.PushJobQueueMessage;
 import de.hhu.bsinfo.dxram.job.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.job.messages.StatusResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
@@ -70,26 +73,43 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
     private AbstractBootComponent m_boot;
     private JobComponent m_job;
     private NetworkComponent m_network;
-
-    private final JobMap m_jobMap = new JobMap();
+    private PluginComponent m_plugin;
 
     private final AtomicLong m_jobIDCounter = new AtomicLong(0);
 
     private final Map<Long, JobEventEntry> m_remoteJobCallbackMap = new HashMap<>();
 
     /**
-     * Register a new implementation/type of Job class.
-     * Make sure to register all your Job classes.
+     * Create an instance of a task denoted by its task (command) name
      *
-     * @param p_typeID
-     *         Type ID for the job to register.
-     * @param p_clazz
-     *         Class to register for the specified ID.
+     * @param p_jobName
+     *         Name of the job class
+     * @param p_args
+     *         Arguments to provide to the task object
+     * @return A task instance
      */
-    public void registerJobType(final short p_typeID, final Class<? extends AbstractJob> p_clazz) {
-        LOGGER.debug("Registering job type %s for class %s", p_typeID, p_clazz);
+    public AbstractJob createJobInstance(final String p_jobName, final Object... p_args) {
+        Class<?> clazz;
 
-        m_jobMap.registerType(p_typeID, p_clazz);
+        try {
+            clazz = m_plugin.getClassByName(p_jobName);
+        } catch (final ClassNotFoundException ignored) {
+            LOGGER.error("Cannot find job class: %s", p_jobName);
+            return null;
+        }
+
+        if (!clazz.getSuperclass().equals(AbstractJob.class)) {
+            LOGGER.error("Class '%s' does not extend the AbstractJob class");
+            return null;
+        }
+
+        try {
+            return (AbstractJob) clazz.getConstructor().newInstance(p_args);
+        } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException |
+                IllegalArgumentException | InvocationTargetException e) {
+            LOGGER.error("Cannot create instance of job '%s': %s", p_jobName, e);
+            return null;
+        }
     }
 
     /**
@@ -269,14 +289,13 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
         m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
         m_job = p_componentAccessor.getComponent(JobComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_plugin = p_componentAccessor.getComponent(PluginComponent.class);
     }
 
     @Override
     protected boolean startService(final DXRAMConfig p_config) {
         registerNetworkMessages();
         registerNetworkMessageListener();
-
-        registerJobType(JobNull.MS_TYPE_ID, JobNull.class);
 
         return true;
     }
@@ -392,8 +411,9 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
     private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
         SOP_INCOMING_SUBMIT.start();
 
-        AbstractJob job = m_jobMap.createInstance(p_request.getJobType());
+        AbstractJob job = createJobInstance(p_request.getJobName());
         ByteBuffer buffer = ByteBuffer.wrap(p_request.getJobBlob());
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
         ByteBufferImExporter importer = new ByteBufferImExporter(buffer);
 
         // de-serialize job data

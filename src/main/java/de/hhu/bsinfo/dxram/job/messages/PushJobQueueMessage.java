@@ -24,7 +24,7 @@ import de.hhu.bsinfo.dxram.job.AbstractJob;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
- * Push a job to the queue of another node
+ * Push a job to the queue of another node.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
@@ -33,8 +33,7 @@ public class PushJobQueueMessage extends Message {
     private byte m_callbackJobEventBitMask;
 
     // for receiving job data
-    private short m_jobType;
-    private int m_jobBlobSize;
+    private String m_jobName;
     private byte[] m_jobBlob;
 
     /**
@@ -61,8 +60,7 @@ public class PushJobQueueMessage extends Message {
         super(p_destination, DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE);
 
         m_job = p_job;
-        m_jobType = p_job.getTypeID();
-        m_jobBlobSize = p_job.sizeofObject();
+        m_jobName = p_job.getClass().getName();
         m_callbackJobEventBitMask = p_callbackJobEventBitMask;
     }
 
@@ -77,16 +75,16 @@ public class PushJobQueueMessage extends Message {
     }
 
     /**
-     * Get the job type
+     * Get the job name.
      *
-     * @return Job type id
+     * @return Job name.
      */
-    public short getJobType() {
-        return m_jobType;
+    public String getJobName() {
+        return m_jobName;
     }
 
     /**
-     * Get the job blob/data
+     * Get the job blob/data.
      *
      * @return Job data as byte array
      */
@@ -96,33 +94,31 @@ public class PushJobQueueMessage extends Message {
 
     @Override
     protected final void writePayload(final AbstractMessageExporter p_exporter) {
+        p_exporter.writeString(m_jobName);
         p_exporter.writeCompactNumber(m_job.sizeofObject());
         p_exporter.exportObject(m_job);
         p_exporter.writeByte(m_callbackJobEventBitMask);
-        p_exporter.writeShort(m_jobType);
     }
 
     @Override
     protected final void readPayload(final AbstractMessageImporter p_importer) {
-        m_jobBlobSize = p_importer.readCompactNumber(m_jobBlobSize);
-        m_jobBlob = new byte[m_jobBlobSize];
-        p_importer.readBytes(m_jobBlob);
+        m_jobName = p_importer.readString(m_jobName);
+        m_jobBlob = p_importer.readByteArray(m_jobBlob);
         m_callbackJobEventBitMask = p_importer.readByte(m_callbackJobEventBitMask);
-        m_jobType = p_importer.readShort(m_jobType);
     }
 
     @Override
     protected final int getPayloadLength() {
-        int size = 0;
+        int size = ObjectSizeUtil.sizeofString(m_jobName);
 
         if (m_job != null) {
             int jobSize = m_job.sizeofObject();
 
             size += ObjectSizeUtil.sizeofCompactedNumber(jobSize) + jobSize;
         } else {
-            size += ObjectSizeUtil.sizeofCompactedNumber(m_jobBlobSize) + m_jobBlobSize;
+            size += ObjectSizeUtil.sizeofByteArray(m_jobBlob);
         }
 
-        return size + Byte.BYTES + Short.BYTES;
+        return size + Byte.BYTES;
     }
 }
