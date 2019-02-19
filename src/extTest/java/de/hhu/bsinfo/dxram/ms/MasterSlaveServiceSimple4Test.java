@@ -6,6 +6,7 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.TestInstance;
+import de.hhu.bsinfo.dxram.ms.script.TaskScript;
 import de.hhu.bsinfo.dxram.ms.tasks.EmptyTask;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 

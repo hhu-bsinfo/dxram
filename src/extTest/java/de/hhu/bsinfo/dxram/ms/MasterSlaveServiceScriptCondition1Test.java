@@ -7,6 +7,8 @@ import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.ms.script.TaskScript;
+import de.hhu.bsinfo.dxram.ms.script.TaskScriptNodeResultCondition;
+import de.hhu.bsinfo.dxram.ms.tasks.DummyTask;
 import de.hhu.bsinfo.dxram.ms.tasks.EmptyTask;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
@@ -16,15 +18,22 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, masterSlaveComputeRole = ComputeRole.MASTER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, masterSlaveComputeRole = ComputeRole.SLAVE),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, masterSlaveComputeRole = ComputeRole.SLAVE),
         })
-public class MasterSlaveServiceSimple2Test {
+public class MasterSlaveServiceScriptCondition1Test {
     @TestInstance(runOnNodeIdx = 1)
-    public void simpleTest(final DXRAM p_instance) {
+    public void conditionTest(final DXRAM p_instance) {
         MasterSlaveComputeService computeService = p_instance.getService(MasterSlaveComputeService.class);
 
         EmptyTask task = new EmptyTask();
-        TaskScript script = new TaskScript(task);
+        DummyTask task2 = new DummyTask();
+
+        TaskScript script1 = new TaskScript(task);
+        TaskScript script2 = new TaskScript(task2);
+
+        TaskScriptNodeResultCondition cond = new TaskScriptNodeResultCondition(
+                TaskScriptNodeResultCondition.CONDITION_EQUALS, 0, script1, script2);
+
+        TaskScript script = new TaskScript(cond);
 
         TaskScriptState state = computeService.submitTaskScript(script);
 
