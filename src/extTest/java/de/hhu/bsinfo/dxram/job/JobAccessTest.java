@@ -9,8 +9,6 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class JobAccessTest extends AbstractJob {
-    public static final short MS_TYPE_ID = 2;
-
     private short m_nodeId;
 
     /**
@@ -27,11 +25,6 @@ public class JobAccessTest extends AbstractJob {
      */
     public int getNodeID() {
         return m_nodeId;
-    }
-
-    @Override
-    public short getTypeID() {
-        return MS_TYPE_ID;
     }
 
     @Override

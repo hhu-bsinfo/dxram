@@ -7,7 +7,7 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
- * Minimal job to test serialization of jobs for remote submission
+ * Minimal job to test serialization of jobs for remote submission.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 05.02.2019
  */
@@ -16,8 +16,6 @@ public class JobRemoteSerializeTest extends AbstractJob {
     private static long VAL2 = 88282828282L;
     private static final byte VAL3 = 123;
     private static final String VAL5 = "asdfghjkqwert1235";
-
-    public static final short MS_TYPE_ID = 1;
 
     private int m_value;
     private long m_value2;
@@ -31,11 +29,6 @@ public class JobRemoteSerializeTest extends AbstractJob {
         m_value3 = VAL3;
         m_value4 = new short[15];
         m_value5 = VAL5;
-    }
-
-    @Override
-    public short getTypeID() {
-        return MS_TYPE_ID;
     }
 
     @Override
@@ -64,13 +57,13 @@ public class JobRemoteSerializeTest extends AbstractJob {
         p_exporter.writeInt(m_value);
         p_exporter.writeLong(m_value2);
         p_exporter.writeByte(m_value3);
-        p_exporter.writeShorts(m_value4);
+        p_exporter.writeShortArray(m_value4);
         p_exporter.writeString(m_value5);
     }
 
     @Override
     public int sizeofObject() {
-        return super.sizeofObject() + Integer.BYTES + Long.BYTES + Byte.BYTES + m_value4.length * Short.BYTES +
-                ObjectSizeUtil.sizeofString(m_value5);
+        return super.sizeofObject() + Integer.BYTES + Long.BYTES + Byte.BYTES +
+                ObjectSizeUtil.sizeofShortArray(m_value4) + ObjectSizeUtil.sizeofString(m_value5);
     }
 }

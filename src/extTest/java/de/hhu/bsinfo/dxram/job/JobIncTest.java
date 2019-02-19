@@ -1,13 +1,11 @@
 package de.hhu.bsinfo.dxram.job;
 
 /**
- * Minimal job to test the JobService
+ * Minimal job to test the JobService.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class JobIncTest extends AbstractJob {
-    public static final short MS_TYPE_ID = 1;
-
     private int m_value;
 
     public JobIncTest() {
@@ -15,24 +13,19 @@ public class JobIncTest extends AbstractJob {
     }
 
     /**
-     * Constructor
+     * Constructor.
      */
     public JobIncTest(final int p_value) {
         m_value = p_value;
     }
 
     /**
-     * Get the test value
+     * Get the test value.
      *
      * @return Value
      */
     public int getValue() {
         return m_value;
-    }
-
-    @Override
-    public short getTypeID() {
-        return MS_TYPE_ID;
     }
 
     @Override

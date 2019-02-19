@@ -5,7 +5,6 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.runner.RunWith;
 
-import de.hhu.bsinfo.dxram.BeforeTestInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
@@ -22,13 +21,6 @@ import de.hhu.bsinfo.dxutils.NodeID;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER, enableJobService = true)
         })
 public class JobServiceRemote2Test {
-
-    @BeforeTestInstance(runOnNodeIdx = {1, 2})
-    public void registerJobType(final DXRAM p_instance) {
-        p_instance.getService(JobService.class).registerJobType(JobRemoteSerializeTest.MS_TYPE_ID,
-                JobRemoteSerializeTest.class);
-    }
-
     @TestInstance(runOnNodeIdx = 2)
     public void remoteTest(final DXRAM p_instance) {
         JobService jobService = p_instance.getService(JobService.class);
