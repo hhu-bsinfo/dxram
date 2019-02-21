@@ -42,7 +42,6 @@ import de.hhu.bsinfo.dxram.job.messages.JobMessages;
 import de.hhu.bsinfo.dxram.job.messages.PushJobQueueMessage;
 import de.hhu.bsinfo.dxram.job.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.job.messages.StatusResponse;
-import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
