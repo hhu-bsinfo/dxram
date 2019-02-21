@@ -17,6 +17,7 @@
 package de.hhu.bsinfo.dxram.ms;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -37,6 +38,7 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.job.AbstractJob;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.ms.messages.GetMasterStatusRequest;
 import de.hhu.bsinfo.dxram.ms.messages.GetMasterStatusResponse;
@@ -110,13 +112,17 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
             return null;
         }
 
-        try {
-            return (Task) clazz.getConstructor().newInstance(p_args);
-        } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException |
-                IllegalArgumentException | InvocationTargetException e) {
-            LOGGER.error("Cannot create instance of Task '%s': %s", p_taskName, e);
-            return null;
+        for (Constructor constructor : clazz.getConstructors()) {
+
+            try {
+                return (Task) constructor.newInstance(p_args);
+            } catch (final SecurityException | InstantiationException | IllegalAccessException |
+                    IllegalArgumentException | InvocationTargetException e) {
+            }
         }
+
+        LOGGER.error("Cannot create instance of Task '%s'", p_taskName);
+        return null;
     }
 
     /**
