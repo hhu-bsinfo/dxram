@@ -16,6 +16,7 @@
 
 package de.hhu.bsinfo.dxram.job;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -41,6 +42,7 @@ import de.hhu.bsinfo.dxram.job.messages.JobMessages;
 import de.hhu.bsinfo.dxram.job.messages.PushJobQueueMessage;
 import de.hhu.bsinfo.dxram.job.messages.StatusRequest;
 import de.hhu.bsinfo.dxram.job.messages.StatusResponse;
+import de.hhu.bsinfo.dxram.ms.Task;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 import de.hhu.bsinfo.dxutils.serialization.ByteBufferImExporter;
@@ -103,13 +105,17 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
             return null;
         }
 
-        try {
-            return (AbstractJob) clazz.getConstructor().newInstance(p_args);
-        } catch (final NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException |
-                IllegalArgumentException | InvocationTargetException e) {
-            LOGGER.error("Cannot create instance of job '%s': %s", p_jobName, e);
-            return null;
+        for (Constructor constructor : clazz.getConstructors()) {
+
+            try {
+                return (AbstractJob) constructor.newInstance(p_args);
+            } catch (final SecurityException | InstantiationException | IllegalAccessException |
+                    IllegalArgumentException | InvocationTargetException e) {
+            }
         }
+
+        LOGGER.error("Cannot create instance of AbstractJob '%s'", p_jobName);
+        return null;
     }
 
     /**
