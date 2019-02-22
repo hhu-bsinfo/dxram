@@ -40,7 +40,7 @@ public class JobServiceRemoteTest {
 
         Assert.assertNotEquals(NodeID.INVALID_ID, otherPeer);
 
-        JobTest job = new JobTest();
+        JobTest job = new JobTest(283782L);
 
         long jobId = jobService.pushJobRemote(job, otherPeer);
         Assert.assertNotEquals(JobID.INVALID_ID, jobId);
