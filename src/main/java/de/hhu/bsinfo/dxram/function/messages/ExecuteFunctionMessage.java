@@ -30,7 +30,7 @@ public class ExecuteFunctionMessage extends Message {
 
         m_name = p_name;
         m_input = p_input;
-        m_class = p_input.getClass().getCanonicalName();
+        m_class = p_input.getClass().getName();
     }
 
     @Override

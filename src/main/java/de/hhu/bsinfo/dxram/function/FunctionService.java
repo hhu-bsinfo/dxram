@@ -2,21 +2,17 @@ package de.hhu.bsinfo.dxram.function;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
-
-import org.apache.zookeeper.data.Stat;
 
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
-import de.hhu.bsinfo.dxram.failure.FailureComponent;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionMessage;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionRequest;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionResponse;
@@ -25,7 +21,6 @@ import de.hhu.bsinfo.dxram.function.messages.RegisterFunctionRequest;
 import de.hhu.bsinfo.dxram.function.messages.RegisterFunctionResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxutils.serialization.Distributable;
-import de.hhu.bsinfo.dxutils.serialization.Exportable;
 
 @AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
@@ -38,7 +33,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
         FAILED, REGISTERED
     }
 
-    public Status registerFunction(final short p_nodeId, final String p_name, final DistributableFunction p_function) {
+    public Status register(final short p_nodeId, final String p_name, final DistributableFunction p_function) {
         RegisterFunctionRequest registerFunctionRequest = new RegisterFunctionRequest(p_nodeId, p_function, p_name);
 
         LOGGER.debug("Registering function %s on node %04X", p_name, p_nodeId);
@@ -55,7 +50,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
         return response.isRegistered() ? Status.REGISTERED : Status.FAILED;
     }
 
-    public Status registerFunction(final String p_name, final DistributableFunction p_function) {
+    public Status register(final String p_name, final DistributableFunction p_function) {
         if (p_function == null) {
             LOGGER.warn("Registered function %s must not be null", p_name);
             return Status.FAILED;
@@ -68,7 +63,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
         return Status.REGISTERED;
     }
 
-    public Distributable executeFunction(final String p_name, final Distributable p_input) {
+    public Distributable execute(final String p_name, final Distributable p_input) {
         DistributableFunction function = m_functions.get(p_name);
 
         if (function == null) {
@@ -81,7 +76,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
         return function.execute(getParentEngine(), p_input);
     }
 
-    public void executeFunction(final short p_nodeId, final String p_name, final Distributable p_input) {
+    public void execute(final short p_nodeId, final String p_name, final Distributable p_input) {
         ExecuteFunctionMessage executeFunctionMessage = new ExecuteFunctionMessage(p_nodeId, p_name, p_input);
 
         LOGGER.debug("Executing function %s on node %04X", p_name, p_nodeId);
@@ -93,7 +88,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
         }
     }
 
-    public <T extends Distributable> T executeFunctionSync(final short p_nodeId, final String p_name, final Distributable p_input) {
+    public <T extends Distributable> T executeSync(final short p_nodeId, final String p_name, final Distributable p_input) {
         ExecuteFunctionRequest executeFunctionRequest = new ExecuteFunctionRequest(p_nodeId, p_name, p_input);
 
         LOGGER.debug("Executing function %s on node %04X", p_name, p_nodeId);
@@ -150,7 +145,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
     }
 
     private void handle(final RegisterFunctionRequest p_message) {
-        Status status = registerFunction(p_message.getName(), p_message.getFunction());
+        Status status = register(p_message.getName(), p_message.getFunction());
 
         RegisterFunctionResponse response = new RegisterFunctionResponse(p_message, status == Status.REGISTERED);
 
@@ -163,7 +158,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
     }
 
     private void handle(final ExecuteFunctionRequest p_message) {
-        Distributable result = executeFunction(p_message.getName(), p_message.getInput());
+        Distributable result = execute(p_message.getName(), p_message.getInput());
 
         ExecuteFunctionResponse response = new ExecuteFunctionResponse(p_message, result);
 
@@ -175,7 +170,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
     }
 
     private void handle(final ExecuteFunctionMessage p_message) {
-        executeFunction(p_message.getName(), p_message.getInput());
+        execute(p_message.getName(), p_message.getInput());
     }
 
     private void registerMessageTypes() {

@@ -24,7 +24,7 @@ public class ExecuteFunctionResponse extends Response {
         m_hasResult = p_result != null;
 
         if (m_hasResult) {
-            m_class = m_result.getClass().getCanonicalName();
+            m_class = m_result.getClass().getName();
         }
     }
 

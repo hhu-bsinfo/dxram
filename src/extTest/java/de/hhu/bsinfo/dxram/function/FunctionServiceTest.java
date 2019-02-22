@@ -1,25 +1,21 @@
 package de.hhu.bsinfo.dxram.function;
 
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.LockSupport;
-import java.util.function.Function;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.junit.Assert;
 import org.junit.runner.RunWith;
 
-import de.hhu.bsinfo.dxram.BeforeTestInstance;
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.function.util.ParameterList;
-import de.hhu.bsinfo.dxram.job.JobID;
-import de.hhu.bsinfo.dxram.job.JobService;
-import de.hhu.bsinfo.dxram.job.JobTest;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.serialization.ClassUtil;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,18 +42,19 @@ public class FunctionServiceTest {
         Assert.assertNotEquals(NodeID.INVALID_ID, peer);
 
         DistributableFunction function = new IntAdderFunction();
-        FunctionService.Status status = functionService.registerFunction(peer, IntAdderFunction.NAME, function);
+        FunctionService.Status status = functionService.register(peer, IntAdderFunction.NAME, function);
         assertEquals(FunctionService.Status.REGISTERED, status);
 
-        ParameterList params, result;
+        IntAdderFunction.Input input;
+        IntAdderFunction.Output output;
 
-        params = new ParameterList(new String[]{"17", "25"});
-        result = functionService.executeFunctionSync(peer, IntAdderFunction.NAME, params);
+        input = new IntAdderFunction.Input(17, 25);
+        output = functionService.executeSync(peer, IntAdderFunction.NAME, input);
 
-        assertEquals("42", result.get(0));
+        assertEquals(42, output.get());
 
-        params = new ParameterList(new String[]{"1", "2", "3", "4", "5", "6", "7", "8"});
-        result = functionService.executeFunctionSync(peer, IntAdderFunction.NAME, params);
-        assertEquals("36", result.get(0));
+        input = new IntAdderFunction.Input(1, 2, 3, 4, 5, 6, 7, 8);
+        output = functionService.executeSync(peer, IntAdderFunction.NAME, input);
+        assertEquals(36, output.get());
     }
 }
