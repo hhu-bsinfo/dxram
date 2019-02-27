@@ -170,7 +170,9 @@ abstract class AbstractComputeMSBase extends Thread {
 
                 // de-serialize byte array data to object
                 if (genericNode.getData().length > 0) {
-                    ByteBufferImExporter importer = new ByteBufferImExporter(ByteBuffer.wrap(genericNode.getData()));
+                    ByteBuffer buffer = ByteBuffer.wrap(genericNode.getData());
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    ByteBufferImExporter importer = new ByteBufferImExporter(buffer);
                     importer.importObject(tasks[i]);
                 }
             } else if (tasks[i] instanceof TaskScriptNodeResultCondition) {
