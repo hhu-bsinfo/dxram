@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.ms;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
