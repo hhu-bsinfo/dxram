@@ -28,7 +28,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor {
+public class DXRAMEngine implements ModuleAccessor {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMEngine.class.getSimpleName());
 
     private final DXRAMVersion m_version;

@@ -79,10 +79,10 @@ public abstract class AbstractDXRAMComponent<T> extends AbstractDXRAMModule<T> {
     /**
      * Called before the component is initialized. Get all the components your own component depends on.
      *
-     * @param p_componentAccessor
+     * @param p_moduleAccessor
      *         Component accessor that provides access to other components
      */
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
     }
 
     /**

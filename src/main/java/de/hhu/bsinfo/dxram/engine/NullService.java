@@ -24,7 +24,7 @@ package de.hhu.bsinfo.dxram.engine;
 @AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class NullService extends AbstractDXRAMService<DXRAMModuleConfig> {
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
         // no dependencies
     }
 

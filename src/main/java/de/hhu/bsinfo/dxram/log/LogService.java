@@ -24,9 +24,9 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.log.messages.GetUtilizationRequest;
 import de.hhu.bsinfo.dxram.log.messages.GetUtilizationResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
@@ -124,10 +124,10 @@ public final class LogService extends AbstractDXRAMService<DXRAMModuleConfig> im
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_log = p_componentAccessor.getComponent(LogComponent.class);
-        m_boot = p_componentAccessor.getComponent(ZookeeperBootComponent.class);
+    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
+        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
+        m_log = p_moduleAccessor.getComponent(LogComponent.class);
+        m_boot = p_moduleAccessor.getComponent(ZookeeperBootComponent.class);
     }
 
     @Override

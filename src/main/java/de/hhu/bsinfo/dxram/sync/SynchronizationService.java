@@ -18,8 +18,8 @@ package de.hhu.bsinfo.dxram.sync;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 
@@ -110,8 +110,8 @@ public class SynchronizationService extends AbstractDXRAMService<Synchronization
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
+        m_lookup = p_moduleAccessor.getComponent(LookupComponent.class);
     }
 
     @Override

@@ -22,9 +22,9 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
+import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.job.ws.Worker;
 import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
 
@@ -97,8 +97,8 @@ public class JobComponent extends AbstractDXRAMComponent<JobComponentConfig>
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
+        m_boot = p_moduleAccessor.getComponent(AbstractBootComponent.class);
     }
 
     @Override

@@ -23,9 +23,9 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.monitoring.messages.*;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -44,10 +44,10 @@ public class MonitoringService extends AbstractDXRAMService<DXRAMModuleConfig> i
     private NetworkComponent m_network;
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_monitor = p_componentAccessor.getComponent(MonitoringComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
+        m_monitor = p_moduleAccessor.getComponent(MonitoringComponent.class);
+        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
+        m_boot = p_moduleAccessor.getComponent(AbstractBootComponent.class);
     }
 
     @Override

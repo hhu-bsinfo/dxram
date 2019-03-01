@@ -34,9 +34,9 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -88,13 +88,13 @@ public class RecoveryService extends AbstractDXRAMService<DXRAMModuleConfig> imp
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunkBackup = p_componentAccessor.getComponent(ChunkBackupComponent.class);
-        m_log = p_componentAccessor.getComponent(LogComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
+        m_boot = p_moduleAccessor.getComponent(AbstractBootComponent.class);
+        m_backup = p_moduleAccessor.getComponent(BackupComponent.class);
+        m_chunkBackup = p_moduleAccessor.getComponent(ChunkBackupComponent.class);
+        m_log = p_moduleAccessor.getComponent(LogComponent.class);
+        m_lookup = p_moduleAccessor.getComponent(LookupComponent.class);
+        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

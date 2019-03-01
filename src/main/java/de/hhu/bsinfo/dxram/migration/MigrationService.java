@@ -34,9 +34,9 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationMessages;
@@ -269,14 +269,14 @@ public class MigrationService extends AbstractDXRAMService<DXRAMModuleConfig> im
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_migrationManager = new MigrationManager(16, p_componentAccessor);
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
-        m_chunkMigration = p_componentAccessor.getComponent(ChunkMigrationComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
+        m_migrationManager = new MigrationManager(16, p_moduleAccessor);
+        m_boot = p_moduleAccessor.getComponent(AbstractBootComponent.class);
+        m_backup = p_moduleAccessor.getComponent(BackupComponent.class);
+        m_chunk = p_moduleAccessor.getComponent(ChunkComponent.class);
+        m_chunkMigration = p_moduleAccessor.getComponent(ChunkMigrationComponent.class);
+        m_lookup = p_moduleAccessor.getComponent(LookupComponent.class);
+        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override
