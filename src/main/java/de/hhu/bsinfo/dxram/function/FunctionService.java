@@ -7,11 +7,12 @@ import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionMessage;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionRequest;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionResponse;
@@ -109,8 +110,8 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
     }
 
     @Override
-    protected void resolveComponentDependencies(ModuleAccessor p_moduleAccessor) {
-        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
+    protected void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor) {
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

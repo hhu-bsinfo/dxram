@@ -22,9 +22,9 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 
 /**
  * Service to access the backend network service for sending messages
@@ -104,8 +104,8 @@ public class NetworkService extends AbstractDXRAMService<DXRAMModuleConfig> {
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

@@ -21,9 +21,9 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 
 /**
  * Component class for local chunk handling (access to local key-value memory)
@@ -62,8 +62,8 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_boot = p_moduleAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
     }
 
     @Override

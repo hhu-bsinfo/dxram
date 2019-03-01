@@ -2,8 +2,8 @@ package de.hhu.bsinfo.dxram.stats;
 
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 
 /**
@@ -23,7 +23,7 @@ public class StatisticsService extends AbstractDXRAMService<StatisticsServiceCon
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
 
     }
 

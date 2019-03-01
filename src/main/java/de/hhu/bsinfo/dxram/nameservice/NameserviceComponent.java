@@ -28,9 +28,9 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkIndexComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 
@@ -126,9 +126,9 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_lookup = p_moduleAccessor.getComponent(LookupComponent.class);
-        m_chunkIndex = p_moduleAccessor.getComponent(ChunkIndexComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_chunkIndex = p_componentAccessor.getComponent(ChunkIndexComponent.class);
     }
 
     @Override

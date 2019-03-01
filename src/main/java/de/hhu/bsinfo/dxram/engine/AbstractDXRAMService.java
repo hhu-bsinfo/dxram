@@ -58,10 +58,10 @@ public abstract class AbstractDXRAMService<T> extends AbstractDXRAMModule<T> {
     /**
      * Called before the service is initialized. Get all the components your service depends on.
      *
-     * @param p_moduleAccessor
+     * @param p_componentAccessor
      *         Component accessor that provides access to the components
      */
-    protected abstract void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor);
+    protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
 
     /**
      * Called when the service is initialized. Setup data structures, read settings etc.

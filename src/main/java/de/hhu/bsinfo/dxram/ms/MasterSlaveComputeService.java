@@ -36,8 +36,8 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.ms.messages.GetMasterStatusRequest;
 import de.hhu.bsinfo.dxram.ms.messages.GetMasterStatusResponse;
@@ -399,12 +399,12 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
-        m_nameservice = p_moduleAccessor.getComponent(NameserviceComponent.class);
-        m_boot = p_moduleAccessor.getComponent(AbstractBootComponent.class);
-        m_lookup = p_moduleAccessor.getComponent(LookupComponent.class);
-        m_plugin = p_moduleAccessor.getComponent(PluginComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_plugin = p_componentAccessor.getComponent(PluginComponent.class);
     }
 
     @Override

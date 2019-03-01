@@ -25,9 +25,9 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeRequest;
 import de.hhu.bsinfo.dxram.lookup.messages.GetLookupTreeResponse;
 import de.hhu.bsinfo.dxram.lookup.messages.GetMetadataSummaryRequest;
@@ -163,10 +163,10 @@ public class LookupService extends AbstractDXRAMService<DXRAMModuleConfig> imple
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_boot = p_moduleAccessor.getComponent(AbstractBootComponent.class);
-        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
-        m_lookup = p_moduleAccessor.getComponent(LookupComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
     @Override

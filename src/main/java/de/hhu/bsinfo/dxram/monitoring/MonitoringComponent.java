@@ -30,9 +30,9 @@ import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.monitoring.beans.MBean;
@@ -71,12 +71,12 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_boot = p_moduleAccessor.getComponent(AbstractBootComponent.class);
-        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
-        m_lookup = p_moduleAccessor.getComponent(LookupComponent.class);
-        m_event = p_moduleAccessor.getComponent(EventComponent.class);
-        m_chunk = p_moduleAccessor.getComponent(ChunkComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
+        m_event = p_componentAccessor.getComponent(EventComponent.class);
+        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
     }
 
     @Override

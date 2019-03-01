@@ -14,8 +14,8 @@ import de.hhu.bsinfo.dxram.app.messages.ApplicationStartResponse;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
 /**
@@ -149,10 +149,10 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_appComponent = p_moduleAccessor.getComponent(ApplicationComponent.class);
-        m_bootComponent = p_moduleAccessor.getComponent(AbstractBootComponent.class);
-        m_networkComponent = p_moduleAccessor.getComponent(NetworkComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_appComponent = p_componentAccessor.getComponent(ApplicationComponent.class);
+        m_bootComponent = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_networkComponent = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

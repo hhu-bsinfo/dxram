@@ -23,9 +23,9 @@ import java.util.Map;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 
 /**
  * Node local event system to notify other listening components about
@@ -86,7 +86,7 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         // no dependencies
     }
 

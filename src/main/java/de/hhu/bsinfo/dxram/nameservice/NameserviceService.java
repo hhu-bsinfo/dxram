@@ -21,9 +21,9 @@ import java.util.ArrayList;
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 
 /**
  * Nameservice service providing mappings of string identifiers to chunkIDs.
@@ -103,8 +103,8 @@ public class NameserviceService extends AbstractDXRAMService<DXRAMModuleConfig> 
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_nameservice = p_moduleAccessor.getComponent(NameserviceComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
     }
 
     @Override

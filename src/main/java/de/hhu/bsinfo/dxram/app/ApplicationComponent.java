@@ -8,10 +8,10 @@ import java.util.List;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 
 /**
@@ -86,8 +86,8 @@ public class ApplicationComponent extends AbstractDXRAMComponent<DXRAMModuleConf
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_plugin = p_moduleAccessor.getComponent(PluginComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_plugin = p_componentAccessor.getComponent(PluginComponent.class);
     }
 
     @Override

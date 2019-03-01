@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
         priorityShutdown = DXRAMComponentOrder.Shutdown.NULL)
 public class NullComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
         // no dependencies
     }
 

@@ -29,9 +29,9 @@ import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.boot.messages.ShutdownMessage;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleAccessor;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
@@ -275,9 +275,9 @@ public class BootService extends AbstractDXRAMService<DXRAMModuleConfig> impleme
     }
 
     @Override
-    protected void resolveComponentDependencies(final ModuleAccessor p_moduleAccessor) {
-        m_boot = p_moduleAccessor.getComponent(AbstractBootComponent.class);
-        m_network = p_moduleAccessor.getComponent(NetworkComponent.class);
+    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override
