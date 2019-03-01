@@ -16,7 +16,7 @@ buildscript {
     }
 
     dependencies {
-        classpath "de.hhu.bsinfo:dxbuild:0.3.0" + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
+        classpath "de.hhu.bsinfo:dxbuild:0.4.0" + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
     }
 }
 
@@ -28,7 +28,7 @@ plugins {
 
 apply plugin: 'dxbuild'
 group = 'de.hhu.bsinfo'
-version = '0.7.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
+version = '0.8.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
 
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
@@ -83,12 +83,12 @@ dependencies {
     implementation fileTree(dir: 'lib', include: ['*.jar'])
 
     compileOnly 'org.projectlombok:lombok:1.18.2'
-    
-    api 'de.hhu.bsinfo:dxmem:0.7.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
-    api 'de.hhu.bsinfo:dxnet:0.7.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
-    api 'de.hhu.bsinfo:dxlog:0.7.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
-    api 'de.hhu.bsinfo:dxmon:0.4.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
-    nativeApi 'de.hhu.bsinfo:dxutils:0.7.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
+
+    api 'de.hhu.bsinfo:dxmem:0.8.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
+    api 'de.hhu.bsinfo:dxnet:0.8.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
+    api 'de.hhu.bsinfo:dxlog:0.8.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
+    api 'de.hhu.bsinfo:dxmon:0.5.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
+    nativeApi 'de.hhu.bsinfo:dxutils:0.8.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
 
     implementation 'com.google.guava:guava:26.0-jre'
     implementation 'org.apache.zookeeper:zookeeper:3.4.13'
