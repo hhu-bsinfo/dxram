@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.app;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -11,6 +12,7 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationMessages;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationStartRequest;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationStartResponse;
+import de.hhu.bsinfo.dxram.app.messages.ApplicationSubmitMessage;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
@@ -139,6 +141,9 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
                     case ApplicationMessages.SUBTYPE_START_APPLICATION_REQUEST:
                         incomingApplicationStartMessage((ApplicationStartRequest) p_message);
                         break;
+                    case ApplicationMessages.SUBTYPE_SUBMIT_APPLICATION:
+                        handleApplicationSubmit((ApplicationSubmitMessage) p_message);
+                        break;
                     default:
                         break;
                 }
@@ -161,9 +166,13 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
                 ApplicationMessages.SUBTYPE_START_APPLICATION_REQUEST, ApplicationStartRequest.class);
         m_networkComponent.registerMessageType(DXRAMMessageTypes.APPLICATION_MESSAGE_TYPE,
                 ApplicationMessages.SUBTYPE_START_APPLICATION_RESPONSE, ApplicationStartResponse.class);
+        m_networkComponent.registerMessageType(DXRAMMessageTypes.APPLICATION_MESSAGE_TYPE,
+                ApplicationMessages.SUBTYPE_SUBMIT_APPLICATION, ApplicationSubmitMessage.class);
 
         m_networkComponent.register(DXRAMMessageTypes.APPLICATION_MESSAGE_TYPE,
                 ApplicationMessages.SUBTYPE_START_APPLICATION_REQUEST, this);
+        m_networkComponent.register(DXRAMMessageTypes.APPLICATION_MESSAGE_TYPE,
+                ApplicationMessages.SUBTYPE_SUBMIT_APPLICATION, this);
 
         return true;
     }
@@ -178,7 +187,9 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
         List<ApplicationServiceConfig.ApplicationEntry> list = getConfig().getAutoStart();
         list.sort(Comparator.comparingInt(ApplicationServiceConfig.ApplicationEntry::getStartOrderId));
 
-        LOGGER.info("Auto starting %d applications", list.size());
+        if (!list.isEmpty()) {
+            LOGGER.info("Auto starting %d applications", list.size());
+        }
 
         getConfig().getAutoStart().forEach(entry -> {
             String[] args;
@@ -193,6 +204,22 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
 
             startApplication(entry.getClassName(), args);
         });
+    }
+
+    private void handleApplicationSubmit(final ApplicationSubmitMessage p_submitMessage) {
+        LOGGER.info("Received new application %s", p_submitMessage.getArchiveName());
+
+        String archiveName = p_submitMessage.getArchiveName();
+        String applicationName = m_appComponent.addApplication(archiveName);
+
+        if (applicationName.isEmpty()) {
+            LOGGER.warn("No subclass of AbstractApplication found within %s", archiveName);
+            return;
+        }
+
+        LOGGER.info("Starting application %s with arguments %s", applicationName, Arrays.toString(p_submitMessage.getArgs()));
+
+        startApplication(applicationName, p_submitMessage.getArgs());
     }
 
     private void incomingApplicationStartMessage(final ApplicationStartRequest p_request) {

@@ -28,6 +28,7 @@ public final class ApplicationMessages {
     public static final byte SUBTYPE_LIST_APPLICATIONS_RESPONSE = 4;
     public static final byte SUBTYPE_LIST_ACTIVE_APPLICATIONS_REQUEST = 5;
     public static final byte SUBTYPE_LIST_ACTIVE_APPLICATIONS_RESPONSE = 6;
+    public static final byte SUBTYPE_SUBMIT_APPLICATION = 7;
 
     /**
      * Static class

@@ -458,7 +458,7 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
                 break;
         }
 
-        LOGGER.info("Started compute node type '%s' with compute group id %d", getConfig().getRole(),
+        LOGGER.debug("Started compute node type '%s' with compute group id %d", getConfig().getRole(),
                 getConfig().getComputeGroupId());
 
         return true;

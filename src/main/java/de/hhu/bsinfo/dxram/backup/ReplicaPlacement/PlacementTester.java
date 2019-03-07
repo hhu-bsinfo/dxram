@@ -15,7 +15,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
  * Class for testing the placement strategies.
  */
 public final class PlacementTester {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(DXNetMain.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXNetMain.class);
 
     /**
      * Unused constructor.

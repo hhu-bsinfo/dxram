@@ -6,6 +6,7 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -33,7 +34,7 @@ public class ZookeeperBootComponentConfig extends DXRAMModuleConfig {
      * Path for zookeeper data directory.
      */
     @Expose
-    private String m_dataDir = "zookeeper_data";
+    private String m_dataDir = DXRAM.getAbsolutePath("zookeeper_data");
 
     /**
      * Address and port of zookeeper (bootstrap peer).

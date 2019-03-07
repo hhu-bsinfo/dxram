@@ -37,7 +37,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 12.11.2018
  */
 class DXRAMModuleManager {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMModuleManager.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMModuleManager.class);
 
     private Map<String, Module> m_modules = new HashMap<>();
 

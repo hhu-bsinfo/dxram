@@ -16,7 +16,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 01.12.2017
  */
 public abstract class AbstractPlacementStrategy {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPlacementStrategy.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPlacementStrategy.class);
 
     int m_replicationFactor;
 

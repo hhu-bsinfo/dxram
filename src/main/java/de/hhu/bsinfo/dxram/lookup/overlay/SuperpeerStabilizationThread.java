@@ -46,7 +46,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
 class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(
-            SuperpeerStabilizationThread.class.getSimpleName());
+            SuperpeerStabilizationThread.class);
 
     // Attributes
     private NetworkComponent m_network;
@@ -87,6 +87,7 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
     SuperpeerStabilizationThread(final OverlaySuperpeer p_superpeer, final short p_nodeID,
             final ReentrantReadWriteLock p_overlayLock, final int p_initialNumberOfSuperpeers,
             final ArrayList<Short> p_superpeers, final int p_sleepInterval, final NetworkComponent p_network) {
+        super("stabilization");
         m_superpeer = p_superpeer;
 
         m_network = p_network;
@@ -453,9 +454,9 @@ class SuperpeerStabilizationThread extends Thread implements MessageReceiver {
 
         if (!(superpeersFigure + peersFigure.toString()).equals(m_overlayFigure)) {
 
-            LOGGER.info(superpeersFigure.toString());
+            LOGGER.debug(superpeersFigure.toString());
             if (!"Peers: ".equals(peersFigure.toString())) {
-                LOGGER.info(peersFigure.toString());
+                LOGGER.debug(peersFigure.toString());
             }
 
         }

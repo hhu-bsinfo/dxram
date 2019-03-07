@@ -272,7 +272,7 @@ public class NodeRegistry implements ServiceCacheListener {
      */
     @Override
     public void cacheChanged() {
-        LOGGER.info("Service discovery cache changed");
+        LOGGER.debug("Service discovery cache changed");
 
         final Set<NodeDetails> remoteDetails = m_cache.getInstances().stream()
                 .map(ServiceInstance::getPayload)
@@ -328,7 +328,7 @@ public class NodeRegistry implements ServiceCacheListener {
      */
     @Override
     public void stateChanged(CuratorFramework p_client, ConnectionState p_newState) {
-        LOGGER.info("Curator connection state changed to {}", p_newState.isConnected() ? "CONNECTED" : "DISCONNECTED");
+        LOGGER.debug("Curator connection state changed to {}", p_newState.isConnected() ? "CONNECTED" : "DISCONNECTED");
     }
 
     private enum ListenerEvent {

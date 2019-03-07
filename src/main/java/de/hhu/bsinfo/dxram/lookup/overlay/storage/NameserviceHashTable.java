@@ -36,7 +36,7 @@ import de.hhu.bsinfo.dxutils.hashtable.IntLongHashTable;
  */
 public class NameserviceHashTable extends IntLongHashTable implements MetadataInterface {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceHashTable.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceHashTable.class);
 
     /**
      * Creates an instance of IDHashTable

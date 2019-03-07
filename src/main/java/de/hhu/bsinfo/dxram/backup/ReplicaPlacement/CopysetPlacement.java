@@ -29,7 +29,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 01.12.2017
  */
 public class CopysetPlacement extends AbstractPlacementStrategy {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(CopysetPlacement.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(CopysetPlacement.class);
 
     private BackupPeer[][] m_copysets;
 

@@ -82,6 +82,6 @@ public class DXRAMVersion {
 
     @Override
     public String toString() {
-        return "DXRAMVersion " + m_major + '.' + m_minor + '.' + m_revision;
+        return String.format("%d.%d.%d", m_major, m_minor, m_revision);
     }
 }

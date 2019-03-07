@@ -16,12 +16,25 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import de.hhu.bsinfo.dxram.generated.BuildConfig;
 
 /**
  * Engine class running DXRAM with components and services.
@@ -29,7 +42,7 @@ import org.apache.logging.log4j.Logger;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMEngine.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMEngine.class);
 
     private final DXRAMVersion m_version;
     private final DXRAMModuleManager m_componentManager;
@@ -39,7 +52,13 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     private DXRAMConfig m_config;
     private DXRAMJNIManager m_jniManager;
 
-    private volatile boolean m_triggerReboot;
+    private final BlockingQueue<EngineEvent> m_events = new LinkedBlockingQueue<>();
+
+    private final Lock m_engineLock = new ReentrantLock();
+
+    enum EngineEvent {
+        REBOOT, SHUTDOWN
+    }
 
     /**
      * Constructor
@@ -118,14 +137,12 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
      * @return True if initialization successful, false on error or if a new configuration was generated
      */
     public boolean init(final DXRAMConfig p_config) {
-        LOGGER.info("Initializing engine (version %s)...", m_version);
-
         if (m_isInitialized) {
             throw new IllegalStateException("Invalid initialization state");
         }
 
         // log final config for debugging
-        LOGGER.debug("Configuration for this instance: %s", p_config);
+        // LOGGER.debug("Configuration for this instance: %s", p_config);
 
         LOGGER.debug("Verifying configuration...");
 
@@ -160,7 +177,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
         List<AbstractDXRAMComponent> components = m_componentManager.getModules(AbstractDXRAMComponent.class);
         components.sort(Comparator.comparingInt(AbstractDXRAMComponent::getPriorityInit));
 
-        LOGGER.info("Initializing %d components...", components.size());
+        LOGGER.info("Initializing %d components", components.size());
 
         for (AbstractDXRAMComponent component : components) {
             if (!component.init(this)) {
@@ -169,13 +186,13 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             }
         }
 
-        LOGGER.info("Initializing components done");
+        LOGGER.debug("Initializing components done");
 
         // -----------------------------
 
         List<AbstractDXRAMService> services = m_serviceManager.getModules(AbstractDXRAMService.class);
 
-        LOGGER.info("Starting %d services...", services.size());
+        LOGGER.info("Initializing %d services", services.size());
 
         for (AbstractDXRAMService service : services) {
             if (!service.init(this)) {
@@ -184,11 +201,11 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             }
         }
 
-        LOGGER.info("Starting services done");
+        LOGGER.debug("Initializing services done");
 
         // -----------------------------
 
-        LOGGER.info("Triggering engineInitFinished on all components... ");
+        LOGGER.debug("Triggering engineInitFinished on all components... ");
 
         for (AbstractDXRAMComponent component : components) {
             component.engineInitFinished();
@@ -196,7 +213,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         // -----------------------------
 
-        LOGGER.info("Triggering engineInitFinished on all services... ");
+        LOGGER.debug("Triggering engineInitFinished on all services... ");
 
         for (AbstractDXRAMService service : services) {
             service.engineInitFinished();
@@ -204,7 +221,7 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
 
         // -----------------------------
 
-        LOGGER.info("Initializing engine done");
+        LOGGER.debug("Initializing engine done");
 
         m_isInitialized = true;
 
@@ -212,41 +229,43 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
     }
 
     /**
-     * The engine must be driven by the main thread
-     *
-     * @return True if update successful, false on error
+     * Starts the engine.
      */
-    public boolean update() {
-        if (!m_isInitialized) {
-            throw new IllegalStateException("Invalid initialization state");
-        }
+    public void run() {
+        LOGGER.info("Running");
+        boolean isRunning = true;
+        EngineEvent event;
 
-        if (Thread.currentThread().getId() != 1) {
-            throw new RuntimeException(
-                    "Update called by thread-" + Thread.currentThread().getId() + " (" +
-                            Thread.currentThread().getName() + "), not main thread");
-        }
+        m_engineLock.lock();
 
-        if (m_triggerReboot) {
-            LOGGER.info("Executing instant soft reboot");
-
-            if (!shutdown()) {
-                return false;
+        while (isRunning) {
+            try {
+                event = m_events.take();
+            } catch (InterruptedException e) {
+                continue;
             }
 
-            if (!init(m_config)) {
+            isRunning = handleEvent(event);
+        }
+
+        m_engineLock.unlock();
+    }
+
+    /**
+     * Handles an event regarding the engine.
+     *
+     * @param p_event The event to handle.
+     * @return True if the engine should continue running; False else.
+     */
+    private boolean handleEvent(EngineEvent p_event) {
+        switch (p_event) {
+            case SHUTDOWN:
+                return !shutdown();
+            case REBOOT:
+                return reboot();
+            default:
                 return false;
-            }
-
-            m_triggerReboot = false;
         }
-
-        try {
-            Thread.sleep(1000);
-        } catch (final InterruptedException ignored) {
-        }
-
-        return true;
     }
 
     /**
@@ -259,44 +278,66 @@ public class DXRAMEngine implements DXRAMServiceAccessor, DXRAMComponentAccessor
             throw new IllegalStateException("Invalid initialization state");
         }
 
-        LOGGER.info("Shutting down engine...");
-
         // -----------------------------
 
         List<AbstractDXRAMService> services = m_serviceManager.getModules(AbstractDXRAMService.class);
 
-        LOGGER.info("Shutting down %d services...", services.size());
+        LOGGER.info("Shutting down %d services", services.size());
 
         services.stream().filter(service -> !service.shutdown()).forEach(
                 service -> LOGGER.error("Shutting down service '%s' failed.", service.getName()));
 
-        LOGGER.info("Shutting down services done");
+        LOGGER.debug("Shutting down services done");
 
         // -----------------------------
 
         List<AbstractDXRAMComponent> components = m_componentManager.getModules(AbstractDXRAMComponent.class);
         components.sort(Comparator.comparingInt(AbstractDXRAMComponent::getPriorityShutdown));
 
-        LOGGER.info("Shutting down %d components...", components.size());
+        LOGGER.info("Shutting down %d components", components.size());
 
         components.forEach(AbstractDXRAMComponent::shutdown);
 
-        LOGGER.info("Shutting down components done");
+        LOGGER.debug("Shutting down components done");
+        LOGGER.info("Bye");
 
         // -----------------------------
-
-        LOGGER.info("Shutting down engine done");
 
         m_isInitialized = false;
 
         return true;
     }
 
+    private boolean reboot() {
+        return shutdown() || init(m_config);
+    }
+
     /**
-     * Trigger a soft reboot on the next update cycle
+     * Pushes a new event to the engine.
+     *
+     * @param p_event The event to push.
+     */
+    private void pushEvent(final EngineEvent p_event) {
+        while (true) {
+            try {
+                m_events.put(p_event);
+            } catch (InterruptedException e) {
+                continue;
+            }
+
+            break;
+        }
+    }
+
+    /**
+     * Trigger a soft reboot
      */
     public void triggerSoftReboot() {
-        m_triggerReboot = true;
+        pushEvent(EngineEvent.REBOOT);
+    }
+
+    public void triggerShutdown() {
+        pushEvent(EngineEvent.SHUTDOWN);
     }
 
     @Override

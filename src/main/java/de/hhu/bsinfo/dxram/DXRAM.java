@@ -16,8 +16,12 @@
 
 package de.hhu.bsinfo.dxram;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 import de.hhu.bsinfo.dxmonitor.info.InstanceInfo;
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
@@ -60,6 +64,8 @@ import de.hhu.bsinfo.dxram.logger.LoggerService;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupComponentConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupService;
+import de.hhu.bsinfo.dxram.management.ManagementService;
+import de.hhu.bsinfo.dxram.management.ManagementServiceConfig;
 import de.hhu.bsinfo.dxram.migration.MigrationService;
 import de.hhu.bsinfo.dxram.monitoring.MonitoringComponent;
 import de.hhu.bsinfo.dxram.monitoring.MonitoringComponentConfig;
@@ -90,12 +96,20 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public final class DXRAM {
-    private static final String STARTUP_DONE_STR = "!---ooo---!";
+
 
     private DXRAMEngine m_engine;
     private ShutdownThread m_shutdownHook;
 
     public static final String EXTENDED_TEST_PROPERTY = "extendedTest";
+
+    public static final String VERBOSE_PROPERTY = "verbose";
+
+    public static final String BASE_DIR_PROPERTY = "dxram.baseDir";
+
+    public static final String BASE_DIR = System.getProperty(BASE_DIR_PROPERTY, "");
+
+    private static final String BANNER_FILENAME = "banner.txt";
 
     /**
      * Constructor.
@@ -103,7 +117,7 @@ public final class DXRAM {
     public DXRAM() {
         Locale.setDefault(new Locale("en", "US"));
 
-        if (!isRunWithinTest()) {
+        if (!isRunWithinTest() && isVerbose()) {
             printBuildInfo();
             printInstanceInfo();
         }
@@ -152,14 +166,9 @@ public final class DXRAM {
             Runtime.getRuntime().addShutdownHook(m_shutdownHook);
         }
 
-        if (isRunWithinTest()) {
-            return true;
+        if (isRunWithinTest() && !isVerbose()) {
+            printNodeInfo();
         }
-
-        printNodeInfo();
-
-        // used for deploy script
-        System.out.println(STARTUP_DONE_STR);
 
         return true;
     }
@@ -183,8 +192,8 @@ public final class DXRAM {
      *
      * @return True on success, false on failure
      */
-    public boolean update() {
-        return m_engine.update();
+    public void run() {
+        m_engine.run();
     }
 
     /**
@@ -253,6 +262,7 @@ public final class DXRAM {
         p_engine.registerService(SynchronizationService.class, SynchronizationServiceConfig.class);
         p_engine.registerService(TemporaryStorageService.class, TemporaryStorageServiceConfig.class);
         p_engine.registerService(FunctionService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(ManagementService.class, ManagementServiceConfig.class);
     }
 
     /**
@@ -328,6 +338,30 @@ public final class DXRAM {
         return System.getProperty(EXTENDED_TEST_PROPERTY) != null;
     }
 
+    public static boolean isVerbose() {
+        return System.getProperty(VERBOSE_PROPERTY) != null;
+    }
+
+    public static void printBanner() {
+        InputStream inputStream = DXRAM.class.getClassLoader().getResourceAsStream(BANNER_FILENAME);
+
+        if (inputStream == null) {
+            return;
+        }
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+        String banner = reader.lines().collect(Collectors.joining(System.lineSeparator()));
+
+        System.out.print("\n");
+        System.out.printf(banner, BuildConfig.DXRAM_VERSION, BuildConfig.BUILD_DATE, BuildConfig.BUILD_TYPE,
+                BuildConfig.BUILD_USER, BuildConfig.GIT_COMMIT);
+        System.out.print("\n\n");
+    }
+
+    public static String getAbsolutePath(String p_directory) {
+        return String.format("%s/%s", BASE_DIR, p_directory);
+    }
+
     /**
      * Shuts down DXRAM in case of the system exits.
      *
@@ -343,7 +377,7 @@ public final class DXRAM {
          *         Reference to DXRAM instance.
          */
         private ShutdownThread(final DXRAM p_dxram) {
-            super(ShutdownThread.class.getSimpleName());
+            super("kill");
             m_dxram = p_dxram;
         }
 

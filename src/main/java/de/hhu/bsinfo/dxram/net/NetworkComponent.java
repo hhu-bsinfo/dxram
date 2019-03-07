@@ -293,7 +293,7 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
                             InetAddress currentAddress = addresses.nextElement();
                             if (myAddress.equals(currentAddress)) {
 
-                                LOGGER.info("%s is bound to %s", myAddress.getHostAddress(),
+                                LOGGER.debug("%s is bound to %s", myAddress.getHostAddress(),
                                         currentNetworkInterface.getDisplayName());
 
                                 found = true;

@@ -57,7 +57,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 class ComputeMaster extends AbstractComputeMSBase implements MessageReceiver {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ComputeMaster.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ComputeMaster.class);
 
     private static final int MAX_TASK_COUNT = 100;
 

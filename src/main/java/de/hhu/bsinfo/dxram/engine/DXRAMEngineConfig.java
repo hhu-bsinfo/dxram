@@ -6,6 +6,7 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
@@ -34,7 +35,7 @@ public class DXRAMEngineConfig {
      * Path to jni dependencies
      */
     @Expose
-    private String m_jniPath = "jni";
+    private String m_jniPath = DXRAM.getAbsolutePath("jni");
 
     /**
      * Role assigned for this DXRAM instance

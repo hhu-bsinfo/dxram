@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.job.AbstractJob;
  */
 public class Worker extends Thread {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(Worker.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(Worker.class);
 
     private int m_id;
     private volatile boolean m_running;

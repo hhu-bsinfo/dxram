@@ -53,7 +53,7 @@ final class TaskExecutor {
      *         Number of Threads to create
      */
     TaskExecutor(final String p_name, final int p_threads) {
-        LOGGER = LogManager.getFormatterLogger(TaskExecutor.class.getSimpleName() + ' ' + p_name);
+        LOGGER = LogManager.getFormatterLogger(TaskExecutor.class.getCanonicalName() + ' ' + p_name);
         m_name = p_name;
 
         m_executor = Executors.newFixedThreadPool(p_threads, new ExecutorThreadFactory());

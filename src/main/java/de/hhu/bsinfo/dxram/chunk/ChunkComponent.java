@@ -71,7 +71,7 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
         ChunkComponentConfig chunkConfig = p_config.getComponentConfig(ChunkComponent.class);
 
         if (chunkConfig.isChunkStorageEnabled()) {
-            LOGGER.info("Allocating native memory (%d mb). This may take a while...",
+            LOGGER.info("Allocating %d MB of native memory",
                     chunkConfig.getKeyValueStoreSize().getMB());
 
             m_memory = new DXMem(m_boot.getNodeId(), chunkConfig.getKeyValueStoreSize().getBytes(),

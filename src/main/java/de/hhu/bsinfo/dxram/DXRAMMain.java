@@ -15,6 +15,9 @@ import de.hhu.bsinfo.dxram.engine.DXRAMConfigBuilderJsonFile2;
  *
  */
 public final class DXRAMMain {
+
+    private static final String STARTUP_DONE_STR = "!---ooo---!";
+
     /**
      * Main entry point
      *
@@ -37,9 +40,10 @@ public final class DXRAMMain {
             System.exit(-1);
         }
 
-        while (dxram.update()) {
-            // run
-        }
+        // used for deploy script
+        System.out.println(STARTUP_DONE_STR);
+
+        dxram.run();
 
         System.exit(0);
     }

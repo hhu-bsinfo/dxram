@@ -56,7 +56,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 class ComputeSlave extends AbstractComputeMSBase implements MessageReceiver, TaskSignalInterface {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ComputeSlave.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ComputeSlave.class);
 
     private short m_masterNodeId = NodeID.INVALID_ID;
 

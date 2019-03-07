@@ -113,7 +113,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 24.05.2018
  */
 public class OverlayPeer implements MessageReceiver {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(OverlayPeer.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(OverlayPeer.class);
 
     private static final int MSG_TIMEOUT_MS = 100;
 

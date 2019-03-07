@@ -15,7 +15,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
 public abstract class AbstractApplication extends Thread {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractApplication.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractApplication.class);
 
     private DXRAMServiceAccessor m_dxramServiceAccessor;
     private ApplicationCallbackHandler m_callbackHandler;

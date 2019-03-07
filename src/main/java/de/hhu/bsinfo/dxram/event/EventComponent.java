@@ -92,7 +92,7 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
 
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
-        LOGGER.info("EventExecutor: Initialising %d threads", getConfig().getThreadCount());
+        LOGGER.debug("EventExecutor: Initialising %d threads", getConfig().getThreadCount());
 
         m_executor = new TaskExecutor("EventExecutor", getConfig().getThreadCount());
 
@@ -106,7 +106,7 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
         try {
             m_executor.awaitTermination();
 
-            LOGGER.info("Shutdown of EventExecutor successful");
+            LOGGER.debug("Shutdown of EventExecutor successful");
         } catch (final InterruptedException e) {
             LOGGER.warn("Could not wait for event executor thread pool to finish. Interrupted");
         }

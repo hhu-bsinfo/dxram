@@ -103,7 +103,7 @@ public class RecoveryService extends AbstractDXRAMService<DXRAMModuleConfig> imp
         registerNetworkMessageListener();
 
         if (!m_backup.isActiveAndAvailableForBackup()) {
-            LOGGER.warn("Backup is not activated/available. Recovery service will not work!");
+            LOGGER.debug("Backup is not activated/available. Recovery service will not work!");
         }
 
         m_backupDirectory = m_backup.getConfig().getBackupDirectory();

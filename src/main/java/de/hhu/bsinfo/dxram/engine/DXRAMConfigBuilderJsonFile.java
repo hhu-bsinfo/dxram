@@ -25,7 +25,7 @@ import de.hhu.bsinfo.dxutils.JsonUtil;
  */
 public class DXRAMConfigBuilderJsonFile implements DXRAMConfigBuilder {
     private static final Logger LOGGER =
-            LogManager.getFormatterLogger(DXRAMConfigBuilderJsonFile.class.getSimpleName());
+            LogManager.getFormatterLogger(DXRAMConfigBuilderJsonFile.class);
 
     private final String m_path;
     private final boolean m_createIfNotExists;
@@ -66,7 +66,7 @@ public class DXRAMConfigBuilderJsonFile implements DXRAMConfigBuilder {
 
         if (!configFile.exists()) {
             if (m_createIfNotExists) {
-                LOGGER.info("Config file does not exist, creating new config: %s", m_path);
+                LOGGER.debug("Config file does not exist, creating new config: %s", m_path);
 
                 try {
                     if (!configFile.createNewFile()) {
@@ -95,7 +95,7 @@ public class DXRAMConfigBuilderJsonFile implements DXRAMConfigBuilder {
                 System.exit(0);
             }
         } else {
-            LOGGER.info("Loading from existing JSON config file: %s", m_path);
+            LOGGER.debug("Loading from existing JSON config file: %s", m_path);
 
             try {
                 JsonElement element = gson.fromJson(new String(Files.readAllBytes(Paths.get(m_path))),

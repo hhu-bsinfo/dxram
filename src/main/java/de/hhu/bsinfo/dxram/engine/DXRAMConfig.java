@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
  */
 @ToString
 public class DXRAMConfig {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMConfig.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMConfig.class);
 
     /**
      * Engine specific settings

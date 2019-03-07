@@ -41,7 +41,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 15.01.2017
  */
 public final class TaskScriptGsonContext {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(TaskScriptGsonContext.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(TaskScriptGsonContext.class);
 
     /**
      * Static class.

@@ -42,7 +42,7 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
 public class PrintMemoryStatusToFileTask implements Task {
 
     private static final Logger LOGGER = LogManager.getFormatterLogger(
-            PrintMemoryStatusToFileTask.class.getSimpleName());
+            PrintMemoryStatusToFileTask.class);
 
     @Expose
     private String m_path = "";

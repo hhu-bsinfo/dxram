@@ -47,7 +47,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Burak Akguel, burak.akguel@hhu.de, 04.04.2017
  */
 public class NetworkTask implements Task, MessageReceiver {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkTask.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(NetworkTask.class);
 
     private static final int PATTERN_END_TO_END = 0;
     private static final int PATTERN_BROADCAST = 1;

@@ -37,7 +37,7 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
  */
 public class ChunkRemoveAllTask implements Task {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkRemoveAllTask.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkRemoveAllTask.class);
 
     private static final int PATTERN_LOCAL_ONLY = 0;
     private static final int PATTERN_REMOTE_ONLY_SUCCESSOR = 1;

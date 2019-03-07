@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.plugin;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.nio.file.Path;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
@@ -25,7 +26,6 @@ import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
 import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 import de.hhu.bsinfo.dxutils.PluginManager;
 
 /**
@@ -37,7 +37,7 @@ import de.hhu.bsinfo.dxutils.PluginManager;
 @AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
 @AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.PLUGIN,
         priorityShutdown = DXRAMComponentOrder.Shutdown.PLUGIN)
-public class PluginComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
+public class PluginComponent extends AbstractDXRAMComponent<PluginComponentConfig> {
     private PluginManager m_pluginManager;
 
     /**
@@ -66,9 +66,19 @@ public class PluginComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
         return m_pluginManager.getAllSubClasses(p_class);
     }
 
+    public <T> List<Class<? extends T>> getAllSubClasses(final Class p_class, final String p_archiveName) {
+        return m_pluginManager.getAllSubClasses(p_class, p_archiveName);
+    }
+
+
+
+    public void add(final Path p_pluginPath) {
+        m_pluginManager.add(p_pluginPath);
+    }
+
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
-        PluginComponentConfig config = p_config.getComponentConfig(PluginComponent.class);
+        PluginComponentConfig config = getConfig();
 
         while (true) {
             try {
@@ -93,7 +103,9 @@ public class PluginComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
 
         List<String> plugins = m_pluginManager.getListPlugins();
 
-        LOGGER.info("Loaded %d jar plugin(s) from directory '%s'", plugins.size(), config.getPluginsPath());
+        if (!plugins.isEmpty()) {
+            LOGGER.info("Loaded %d jar plugin(s) from directory '%s'", plugins.size(), config.getPluginsPath());
+        }
 
         if (!plugins.isEmpty()) {
             StringBuilder strBuilder = new StringBuilder();

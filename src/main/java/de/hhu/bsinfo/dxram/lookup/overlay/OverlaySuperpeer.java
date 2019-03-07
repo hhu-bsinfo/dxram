@@ -139,7 +139,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  */
 public class OverlaySuperpeer implements MessageReceiver {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(OverlaySuperpeer.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(OverlaySuperpeer.class);
 
     // Attributes
     private NetworkComponent m_network;
@@ -265,7 +265,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         try {
             m_stabilizationThread.join();
 
-            LOGGER.info("Shutdown of StabilizationThread successful");
+            LOGGER.debug("Shutdown of StabilizationThread successful");
         } catch (final InterruptedException ignored) {
             LOGGER.warn("Could not wait for stabilization thread to finish. Interrupted");
         }
@@ -1200,8 +1200,6 @@ public class OverlaySuperpeer implements MessageReceiver {
         m_stabilizationThread =
                 new SuperpeerStabilizationThread(this, m_nodeID, m_overlayLock, m_initialNumberOfSuperpeers,
                         m_superpeers, p_sleepInterval, m_network);
-        m_stabilizationThread.setName(
-                SuperpeerStabilizationThread.class.getSimpleName() + " for " + LookupComponent.class.getSimpleName());
         m_stabilizationThread.setDaemon(true);
         m_stabilizationThread.start();
 
@@ -1342,7 +1340,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
         boolean newNodeisSuperpeer;
 
-        LOGGER.info("Received JoinRequest from 0x%X", p_joinRequest.getSource());
+        LOGGER.debug("Received JoinRequest from 0x%X", p_joinRequest.getSource());
 
         joiningNode = p_joinRequest.getNodeId();
         newNodeisSuperpeer = p_joinRequest.isSuperPeer();

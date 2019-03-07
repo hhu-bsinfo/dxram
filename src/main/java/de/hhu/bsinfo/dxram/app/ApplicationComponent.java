@@ -1,5 +1,7 @@
 package de.hhu.bsinfo.dxram.app;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -27,6 +29,8 @@ public class ApplicationComponent extends AbstractDXRAMComponent<DXRAMModuleConf
 
     private final HashMap<String, Class<? extends AbstractApplication>> m_applicationClasses = new HashMap<>();
     private ApplicationRunner m_runner;
+
+    private static final String NO_APP = "";
 
     /**
      * Start an application
@@ -83,6 +87,28 @@ public class ApplicationComponent extends AbstractDXRAMComponent<DXRAMModuleConf
      */
     public void registerApplicationClass(final Class<? extends AbstractApplication> p_class) {
         m_applicationClasses.put(p_class.getName(), p_class);
+    }
+
+    public String addApplication(final String p_archiveName) {
+        String pluginDir = m_plugin.getConfig().getPluginsPath();
+        Path pluginPath = Paths.get(pluginDir, p_archiveName);
+
+        LOGGER.info("Adding new plugin %s", pluginPath.toString());
+
+        m_plugin.add(pluginPath);
+
+        List<Class<? extends AbstractApplication>> applicationClasses = m_plugin.getAllSubClasses(
+                AbstractApplication.class, p_archiveName);
+
+        if (applicationClasses.isEmpty()) {
+            return NO_APP;
+        }
+
+        Class<? extends AbstractApplication> applicationClass = applicationClasses.get(0);
+
+        registerApplicationClass(applicationClass);
+
+        return applicationClass.getName();
     }
 
     @Override

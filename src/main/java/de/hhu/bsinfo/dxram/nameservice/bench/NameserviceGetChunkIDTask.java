@@ -38,7 +38,7 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
  * @author Burak Akguel, burak.akguel@hhu.de, 19.01.2017
  */
 public class NameserviceGetChunkIDTask implements Task {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceGetChunkIDTask.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceGetChunkIDTask.class);
 
     @Expose
     private int m_numThreads = 1;

@@ -41,7 +41,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 public final class MetadataHandler {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(MetadataHandler.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(MetadataHandler.class);
 
     // Attributes
     private PeerHandler[] m_peerHandlers;

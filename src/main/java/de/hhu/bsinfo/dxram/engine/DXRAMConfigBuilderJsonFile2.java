@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class DXRAMConfigBuilderJsonFile2 extends DXRAMConfigBuilderJsonFile {
     private static final Logger LOGGER =
-            LogManager.getFormatterLogger(DXRAMConfigBuilderJsonFile2.class.getSimpleName());
+            LogManager.getFormatterLogger(DXRAMConfigBuilderJsonFile2.class);
 
     private static final String JVM_ARG_CREATE_EXIT = "dxram.config.createDefaultAndExit";
     private static final String JVM_ARG_KEY = "dxram.config";
@@ -27,7 +27,6 @@ public class DXRAMConfigBuilderJsonFile2 extends DXRAMConfigBuilderJsonFile {
             LOGGER.warn("No config file path specified as JVM args (%s), use default path: %s", JVM_ARG_KEY, PATH);
         } else {
             PATH = value;
-            LOGGER.info("JVM arg config path: %s", PATH);
         }
 
         CREATE_AND_EXIT = System.getProperty(JVM_ARG_CREATE_EXIT) != null;

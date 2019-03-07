@@ -41,7 +41,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 20.10.2016
  */
 final class DXRAMGsonContext {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMGsonContext.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMGsonContext.class);
 
     /**
      * Hidden constructor

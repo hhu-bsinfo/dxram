@@ -41,7 +41,7 @@ import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
  */
 public class PrintStatisticsToFileTask implements Task {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(PrintStatisticsToFileTask.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(PrintStatisticsToFileTask.class);
 
     @Expose
     private String m_path = "";

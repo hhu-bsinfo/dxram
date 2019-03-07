@@ -40,7 +40,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2017
  */
 public class ChunkDataModifyRandomTask implements Task {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDataModifyRandomTask.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(ChunkDataModifyRandomTask.class);
 
     private static final int PATTERN_GET_LOCAL = 0;
     private static final int PATTERN_GET_PUT_LOCAL = 1;

@@ -48,7 +48,7 @@ class AbstractOperation {
             final AbstractBootComponent p_boot, final BackupComponent p_backup, final ChunkComponent p_chunk,
             final NetworkComponent p_network, final LookupComponent p_lookup,
             final NameserviceComponent p_nameservice) {
-        m_logger = LogManager.getFormatterLogger(p_parentService.getSimpleName());
+        m_logger = LogManager.getFormatterLogger(p_parentService);
         m_boot = p_boot;
         m_backup = p_backup;
         m_chunk = p_chunk;

@@ -107,7 +107,7 @@ abstract class AbstractComputeMSBase extends Thread {
             final LookupComponent p_lookup, final PluginComponent p_plugin) {
         super("ComputeMS-" + p_role + '-' + p_computeGroupId);
 
-        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
+        LOGGER = LogManager.getFormatterLogger(getClass());
 
         m_role = p_role;
         m_computeGroupId = p_computeGroupId;

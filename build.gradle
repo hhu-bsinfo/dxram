@@ -33,10 +33,12 @@ version = '0.8.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNA
 sourceCompatibility = '1.8'
 targetCompatibility = '1.8'
 
-mainClassName = 'de.hhu.bsinfo.dxram.DXRAMMain'
+mainClassName = 'de.hhu.bsinfo.dxram.Runner'
 
 applicationDefaultJvmArgs = [
-        '-Dlog4j.configurationFile=file:DXRAM_HOME/config/log4j2.xml'
+        '-Dlog4j.configurationFile=file:DXRAM_HOME/config/log4j2.xml',
+        '-Ddxram.config=DXRAM_HOME/config/dxram.json',
+        '-Ddxram.baseDir=DXRAM_HOME'
 ]
 
 project.startScripts.with {
@@ -90,6 +92,13 @@ dependencies {
     api 'de.hhu.bsinfo:dxmon:0.5.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
     nativeApi 'de.hhu.bsinfo:dxutils:0.8.0' + (Boolean.valueOf(System.getProperty('release')) ? '' : '-SNAPSHOT')
 
+    implementation 'info.picocli:picocli:3.9.5'
+
+    implementation 'com.squareup.retrofit2:retrofit:2.5.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.5.0'
+    
+    implementation 'io.javalin:javalin:2.6.0'
+    
     implementation 'com.google.guava:guava:26.0-jre'
     implementation 'org.apache.zookeeper:zookeeper:3.4.13'
     implementation('org.apache.curator:curator-x-discovery:4.0.1') {

@@ -39,7 +39,7 @@ import java.util.HashMap;
  */
 public class PeerDXRAMMonitoringHandler extends Thread {
     private static final Logger LOGGER = LogManager.getFormatterLogger(
-            PeerDXRAMMonitoringHandler.class.getSimpleName());
+            PeerDXRAMMonitoringHandler.class);
 
     private short m_ownNid;
     private volatile boolean m_shouldShutdown;

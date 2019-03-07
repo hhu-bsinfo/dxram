@@ -16,13 +16,13 @@ import de.hhu.bsinfo.dxutils.JsonUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 12.11.2018
  */
 public class DXRAMConfigBuilderJVMArgs implements DXRAMConfigBuilder {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMConfigBuilderJVMArgs.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMConfigBuilderJVMArgs.class);
 
     @Override
     public DXRAMConfig build(final DXRAMConfig p_config) throws DXRAMConfigBuilderException {
         DXRAMConfig configOut;
 
-        LOGGER.info("Overriding config with values from JVM args...");
+        LOGGER.debug("Overriding config with values from JVM args...");
 
         Gson gson = DXRAMGsonContext.createGsonInstance();
 

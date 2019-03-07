@@ -8,7 +8,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 
 public class TestApplicationAccessor extends AbstractApplication {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(TestApplicationAccessor.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(TestApplicationAccessor.class);
 
     @Override
     public DXRAMVersion getBuiltAgainstVersion() {

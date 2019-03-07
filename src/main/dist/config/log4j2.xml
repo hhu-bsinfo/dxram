@@ -2,20 +2,19 @@
 <Configuration status="warn">
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
-            <PatternLayout
-                    pattern="%highlight{[%d{HH:mm:ss.SSS}][%t][%-5level][%logger{36}] %msg%n}{FATAL=red, ERROR=red, WARN=yellow, INFO=blue, DEBUG=green, TRACE=white}"/>
+            <PatternLayout pattern="%highlight{[%d{HH:mm:ss.SSS}][%t{4}][%-5level][%c{1}] %msg%n}{FATAL=red, ERROR=red, WARN=yellow, INFO=blue, DEBUG=green, TRACE=white}"/>
         </Console>
         <Async name="ConsoleAsync" bufferSize="500">
             <AppenderRef ref="Console"/>
         </Async>
     </Appenders>
     <Loggers>
-        <!-- Do not let zookeeper flood our log-->
-        <Logger name="org.apache.zookeeper" level="OFF"/>
-
-        <Root level="debug">
+        <Root level="error">
             <AppenderRef ref="ConsoleAsync"/>
         </Root>
+        <Logger name="de.hhu.bsinfo" level="debug" additivity="false">
+            <AppenderRef ref="ConsoleAsync" />
+        </Logger>
     </Loggers>
 </Configuration>
 

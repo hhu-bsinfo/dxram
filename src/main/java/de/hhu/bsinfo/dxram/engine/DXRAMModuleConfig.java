@@ -38,7 +38,7 @@ public class DXRAMModuleConfig {
      * Default constructor for Gson
      */
     public DXRAMModuleConfig() {
-        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
+        LOGGER = LogManager.getFormatterLogger(getClass());
     }
 
     /**
@@ -48,7 +48,7 @@ public class DXRAMModuleConfig {
      *         Class name of the associated module
      */
     public DXRAMModuleConfig(final String p_moduleName) {
-        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
+        LOGGER = LogManager.getFormatterLogger(getClass());
         m_configClassName = getClass().getName();
         m_moduleClassName = p_moduleName;
     }
@@ -60,7 +60,7 @@ public class DXRAMModuleConfig {
      *         Class of the module that uses this configuration
      */
     public DXRAMModuleConfig(final Class<?> p_module) {
-        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
+        LOGGER = LogManager.getFormatterLogger(getClass());
         m_configClassName = getClass().getName();
         m_moduleClassName = p_module.getSimpleName();
     }

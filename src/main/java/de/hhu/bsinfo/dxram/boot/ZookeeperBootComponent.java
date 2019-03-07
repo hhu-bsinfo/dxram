@@ -165,11 +165,11 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             initializeZooKeeperServer();
         }
 
-        LOGGER.info("Searching free port with initial value of %d", m_port);
+        LOGGER.debug("Searching free port with initial value of %d", m_port);
 
         m_port = getNextOpenPort(m_port);
 
-        LOGGER.info("Initializing with address %s:%d and role %s", m_address, m_port, m_role);
+        LOGGER.debug("Initializing with address %s:%d and role %s", m_address, m_port, m_role);
 
         establishCuratorConnection();
         configureCurator();
@@ -229,7 +229,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         String zooKeeperAddress = String.format("%s:%d", getConfig().getConnection().getIP(),
                 getConfig().getConnection().getPort());
 
-        LOGGER.info("Connecting to ZooKeeper at %s", zooKeeperAddress);
+        LOGGER.debug("Connecting to ZooKeeper at %s", zooKeeperAddress);
 
         // Connect to Zookeeper
         m_curatorClient = CuratorFrameworkFactory.newClient(zooKeeperAddress, m_retryPolicy);
@@ -253,7 +253,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     }
 
     private void deleteZooKeeperData() {
-        LOGGER.info("Deleting ZooKeeper data directory");
+        LOGGER.debug("Deleting ZooKeeper data directory");
         Path path = Paths.get(getConfig().getDataDir());
 
         if (!Files.exists(path)) {
@@ -282,7 +282,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
     private void initializeZooKeeperServer() {
         deleteZooKeeperData();
         m_zooKeeperServerConfig.parse(getZooKeeperConfiguration());
-        LOGGER.info("Starting ZooKeeper server on port %d",
+        LOGGER.debug("Starting ZooKeeper server on port %d",
                 m_zooKeeperServerConfig.getClientPortAddress().getPort());
         m_zooKeeperServerThread.start();
     }
@@ -293,7 +293,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
      * @return true, if initialization succeeded; false else
      */
     private boolean initializeBootstrapNode() {
-        LOGGER.info("Starting bootstrap process");
+        LOGGER.info("Running in bootstrap mode");
 
         m_details = buildNodeDetails();
 
@@ -312,7 +312,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return false;
         }
 
-        LOGGER.info("Finished bootstrap process, node ID of this instance: %X", getDetails().getId());
+        LOGGER.info("Assigned node ID %X to this instance", getDetails().getId());
 
         return true;
     }
@@ -328,7 +328,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
         // Wait until bootstrap node finishes initializing
         Poller.blockingPoll(this::getBootstrapDetails, 1, TimeUnit.SECONDS);
 
-        LOGGER.info("Bootstrap node is ready");
+        LOGGER.debug("Bootstrap node is ready");
 
         m_details = buildNodeDetails();
 
@@ -339,7 +339,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             return false;
         }
 
-        LOGGER.info("Finished initialization, node ID of this instance: %X", getDetails().getId());
+        LOGGER.info("Assigned node ID %X to this instance", getDetails().getId());
 
         return true;
     }
@@ -365,7 +365,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             m_id = calculateNodeId();
         } while (m_nodeRegistry.getDetails(m_id) != null);
 
-        LOGGER.info("Assigned counter value %d to this node", m_counterValue);
+        LOGGER.debug("Assigned counter value %d to this node", m_counterValue);
     }
 
     /**
@@ -434,7 +434,7 @@ public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootC
             capabilities |= NodeCapabilities.COMPUTE;
         }
 
-        LOGGER.info("Detected capabilities %s", NodeCapabilities.toString(capabilities));
+        LOGGER.debug("Detected capabilities %s", NodeCapabilities.toString(capabilities));
 
         return capabilities;
     }

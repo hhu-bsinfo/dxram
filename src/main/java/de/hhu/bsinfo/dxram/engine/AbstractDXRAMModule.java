@@ -27,7 +27,7 @@ public abstract class AbstractDXRAMModule<T> {
      * Constructor
      */
     AbstractDXRAMModule() {
-        LOGGER = LogManager.getFormatterLogger(getClass().getSimpleName());
+        LOGGER = LogManager.getFormatterLogger(getClass());
 
         Annotation[] annotations = getClass().getAnnotations();
 
@@ -71,14 +71,14 @@ public abstract class AbstractDXRAMModule<T> {
     public boolean init(final DXRAMEngine p_engine) {
         m_parentEngine = p_engine;
 
-        LOGGER.info("Initializing module...");
+        LOGGER.debug("Initializing module...");
 
         boolean success = moduleInit(p_engine);
 
         if (!success) {
             LOGGER.error("Initializing module failed");
         } else {
-            LOGGER.info("Initializing module successful");
+            LOGGER.debug("Initializing module successful");
 
             m_isInitialized = true;
         }
@@ -95,14 +95,14 @@ public abstract class AbstractDXRAMModule<T> {
         boolean ret = true;
 
         if (m_isInitialized) {
-            LOGGER.info("Shutting down module...");
+            LOGGER.debug("Shutting down module");
 
             ret = moduleShutdown();
 
             if (!ret) {
                 LOGGER.warn("Shutting down module failed");
             } else {
-                LOGGER.info("Shutting down module successful");
+                LOGGER.debug("Shutting down module successful");
             }
 
             m_parentEngine = null;

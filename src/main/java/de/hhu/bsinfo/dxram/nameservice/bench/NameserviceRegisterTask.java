@@ -37,7 +37,7 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
  * @author Burak Akguel, burak.akguel@hhu.de, 19.01.2017
  */
 public class NameserviceRegisterTask implements Task {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceRegisterTask.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(NameserviceRegisterTask.class);
 
     private String m_allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGRHIJKLMNOPQRSTUVWXYZ0123456789-";
 

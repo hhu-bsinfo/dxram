@@ -33,7 +33,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 public class BarriersTable implements MetadataInterface {
 
-    private static final Logger LOGGER = LogManager.getFormatterLogger(BarriersTable.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(BarriersTable.class);
 
     private int m_maxNumBarriers;
     private int m_allBarriersCount;

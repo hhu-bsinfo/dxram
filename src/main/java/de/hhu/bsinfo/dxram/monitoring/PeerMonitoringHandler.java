@@ -43,7 +43,7 @@ import java.util.HashMap;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 public class PeerMonitoringHandler extends Thread {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(PeerMonitoringHandler.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(PeerMonitoringHandler.class);
 
     private NetworkComponent m_networkComponent;
 

@@ -42,7 +42,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  */
 public class ChunkDataModifySequentialTask implements Task {
     private static final Logger LOGGER =
-            LogManager.getFormatterLogger(ChunkDataModifySequentialTask.class.getSimpleName());
+            LogManager.getFormatterLogger(ChunkDataModifySequentialTask.class);
 
     private static final int PATTERN_GET_LOCAL = 0;
     private static final int PATTERN_GET_PUT_LOCAL = 1;

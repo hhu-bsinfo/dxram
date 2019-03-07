@@ -16,15 +16,14 @@
 
 package de.hhu.bsinfo.dxram.monitoring;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
-import javax.management.NotCompliantMBeanException;
 
-import org.jetbrains.annotations.NotNull;
-
+import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
@@ -34,11 +33,14 @@ import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
+import de.hhu.bsinfo.dxram.generated.BuildConfig;
+import de.hhu.bsinfo.dxram.log.LogComponent;
+import de.hhu.bsinfo.dxram.log.LogComponentConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
-import de.hhu.bsinfo.dxram.monitoring.beans.MBean;
-import de.hhu.bsinfo.dxram.monitoring.beans.Storage;
 import de.hhu.bsinfo.dxram.monitoring.util.MonitoringSysDxramWrapper;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 /**
  * Monitoring component (will launch 2 handler threads on peer nodes and 1 handler on superpeers)
@@ -81,99 +83,102 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
 
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
+        if (!getConfig().isMonitoringActive()) {
+            return true;
+        }
 
-        //        if (!isToolsJarLoaded()) {
-        //            LOGGER.error("The monitoring system requires tools.jar to be on the classpath");
-        //            return false;
-        //        }
-        //
-        //        LogComponentConfig logConfig = p_config.getComponentConfig(LogComponent.class);
-        //        MonitoringComponentConfig componentConfig = p_config.getComponentConfig(MonitoringComponent.class);
-        //
-        //        // Create directory if it doesn't exist
-        //        try {
-        //            Files.createDirectories(Paths.get(componentConfig.getMonitoringFolder()));
-        //        } catch (IOException e) {
-        //            LOGGER.error("Failed creating monitoring data directory");
-        //            return false;
-        //        }
-        //
-        //        if (componentConfig.isMonitoringActive()) {
-        //            String diskIdentifier = componentConfig.getDisk();
-        //
-        //            if (diskIdentifier.isEmpty()) {
-        //                // pick first disk found
-        //                try {
-        //                    diskIdentifier = DeviceLister.getDisks().get(0);
-        //                } catch (final IOException e) {
-        //                    LOGGER.error("Failed to auto assign first disk identifier: %s", e.getMessage());
-        //                    return false;
-        //                }
-        //
-        //                LOGGER.warn("Empty disk identifier from config, auto assigning disk: %s", diskIdentifier);
-        //            }
-        //
-        //            String nicIdentifier = componentConfig.getNic();
-        //
-        //            if (nicIdentifier.isEmpty()) {
-        //                try {
-        //                    nicIdentifier = DeviceLister.getNICs().get(0);
-        //                } catch (final IOException e) {
-        //                    LOGGER.error("Failed to auto assign first NIC identifier: %s", e.getMessage());
-        //                    return false;
-        //                }
-        //
-        //                LOGGER.warn("Empty NIC identifier from config, auto assigning interface: %s", nicIdentifier);
-        //            }
-        //
-        //            String monitoringFolder = componentConfig.getMonitoringFolder();
-        //            float secondDelay = componentConfig.getTimeWindow().getSec();
-        //
-        //            // check if kernel buffer is in use
-        //            boolean isPageCacheInUse = false;
-        //            String hardwareAccessMode =logConfig.getDxlogConfig().getHarddriveAccess();
-        //
-        //            if (hardwareAccessMode.equals("raf")) {
-        //                isPageCacheInUse = true;
-        //            }
-        //
-        //            String buildUser = BuildConfig.BUILD_USER;
-        //            String buildDate = BuildConfig.BUILD_DATE;
-        //            String buildType = BuildConfig.BUILD_TYPE;
-        //            String commit = BuildConfig.GIT_COMMIT;
-        //            String version = BuildConfig.DXRAM_VERSION.toString();
-        //
-        //            MonitoringDXRAMInformation.setValues(buildDate, buildUser, buildType, version, commit, isPageCacheInUse);
-        //
-        //            short numberOfCollects = componentConfig.getCollectsPerWindow();
-        //
-        //            if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
-        //                m_superpeerHandler =
-        //                        new SuperpeerMonitoringHandler(componentConfig.getCsvTimeWindow().getSec(), m_boot, m_event,
-        //                                monitoringFolder);
-        //                m_superpeerHandler.start();
-        //            } else {
-        //                short ownNid = m_boot.getNodeId();
-        //                short superpeerNid = m_lookup.getResponsibleSuperpeer(ownNid);
-        //
-        //                if (superpeerNid == NodeID.INVALID_ID) {
-        //                    LOGGER.error("Found no responsible superpeer for node 0x%x", ownNid);
-        //                    return false; // need superpeer to monitor
-        //                }
-        //
-        //                m_peerHandler = new PeerMonitoringHandler(ownNid, superpeerNid, m_network);
-        //                m_peerHandler.setConfigParameters(monitoringFolder, secondDelay, numberOfCollects, nicIdentifier,
-        //                        diskIdentifier);
-        //                m_peerHandler.setupComponents();
-        //                m_peerHandler.start();
-        //
-        //                m_dxramPeerHandler =
-        //                        new PeerDXRAMMonitoringHandler(ownNid, numberOfCollects, secondDelay, monitoringFolder);
-        //                m_dxramPeerHandler.start();
-        //            }
-        //        }
+        if (!isToolsJarLoaded()) {
+            LOGGER.error("The monitoring system requires tools.jar to be on the classpath");
+            return false;
+        }
 
-        return registerMBeans();
+        LogComponentConfig logConfig = p_config.getComponentConfig(LogComponent.class);
+        MonitoringComponentConfig componentConfig = p_config.getComponentConfig(MonitoringComponent.class);
+
+        // Create directory if it doesn't exist
+        try {
+            Files.createDirectories(Paths.get(componentConfig.getMonitoringFolder()));
+        } catch (IOException e) {
+            LOGGER.error("Failed creating monitoring data directory");
+            return false;
+        }
+
+        if (componentConfig.isMonitoringActive()) {
+            String diskIdentifier = componentConfig.getDisk();
+
+            if (diskIdentifier.isEmpty()) {
+                // pick first disk found
+                try {
+                    diskIdentifier = DeviceLister.getDisks().get(0);
+                } catch (final IOException e) {
+                    LOGGER.error("Failed to auto assign first disk identifier: %s", e.getMessage());
+                    return false;
+                }
+
+                LOGGER.warn("Empty disk identifier from config, auto assigning disk: %s", diskIdentifier);
+            }
+
+            String nicIdentifier = componentConfig.getNic();
+
+            if (nicIdentifier.isEmpty()) {
+                try {
+                    nicIdentifier = DeviceLister.getNICs().get(0);
+                } catch (final IOException e) {
+                    LOGGER.error("Failed to auto assign first NIC identifier: %s", e.getMessage());
+                    return false;
+                }
+
+                LOGGER.warn("Empty NIC identifier from config, auto assigning interface: %s", nicIdentifier);
+            }
+
+            String monitoringFolder = componentConfig.getMonitoringFolder();
+            float secondDelay = componentConfig.getTimeWindow().getSec();
+
+            // check if kernel buffer is in use
+            boolean isPageCacheInUse = false;
+            String hardwareAccessMode =logConfig.getDxlogConfig().getHarddriveAccess();
+
+            if (hardwareAccessMode.equals("raf")) {
+                isPageCacheInUse = true;
+            }
+
+            String buildUser = BuildConfig.BUILD_USER;
+            String buildDate = BuildConfig.BUILD_DATE;
+            String buildType = BuildConfig.BUILD_TYPE;
+            String commit = BuildConfig.GIT_COMMIT;
+            String version = BuildConfig.DXRAM_VERSION.toString();
+
+            MonitoringDXRAMInformation.setValues(buildDate, buildUser, buildType, version, commit, isPageCacheInUse);
+
+            short numberOfCollects = componentConfig.getCollectsPerWindow();
+
+            if (m_boot.getNodeRole() == NodeRole.SUPERPEER) {
+                m_superpeerHandler =
+                        new SuperpeerMonitoringHandler(componentConfig.getCsvTimeWindow().getSec(), m_boot, m_event,
+                                monitoringFolder);
+                m_superpeerHandler.start();
+            } else {
+                short ownNid = m_boot.getNodeId();
+                short superpeerNid = m_lookup.getResponsibleSuperpeer(ownNid);
+
+                if (superpeerNid == NodeID.INVALID_ID) {
+                    LOGGER.error("Found no responsible superpeer for node 0x%x", ownNid);
+                    return false; // need superpeer to monitor
+                }
+
+                m_peerHandler = new PeerMonitoringHandler(ownNid, superpeerNid, m_network);
+                m_peerHandler.setConfigParameters(monitoringFolder, secondDelay, numberOfCollects, nicIdentifier,
+                        diskIdentifier);
+                m_peerHandler.setupComponents();
+                m_peerHandler.start();
+
+                m_dxramPeerHandler =
+                        new PeerDXRAMMonitoringHandler(ownNid, numberOfCollects, secondDelay, monitoringFolder);
+                m_dxramPeerHandler.start();
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -252,37 +257,5 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
      */
     void addMonitoringSysInfoToWriter(final short p_nid, final MonitoringSysDxramWrapper p_wrapper) {
         m_superpeerHandler.addSysInfoToList(p_nid, p_wrapper);
-    }
-
-    /**
-     * Registers custom MBeans within the MBeanServer.
-     */
-    private boolean registerMBeans() {
-        if (m_chunk.isStorageEnabled()) {
-            return registerBean(new Storage(m_chunk));
-        } else {
-            return true;
-        }
-    }
-
-    /**
-     * Registers a specific MBean within the MBeanServer.
-     *
-     * @param p_bean
-     *         The MBean to register.
-     * @return True, if registration was successful; false else.
-     */
-    private boolean registerBean(final @NotNull MBean p_bean) {
-        try {
-            m_beanServer.registerMBean(p_bean, p_bean.getObjectName());
-        } catch (InstanceAlreadyExistsException e) {
-            LOGGER.info("MBean %s already exists", p_bean.getObjectName());
-            return true;
-        } catch (MBeanRegistrationException | NotCompliantMBeanException e) {
-            LOGGER.error("Failed registering MBean", e);
-            return false;
-        }
-
-        return true;
     }
 }

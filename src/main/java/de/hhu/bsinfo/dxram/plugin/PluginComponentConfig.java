@@ -22,6 +22,7 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
+import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 
 /**
@@ -37,7 +38,7 @@ public class PluginComponentConfig extends DXRAMModuleConfig {
      * Path to scan for plugin jar files
      */
     @Expose
-    private String m_pluginsPath = "plugin";
+    private String m_pluginsPath = DXRAM.getAbsolutePath("plugin");
 
     /**
      * Constructor

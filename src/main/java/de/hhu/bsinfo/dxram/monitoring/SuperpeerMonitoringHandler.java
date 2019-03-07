@@ -41,7 +41,7 @@ import java.util.Map;
  */
 public class SuperpeerMonitoringHandler extends Thread implements EventListener<AbstractEvent> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(
-            SuperpeerMonitoringHandler.class.getSimpleName());
+            SuperpeerMonitoringHandler.class);
 
     private ArrayList<MonitoringDataStructure> m_collectedData;
     private volatile boolean m_shouldShutdown;

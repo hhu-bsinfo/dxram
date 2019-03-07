@@ -29,7 +29,7 @@ import de.hhu.bsinfo.dxutils.OSValidator;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public final class DXRAMJNIManager {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMJNIManager.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMJNIManager.class);
 
     private final File m_jniPath;
 

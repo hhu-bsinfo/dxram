@@ -33,7 +33,7 @@ public final class OverlayHelper {
 
     // Constants
     public static final short ORDER = 10;
-    private static final Logger LOGGER = LogManager.getFormatterLogger(OverlayHelper.class.getSimpleName());
+    private static final Logger LOGGER = LogManager.getFormatterLogger(OverlayHelper.class);
 
     /**
      * Hidden constructor
