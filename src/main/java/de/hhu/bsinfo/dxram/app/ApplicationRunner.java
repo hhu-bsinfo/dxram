@@ -97,6 +97,9 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
         }
 
         app.init(m_dxramServiceAccessor, this, p_args);
+
+        LOGGER.info("Starting %s", app.getApplicationName());
+
         app.start();
 
         return true;

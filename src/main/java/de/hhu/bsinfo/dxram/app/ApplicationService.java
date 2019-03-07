@@ -207,7 +207,7 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     }
 
     private void handleApplicationSubmit(final ApplicationSubmitMessage p_submitMessage) {
-        LOGGER.info("Received new application %s", p_submitMessage.getArchiveName());
+        LOGGER.debug("Received new application %s", p_submitMessage.getArchiveName());
 
         String archiveName = p_submitMessage.getArchiveName();
         String applicationName = m_appComponent.addApplication(archiveName);
@@ -216,8 +216,6 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
             LOGGER.warn("No subclass of AbstractApplication found within %s", archiveName);
             return;
         }
-
-        LOGGER.info("Starting application %s with arguments %s", applicationName, Arrays.toString(p_submitMessage.getArgs()));
 
         startApplication(applicationName, p_submitMessage.getArgs());
     }

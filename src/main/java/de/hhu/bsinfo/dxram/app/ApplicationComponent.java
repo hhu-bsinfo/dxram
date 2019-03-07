@@ -93,7 +93,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<DXRAMModuleConf
         String pluginDir = m_plugin.getConfig().getPluginsPath();
         Path pluginPath = Paths.get(pluginDir, p_archiveName);
 
-        LOGGER.info("Adding new plugin %s", pluginPath.toString());
+        LOGGER.debug("Adding new plugin %s", pluginPath.toString());
 
         m_plugin.add(pluginPath);
 

@@ -61,15 +61,11 @@ public abstract class AbstractApplication extends Thread {
 
         m_callbackHandler.started(this);
 
-        LOGGER.info("Starting '%s' with arguments (%d): %s", getName(), m_args.length, Arrays.toString(m_args));
-
         try {
             main(m_args);
         } catch (final Exception e) {
             LOGGER.info("Exception in application", e);
         }
-
-        LOGGER.info("'%s' finished", getName());
 
         m_callbackHandler.finished(this);
     }
