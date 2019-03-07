@@ -18,7 +18,10 @@ package de.hhu.bsinfo.dxram.plugin;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
@@ -79,6 +82,12 @@ public class PluginComponent extends AbstractDXRAMComponent<PluginComponentConfi
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         PluginComponentConfig config = getConfig();
+
+        try {
+            Files.createDirectories(Paths.get(config.getPluginsPath()));
+        } catch (IOException e) {
+            LOGGER.warn("Couldn't create plugins directory");
+        }
 
         while (true) {
             try {
