@@ -10,6 +10,11 @@ public final class Runner {
     private Runner() {}
 
     public static void main(final String[] p_args) {
-        CommandLine.run(new Root(p_args), p_args);
+        CommandLine cli = new CommandLine(new Root(p_args));
+        cli.setCaseInsensitiveEnumValuesAllowed(true);
+        cli.parseWithHandlers(
+                new CommandLine.RunLast().useOut(System.out),
+                CommandLine.defaultExceptionHandler().useErr(System.err),
+                p_args);
     }
 }
