@@ -48,6 +48,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
 import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
+import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 import de.hhu.bsinfo.dxram.migration.data.MigrationPayload;
 import de.hhu.bsinfo.dxram.migration.messages.MigrationFinish;
@@ -73,6 +74,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     private final ChunkMigrationComponent m_chunkMigration;
     private final ChunkComponent m_chunk;
     private final NetworkComponent m_network;
+    private final LookupComponent m_lookup;
 
     private final int m_workerCount;
 
@@ -86,6 +88,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
         m_chunkMigration = p_componentAccessor.getComponent(ChunkMigrationComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
+        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
     /**
@@ -98,6 +101,9 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
      * @return A ticket containing information associated with the created migration.
      */
     public MigrationTicket migrateRange(final short p_target, final LongRange p_range) {
+
+        log.info("Migrating chunk range [%X,%X] to target node %04X", p_range.getFrom(), p_range.getTo(), p_target);
+
         MigrationIdentifier identifier = new MigrationIdentifier(m_boot.getNodeId(), p_target);
         List<MigrationTask> tasks = createMigrationTasks(identifier, p_range);
 
@@ -133,7 +139,7 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
     // TODO(krakowski)
     //  Move this method to dxutils
     public static long[] partition(long p_start, long p_end, int p_count) {
-        log.info("Creating %d partitions for chunks [%X , %X]", p_count, p_start, p_end);
+        log.debug("Creating %d partitions for chunks [%X , %X]", p_count, p_start, p_end);
         int elementCount = (int) (p_end - p_start);
 
         if (p_count > elementCount) {
@@ -299,13 +305,16 @@ public class MigrationManager implements MessageReceiver, ChunkMigrator {
 
         log.debug("Removing migrated chunks from local memory");
 
-        // Remove chunks from local storage
+        // Remove chunks from local storage and inform superpeer about migration
+        short target = p_migrationFinish.getSource();
         for (LongRange range : ranges) {
             for (long cid = range.getFrom(); cid < range.getTo(); cid++) {
                 int chunkSize = m_chunk.getMemory().remove().remove(cid, true);
                 m_backup.deregisterChunk(cid, chunkSize);
             }
+            m_lookup.migrateRange(range.getFrom(), range.getTo(), target);
         }
+
 
         // Remove chunks on remote backup peers
         if (m_backup.isActive()) {

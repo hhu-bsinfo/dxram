@@ -24,14 +24,18 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
@@ -57,6 +61,8 @@ public class DXRAMJunitRunner extends Runner {
 
     private static final String DEFAULT_LOG_LEVEL = "debug";
 
+    private static final String BASE_PACKAGE = "de.hhu.bsinfo";
+
     /**
      * Constructor
      *
@@ -70,7 +76,7 @@ public class DXRAMJunitRunner extends Runner {
 
     @Override
     public Description getDescription() {
-        return Description.createTestDescription(m_testClass, "DXRAM instance test runner");
+        return Description.createSuiteDescription(m_testClass);
     }
 
     @Override
@@ -91,9 +97,11 @@ public class DXRAMJunitRunner extends Runner {
 
         m_instances = new DXRAM[config.nodes().length];
 
-        System.out.println("============================================");
-        System.out.printf(">>> Creating %d DXRAM instances\n", m_instances.length);
-        System.out.println("============================================");
+        System.out.println();
+        System.out.println("  ============================================");
+        System.out.printf( "   >>> Creating %d DXRAM instances\n", m_instances.length);
+        System.out.println("  ============================================");
+        System.out.println();
 
         for (int i = 0; i < m_instances.length; i++) {
             m_instances[i] = createNodeInstance(props.getProperty(WORKSPACE_PROPERTY), config, i, 22221 + i);
@@ -108,14 +116,11 @@ public class DXRAMJunitRunner extends Runner {
      * Configure the logger (log4j) for the test to run
      */
     private void configureLogger(final String p_logLevel) {
-        LoggerContext lc = (LoggerContext) LogManager.getContext(false);
-        Appender appender = LogAppenderAsssert.createAppender("unitTest", PatternLayout.createDefaultLayout(), null);
-        appender.start();
-        lc.getConfiguration().addAppender(appender);
-        lc.getRootLogger().addAppender(lc.getConfiguration().getAppender(appender.getName()));
-        lc.updateLoggers();
+        final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        final Configuration config = ctx.getConfiguration();
 
-        Configurator.setRootLevel(Level.valueOf(p_logLevel));
+        config.getRootLogger().setLevel(Level.ERROR);
+        config.getLoggerConfig(BASE_PACKAGE).setLevel(Level.valueOf(p_logLevel));
     }
 
     /**
@@ -160,9 +165,11 @@ public class DXRAMJunitRunner extends Runner {
      *         Instances to cleanup
      */
     private void cleanupNodeInstances(final DXRAM[] p_instances) {
-        System.out.println("============================================");
-        System.out.printf(">>> Cleaning up %d DXRAM instances\n", p_instances.length);
-        System.out.println("============================================");
+        System.out.println();
+        System.out.println("  ============================================");
+        System.out.printf( "   >>> Cleaning up %d DXRAM instances\n", p_instances.length);
+        System.out.println("  ============================================");
+        System.out.println();
 
         // cleanup in reverse order: superpeers have to soft shutdown last
         for (int i = p_instances.length - 1; i >= 0; i--) {
@@ -200,9 +207,11 @@ public class DXRAMJunitRunner extends Runner {
                 }
             }
 
-            System.out.println("============================================");
-            System.out.println("!!! Running tests (parallel) !!!");
-            System.out.println("============================================");
+            System.out.println();
+            System.out.println("  ============================================");
+            System.out.println("   >>> Running parallel tests");
+            System.out.println("  ============================================");
+            System.out.println();
 
             TestRunnerThread[] threads = new TestRunnerThread[p_instances.length];
 
@@ -250,9 +259,11 @@ public class DXRAMJunitRunner extends Runner {
                     if (System.currentTimeMillis() - startTimeMs >= p_timeoutMs) {
                         Exception e = new RuntimeException("Test timeout, " + p_timeoutMs + " ms.");
 
-                        System.out.println("============================================");
-                        System.out.println("!!! Test timeout !!!");
-                        System.out.println("============================================");
+                        System.out.println();
+                        System.out.println("  ============================================");
+                        System.out.println("   !!! Test timeout");
+                        System.out.println("  ============================================");
+                        System.out.println();
 
                         p_notifier.fireTestFailure(new Failure(Description.createTestDescription(getClass(), "Timeout"),
                                 e));
@@ -267,9 +278,11 @@ public class DXRAMJunitRunner extends Runner {
                 Thread.sleep(100);
             }
 
-            System.out.println("============================================");
-            System.out.println("!!! Finished running tests !!!");
-            System.out.println("============================================");
+            System.out.println();
+            System.out.println("  ============================================");
+            System.out.println("   >>> Finished running tests");
+            System.out.println("  ============================================");
+            System.out.println();
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -284,6 +297,8 @@ public class DXRAMJunitRunner extends Runner {
         private final Object m_testObject;
         private final ArrayList<Method> m_testMethods;
         private final RunNotifier m_notifier;
+
+        private static final char[] NODE_NUMBERS = new char[]{'⓪', '①', '②', '③' , '④' , '⑤' , '⑥',  '⑦' , '⑧', '⑨'};
 
         /**
          * Constructor
@@ -320,7 +335,7 @@ public class DXRAMJunitRunner extends Runner {
         public void run() {
             for (Method method : m_testMethods) {
                 Description testDescription = Description.createTestDescription(m_testObject.getClass(),
-                        m_instanceIdx + " | " + method.getName());
+                        String.format("%c %s", NODE_NUMBERS[m_instanceIdx], method.getName()));
 
                 m_notifier.fireTestStarted(testDescription);
 

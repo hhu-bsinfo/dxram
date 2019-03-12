@@ -117,7 +117,7 @@ public final class DXRAM {
     public DXRAM() {
         Locale.setDefault(new Locale("en", "US"));
 
-        if (!isRunWithinTest() && isVerbose()) {
+        if (isVerbose()) {
             printBuildInfo();
             printInstanceInfo();
         }
@@ -166,7 +166,7 @@ public final class DXRAM {
             Runtime.getRuntime().addShutdownHook(m_shutdownHook);
         }
 
-        if (isRunWithinTest() && !isVerbose()) {
+        if (isVerbose()) {
             printNodeInfo();
         }
 

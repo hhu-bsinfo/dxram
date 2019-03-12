@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.lookup.overlay;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,7 +44,6 @@ import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.failure.messages.FailureRequest;
 import de.hhu.bsinfo.dxram.failure.messages.FailureResponse;
-import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.events.NodeJoinEvent;
 import de.hhu.bsinfo.dxram.lookup.messages.AskAboutBackupsRequest;
@@ -1837,6 +1837,7 @@ public class OverlaySuperpeer implements MessageReceiver {
         if (OverlayHelper.isPeerInSuperpeerRange(creator, m_predecessor, m_nodeID)) {
             if (m_metadata.putChunkIDRangeInLookupTree(startChunkID, endChunkID, nodeID, m_backupActive)) {
                 backupSuperpeers = OverlayHelper.getBackupSuperpeers(m_nodeID, m_superpeers);
+                LOGGER.info("Informing other superpeers %s", Arrays.toString(backupSuperpeers));
                 m_overlayLock.readLock().unlock();
                 if (backupSuperpeers[0] != NodeID.INVALID_ID) {
                     // Outsource informing backups to another thread to avoid blocking a message handler

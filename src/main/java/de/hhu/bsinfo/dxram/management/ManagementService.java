@@ -61,6 +61,7 @@ public class ManagementService extends AbstractDXRAMService<ManagementServiceCon
 
     @Override
     protected boolean shutdownService() {
+        m_server.stop();
         return true;
     }
 }
