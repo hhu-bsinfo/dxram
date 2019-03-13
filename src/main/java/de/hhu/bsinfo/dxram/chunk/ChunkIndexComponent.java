@@ -9,6 +9,7 @@ import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -27,10 +28,17 @@ import de.hhu.bsinfo.dxutils.NodeID;
 @Component.Attributes(priorityInit = DXRAMComponentOrder.Init.CHUNK_INDEX,
         priorityShutdown = DXRAMComponentOrder.Shutdown.CHUNK_INDEX)
 public class ChunkIndexComponent extends Component<ModuleConfig> {
-    // component dependencies
+
+    @Inject
     private BackupComponent m_backup;
+
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private ChunkComponent m_chunk;
+
+    @Inject
     private NetworkComponent m_network;
 
     /**

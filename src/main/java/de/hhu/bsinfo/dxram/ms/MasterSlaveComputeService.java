@@ -34,6 +34,7 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -65,11 +66,20 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class MasterSlaveComputeService extends Service<MasterSlaveComputeServiceConfig>
         implements MessageReceiver, TaskListener {
-    // component dependencies
+
+    @Inject
     private NetworkComponent m_network;
+
+    @Inject
     private NameserviceComponent m_nameservice;
+
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private LookupComponent m_lookup;
+
+    @Inject
     private PluginComponent m_plugin;
 
     private AbstractComputeMSBase m_computeMSInstance;

@@ -28,6 +28,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -55,10 +56,19 @@ public class MonitoringComponent extends Component<MonitoringComponentConfig> {
     private PeerDXRAMMonitoringHandler m_dxramPeerHandler;
     private SuperpeerMonitoringHandler m_superpeerHandler;
 
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private NetworkComponent m_network;
+
+    @Inject
     private LookupComponent m_lookup;
+
+    @Inject
     private EventComponent m_event;
+
+    @Inject
     private ChunkComponent m_chunk;
 
     private static final String VIRTUALMACHINE_CLASS = "com.sun.tools.attach.VirtualMachine";

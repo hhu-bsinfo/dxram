@@ -7,6 +7,7 @@ import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -24,9 +25,10 @@ import de.hhu.bsinfo.dxutils.serialization.Distributable;
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class FunctionService extends Service<ModuleConfig> implements MessageReceiver {
 
-    private final Map<String, DistributableFunction> m_functions = new ConcurrentHashMap<>();
-
+    @Inject
     private NetworkComponent m_network;
+
+    private final Map<String, DistributableFunction> m_functions = new ConcurrentHashMap<>();
 
     public enum Status {
         FAILED, REGISTERED

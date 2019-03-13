@@ -20,16 +20,21 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.dependency.DependencyGraph;
 
 /**
  * Manager for modules (components and/or services) in DXRAM. All modules used in DXRAM must be registered here to
@@ -234,13 +239,9 @@ class ModuleManager {
             }
 
             try {
-                m_instance = m_moduleClass.getConstructor(ComponentProvider.class).newInstance(p_componentProvider);
-            } catch (Exception outer) {
-                try {
-                    m_instance = m_moduleClass.getConstructor().newInstance();
-                } catch (final Exception inner) {
-                    throw new RuntimeException("Cannot create module instance of " + m_moduleClass.getSimpleName(), inner);
-                }
+                m_instance = m_moduleClass.getConstructor().newInstance();
+            } catch (final Exception inner) {
+                throw new RuntimeException("Cannot create module instance of " + m_moduleClass.getSimpleName(), inner);
             }
 
             m_instance.setConfig(p_config);

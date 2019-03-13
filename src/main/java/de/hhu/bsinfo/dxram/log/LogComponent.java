@@ -31,6 +31,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -53,10 +54,16 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
         priorityShutdown = DXRAMComponentOrder.Shutdown.LOG)
 public final class LogComponent extends Component<ModuleConfig> {
 
-    // component dependencies
+    @Inject
     private NetworkComponent m_network;
+
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private BackupComponent m_backup;
+
+    @Inject
     private ChunkComponent m_chunk;
 
     // private state

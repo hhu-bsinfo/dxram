@@ -19,6 +19,7 @@ package de.hhu.bsinfo.dxram.nameservice;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -34,7 +35,8 @@ import de.hhu.bsinfo.dxram.engine.ModuleConfig;
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class NameserviceService extends Service<ModuleConfig> {
-    // component dependencies
+
+    @Inject
     private NameserviceComponent m_nameservice;
 
     /**

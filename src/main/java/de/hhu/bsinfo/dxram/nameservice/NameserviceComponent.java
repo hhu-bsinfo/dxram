@@ -27,6 +27,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkIndexComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -45,8 +46,11 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
 @Component.Attributes(priorityInit = DXRAMComponentOrder.Init.NAMESERVICE,
         priorityShutdown = DXRAMComponentOrder.Shutdown.NAMESERVICE)
 public class NameserviceComponent extends Component<NameserviceComponentConfig> {
-    // component dependencies
+
+    @Inject
     private LookupComponent m_lookup;
+
+    @Inject
     private ChunkIndexComponent m_chunkIndex;
 
     private NameServiceStringConverter m_converter;

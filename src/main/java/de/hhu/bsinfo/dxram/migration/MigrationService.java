@@ -44,6 +44,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -73,30 +74,31 @@ public class MigrationService extends Service<MigrationServiceConfig> implements
 
     public static final ThreadFactory THREAD_FACTORY = new MigrationThreadFactory();
 
+    @Inject
+    private BootComponent m_boot;
+
+    @Inject
+    private BackupComponent m_backup;
+
+    @Inject
+    private ChunkMigrationComponent m_chunkMigration;
+
+    @Inject
+    private ChunkComponent m_chunk;
+
+    @Inject
+    private NetworkComponent m_network;
+
+    @Inject
+    private LookupComponent m_lookup;
+
     private ExecutorService m_executor;
-
-    private final BootComponent m_boot;
-    private final BackupComponent m_backup;
-    private final ChunkMigrationComponent m_chunkMigration;
-    private final ChunkComponent m_chunk;
-    private final NetworkComponent m_network;
-    private final LookupComponent m_lookup;
-
     private int m_workerCount = 16;
 
     private final MigrationProgressTracker m_progressTracker = new MigrationProgressTracker();
 
     private static final int SHUTDOWN_TIMEOUT = 5000;
     private static final TimeUnit SHUTDOWN_TIMEUNIT = TimeUnit.MILLISECONDS;
-
-    public MigrationService(final ComponentProvider p_componentProvider) {
-        m_boot = p_componentProvider.getComponent(BootComponent.class);
-        m_backup = p_componentProvider.getComponent(BackupComponent.class);
-        m_chunk = p_componentProvider.getComponent(ChunkComponent.class);
-        m_chunkMigration = p_componentProvider.getComponent(ChunkMigrationComponent.class);
-        m_network = p_componentProvider.getComponent(NetworkComponent.class);
-        m_lookup = p_componentProvider.getComponent(LookupComponent.class);
-    }
 
     public MigrationTicket migrateRange(final long p_from, final long p_to, final short p_target) {
         return migrateRange(p_target, new LongRange(p_from, p_to));
@@ -416,7 +418,8 @@ public class MigrationService extends Service<MigrationServiceConfig> implements
 
     @Override
     protected boolean startService(DXRAMConfig p_config) {
-        m_executor = Executors.newFixedThreadPool(getConfig().getWorkerCount(), THREAD_FACTORY);
+        m_workerCount = getConfig().getWorkerCount();
+        m_executor = Executors.newFixedThreadPool(m_workerCount, THREAD_FACTORY);
         registerMessages();
         return true;
     }

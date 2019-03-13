@@ -12,9 +12,9 @@ if (isDevelop && new File('../dxbuild').exists()) {
     includeBuild('../dxbuild')
 }
 
-if (isDevelop && new File('../dxutils').exists()) {
-    includeBuild '../dxutils'
-}
+//if (isDevelop && new File('../dxutils').exists()) {
+//    includeBuild '../dxutils'
+//}
 
 if (isDevelop && new File('../dxmon').exists()) {
     includeBuild '../dxmon'

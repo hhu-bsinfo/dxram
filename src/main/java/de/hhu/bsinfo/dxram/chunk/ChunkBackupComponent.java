@@ -25,6 +25,7 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -44,9 +45,13 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
         priorityShutdown = DXRAMComponentOrder.Shutdown.BACKUP)
 public class ChunkBackupComponent extends Component<ModuleConfig> {
 
-    // component dependencies
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private ChunkComponent m_chunk;
+
+    @Inject
     private NetworkComponent m_network;
 
     /**

@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -24,10 +25,8 @@ public class ManagementService extends Service<ManagementServiceConfig> {
 
     private final Gson m_gson = new Gson();
 
-    private final MBeanServer m_beanServer = ManagementFactory.getPlatformMBeanServer();
-
+    @Inject
     private BootComponent<ZookeeperBootComponentConfig> m_bootComponent;
-    private ChunkComponent m_chunkComponent;
 
     private ComponentProvider m_componentAccessor;
 
@@ -37,7 +36,6 @@ public class ManagementService extends Service<ManagementServiceConfig> {
     protected void resolveComponentDependencies(ComponentProvider p_componentAccessor) {
         m_componentAccessor = p_componentAccessor;
         m_bootComponent = p_componentAccessor.getComponent(BootComponent.class);
-        m_chunkComponent = p_componentAccessor.getComponent(ChunkComponent.class);
     }
 
     @Override

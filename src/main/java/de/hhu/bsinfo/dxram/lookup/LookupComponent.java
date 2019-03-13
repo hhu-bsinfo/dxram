@@ -28,6 +28,7 @@ import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -69,10 +70,16 @@ public class LookupComponent extends Component<LookupComponentConfig>
         implements EventListener<Event> {
     private static final short ORDER = 10;
 
-    // component dependencies
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private BackupComponent m_backup;
+
+    @Inject
     private EventComponent m_event;
+
+    @Inject
     private NetworkComponent m_network;
 
     private OverlaySuperpeer m_superpeer;

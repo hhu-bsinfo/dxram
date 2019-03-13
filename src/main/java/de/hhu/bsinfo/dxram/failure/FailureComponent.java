@@ -26,6 +26,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -58,10 +59,16 @@ public class FailureComponent extends Component<ModuleConfig>
 
     private static final int EVENT_TIMEOUT = 1000;
 
-    // component dependencies
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private LookupComponent m_lookup;
+
+    @Inject
     private EventComponent m_event;
+
+    @Inject
     private NetworkComponent m_network;
 
     private final byte[] m_nodeStatus = new byte[Short.MAX_VALUE * 2 / 8];

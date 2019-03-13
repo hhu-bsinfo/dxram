@@ -33,6 +33,7 @@ import de.hhu.bsinfo.dxnet.core.messages.Messages;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -54,8 +55,11 @@ import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
         priorityShutdown = DXRAMComponentOrder.Shutdown.NETWORK)
 public class NetworkComponent extends Component<NetworkComponentConfig>
         implements EventListener<NodeFailureEvent>, ConnectionManagerListener {
-    // component dependencies
+
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private EventComponent m_event;
 
     // Attributes

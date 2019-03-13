@@ -22,6 +22,7 @@ import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -47,9 +48,14 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public final class LogService extends Service<ModuleConfig> implements SpecialMessageReceiver {
-    // component dependencies
+
+    @Inject
     private NetworkComponent m_network;
+
+    @Inject
     private LogComponent m_log;
+
+    @Inject
     private ZookeeperBootComponent m_boot;
 
     /**

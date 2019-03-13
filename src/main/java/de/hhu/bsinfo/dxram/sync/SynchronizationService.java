@@ -16,6 +16,7 @@
 
 package de.hhu.bsinfo.dxram.sync;
 
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -31,7 +32,7 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.BarrierStatus;
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class SynchronizationService extends Service<SynchronizationServiceConfig> {
 
-    // component dependencies
+    @Inject
     private LookupComponent m_lookup;
 
     /**

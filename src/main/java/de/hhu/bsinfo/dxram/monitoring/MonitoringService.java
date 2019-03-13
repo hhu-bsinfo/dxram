@@ -21,6 +21,7 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -39,8 +40,13 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 public class MonitoringService extends Service<ModuleConfig> implements MessageReceiver {
     private boolean m_peerIsSuperpeer;
 
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private MonitoringComponent m_monitor;
+
+    @Inject
     private NetworkComponent m_network;
 
     @Override

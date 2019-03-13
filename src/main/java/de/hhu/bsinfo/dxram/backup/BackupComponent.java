@@ -32,6 +32,7 @@ import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.RandomPlacement;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -64,12 +65,22 @@ public class BackupComponent extends Component<BackupComponentConfig>
         implements EventListener<Event> {
     private static final boolean REREPLICATION_ACTIVE = true;
 
-    // component dependencies
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private ChunkBackupComponent m_chunkBackup;
+
+    @Inject
     private LookupComponent m_lookup;
+
+    @Inject
     private LogComponent m_log;
+
+    @Inject
     private EventComponent m_event;
+
+    @Inject
     private NetworkComponent m_network;
 
     // private state

@@ -32,6 +32,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
+import de.hhu.bsinfo.dxram.engine.Inject;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -55,12 +56,23 @@ import de.hhu.bsinfo.dxutils.jni.JNIFileRaw;
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class RecoveryService extends Service<ModuleConfig> implements MessageReceiver {
-    // component dependencies
+
+    @Inject
     private BootComponent m_boot;
+
+    @Inject
     private BackupComponent m_backup;
+
+    @Inject
     private ChunkBackupComponent m_chunkBackup;
+
+    @Inject
     private LogComponent m_log;
+
+    @Inject
     private LookupComponent m_lookup;
+
+    @Inject
     private NetworkComponent m_network;
 
     private String m_backupDirectory;
