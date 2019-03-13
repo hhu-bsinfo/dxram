@@ -69,11 +69,11 @@ import de.hhu.bsinfo.dxutils.NodeID;
  */
 @SuppressWarnings("WeakerAccess")
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
-public class MigrationService extends Service<ModuleConfig> implements MessageReceiver, ChunkMigrator {
+public class MigrationService extends Service<MigrationServiceConfig> implements MessageReceiver, ChunkMigrator {
 
     public static final ThreadFactory THREAD_FACTORY = new MigrationThreadFactory();
 
-    private final ExecutorService m_executor;
+    private ExecutorService m_executor;
 
     private final BootComponent m_boot;
     private final BackupComponent m_backup;
@@ -90,7 +90,6 @@ public class MigrationService extends Service<ModuleConfig> implements MessageRe
     private static final TimeUnit SHUTDOWN_TIMEUNIT = TimeUnit.MILLISECONDS;
 
     public MigrationService(final ComponentProvider p_componentProvider) {
-        m_executor = Executors.newFixedThreadPool(m_workerCount, THREAD_FACTORY);
         m_boot = p_componentProvider.getComponent(BootComponent.class);
         m_backup = p_componentProvider.getComponent(BackupComponent.class);
         m_chunk = p_componentProvider.getComponent(ChunkComponent.class);
@@ -189,6 +188,8 @@ public class MigrationService extends Service<ModuleConfig> implements MessageRe
                 case MigrationMessages.SUBTYPE_MIGRATION_FINISH:
                     handle((MigrationFinish) p_message);
                     break;
+                default:
+                    break;
             }
         });
     }
@@ -251,14 +252,14 @@ public class MigrationService extends Service<ModuleConfig> implements MessageRe
         return Status.SENT;
     }
 
-    public static String readableFileSize(long size) {
-        if (size <= 0) {
+    public static String readableFileSize(long p_size) {
+        if (p_size <= 0) {
             return "0";
         }
 
         final String[] units = new String[] {"B", "kB", "MB", "GB", "TB"};
-        int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
-        return new DecimalFormat("###0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
+        int digitGroups = (int) (Math.log10(p_size) / Math.log10(1024));
+        return new DecimalFormat("###0.#").format(p_size / Math.pow(1024, digitGroups)) + ' ' + units[digitGroups];
     }
 
     private void handle(final MigrationPush p_migrationPush) {
@@ -349,8 +350,7 @@ public class MigrationService extends Service<ModuleConfig> implements MessageRe
      *         The identifier.
      * @return The progress associated with the specified identifier.
      */
-    @Nullable
-    public MigrationProgress getProgress(final MigrationIdentifier p_identifier) {
+    public @Nullable MigrationProgress getProgress(final MigrationIdentifier p_identifier) {
         return m_progressTracker.get(p_identifier);
     }
 
@@ -370,12 +370,11 @@ public class MigrationService extends Service<ModuleConfig> implements MessageRe
      *         The ticket associated with the migration.
      * @return The migration's status or null if an exception occurred.
      */
-    @Nullable
-    public MigrationStatus await(final @NotNull MigrationTicket p_ticket) {
+    public @Nullable MigrationStatus await(final @NotNull MigrationTicket p_ticket) {
         try {
             return p_ticket.getFuture().get();
-        } catch (InterruptedException | ExecutionException p_e) {
-            LOGGER.warn("Waiting on migration failed", p_e);
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.warn("Waiting on migration failed", e);
             return null;
         }
     }
@@ -387,13 +386,12 @@ public class MigrationService extends Service<ModuleConfig> implements MessageRe
      *         The ticket associated with the migration.
      * @return The migration's status or null if an exception occurred or the timeout was reached.
      */
-    @Nullable
-    public MigrationStatus await(final long p_timeout, final @NotNull TimeUnit p_timeUnit,
+    public @Nullable MigrationStatus await(final long p_timeout, final @NotNull TimeUnit p_timeUnit,
             final @NotNull MigrationTicket p_ticket) {
         try {
             return p_ticket.getFuture().get(p_timeout, p_timeUnit);
-        } catch (InterruptedException | ExecutionException | TimeoutException p_e) {
-            LOGGER.warn("Waiting on migration failed", p_e);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            LOGGER.warn("Waiting on migration failed", e);
             return null;
         }
     }
@@ -418,6 +416,7 @@ public class MigrationService extends Service<ModuleConfig> implements MessageRe
 
     @Override
     protected boolean startService(DXRAMConfig p_config) {
+        m_executor = Executors.newFixedThreadPool(getConfig().getWorkerCount(), THREAD_FACTORY);
         registerMessages();
         return true;
     }

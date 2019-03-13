@@ -235,20 +235,15 @@ class ModuleManager {
 
             try {
                 m_instance = m_moduleClass.getConstructor(ComponentProvider.class).newInstance(p_componentProvider);
-            } catch (Exception e) {
-                // ignored
+            } catch (Exception outer) {
+                try {
+                    m_instance = m_moduleClass.getConstructor().newInstance();
+                } catch (final Exception inner) {
+                    throw new RuntimeException("Cannot create module instance of " + m_moduleClass.getSimpleName(), inner);
+                }
             }
 
-            if (m_instance != null) {
-                return m_instance;
-            }
-
-            try {
-                m_instance = m_moduleClass.getConstructor().newInstance();
-                m_instance.setConfig(p_config);
-            } catch (final Exception e) {
-                throw new RuntimeException("Cannot create module instance of " + m_moduleClass.getSimpleName(), e);
-            }
+            m_instance.setConfig(p_config);
 
             return m_instance;
         }
