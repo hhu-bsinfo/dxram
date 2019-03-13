@@ -6,12 +6,12 @@ import lombok.experimental.Accessors;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class ManagementServiceConfig extends DXRAMModuleConfig {
+public class ManagementServiceConfig extends ModuleConfig {
 
     public ManagementServiceConfig() {
         super(ManagementService.class);

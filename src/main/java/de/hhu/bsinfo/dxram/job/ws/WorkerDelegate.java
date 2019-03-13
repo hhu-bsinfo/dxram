@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.job.ws;
 
-import de.hhu.bsinfo.dxram.job.AbstractJob;
+import de.hhu.bsinfo.dxram.job.Job;
 
 /**
  * Delegate for worker to provide some information to the Component via callbacks.
@@ -31,7 +31,7 @@ public interface WorkerDelegate {
      *         Worker trying to steal.
      * @return Job successfully stolen from another worker or null if no jobs available or stealing failed.
      */
-    AbstractJob stealJobLocal(final Worker p_thief);
+    Job stealJobLocal(final Worker p_thief);
 
     /**
      * A job was scheduled for execution by a worker.
@@ -39,7 +39,7 @@ public interface WorkerDelegate {
      * @param p_job
      *         Job which was scheduled.
      */
-    void scheduledJob(final AbstractJob p_job);
+    void scheduledJob(final Job p_job);
 
     /**
      * A job is right before getting executed by a worker.
@@ -47,7 +47,7 @@ public interface WorkerDelegate {
      * @param p_job
      *         Job getting executed.
      */
-    void executingJob(final AbstractJob p_job);
+    void executingJob(final Job p_job);
 
     /**
      * Execution of a job finished by a worker.
@@ -55,5 +55,5 @@ public interface WorkerDelegate {
      * @param p_job
      *         Job that finished execution.
      */
-    void finishedJob(final AbstractJob p_job);
+    void finishedJob(final Job p_job);
 }

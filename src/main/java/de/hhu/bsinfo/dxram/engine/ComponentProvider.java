@@ -21,7 +21,7 @@ package de.hhu.bsinfo.dxram.engine;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public interface DXRAMComponentAccessor {
+public interface ComponentProvider {
 
     /**
      * Get a component from the engine.
@@ -33,5 +33,5 @@ public interface DXRAMComponentAccessor {
      *         interface or abstract class to get the registered instance.
      * @return Reference to the component if available, null otherwise
      */
-    <T extends AbstractDXRAMComponent> T getComponent(Class<T> p_class);
+    <T extends Component> T getComponent(Class<T> p_class);
 }

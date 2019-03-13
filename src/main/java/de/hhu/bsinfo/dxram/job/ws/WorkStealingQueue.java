@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.job.ws;
 
-import de.hhu.bsinfo.dxram.job.AbstractJob;
+import de.hhu.bsinfo.dxram.job.Job;
 
 /**
  * Interface for a work stealing queue.
@@ -38,19 +38,19 @@ public interface WorkStealingQueue {
      *         Job to add to the queue.
      * @return True if adding was successful, false if failed (queue full).
      */
-    boolean push(final AbstractJob p_job);
+    boolean push(final Job p_job);
 
     /**
      * Pop a job from the back of the queue.
      *
      * @return Job from the back of the queue or null if queue empty.
      */
-    AbstractJob pop();
+    Job pop();
 
     /**
      * Steal a job from the front of the queue.
      *
      * @return Job from the front of the queue or null if stealing failed or queue empty.
      */
-    AbstractJob steal();
+    Job steal();
 }

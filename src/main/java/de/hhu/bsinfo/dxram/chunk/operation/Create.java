@@ -10,13 +10,13 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.CreateResponse;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -33,7 +33,7 @@ import de.hhu.bsinfo.dxutils.stats.ValuePool;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
-public class Create extends AbstractOperation implements MessageReceiver {
+public class Create extends Operation implements MessageReceiver {
     private static final ThroughputPool SOP_LOCAL =
             new ThroughputPool(ChunkService.class, "CreateLocal", Value.Base.B_10);
     private static final ThroughputPool SOP_REMOTE =
@@ -71,7 +71,7 @@ public class Create extends AbstractOperation implements MessageReceiver {
      * @param p_nameservice
      *         Instance of NameserviceComponent
      */
-    public Create(final Class<? extends AbstractDXRAMService> p_parentService, final AbstractBootComponent p_boot,
+    public Create(final Class<? extends Service> p_parentService, final BootComponent p_boot,
             final BackupComponent p_backup, final ChunkComponent p_chunk, final NetworkComponent p_network,
             final LookupComponent p_lookup, final NameserviceComponent p_nameservice) {
         super(p_parentService, p_boot, p_backup, p_chunk, p_network, p_lookup, p_nameservice);

@@ -24,14 +24,14 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.messages.DefaultMessage;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
-import de.hhu.bsinfo.dxram.event.AbstractEvent;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
+import de.hhu.bsinfo.dxram.event.Event;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -50,16 +50,16 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.FAILURE,
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.FAILURE,
         priorityShutdown = DXRAMComponentOrder.Shutdown.FAILURE)
-public class FailureComponent extends AbstractDXRAMComponent<DXRAMModuleConfig>
-        implements MessageReceiver, EventListener<AbstractEvent> {
+public class FailureComponent extends Component<ModuleConfig>
+        implements MessageReceiver, EventListener<Event> {
 
     private static final int EVENT_TIMEOUT = 1000;
 
     // component dependencies
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private LookupComponent m_lookup;
     private EventComponent m_event;
     private NetworkComponent m_network;
@@ -71,7 +71,7 @@ public class FailureComponent extends AbstractDXRAMComponent<DXRAMModuleConfig>
     private volatile boolean m_isActive = true;
 
     @Override
-    public void eventTriggered(final AbstractEvent p_event) {
+    public void eventTriggered(final Event p_event) {
         int index;
         int mask;
 
@@ -180,8 +180,8 @@ public class FailureComponent extends AbstractDXRAMComponent<DXRAMModuleConfig>
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);

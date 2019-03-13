@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 
 /**
  * Config for the JobComponent
@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class JobComponentConfig extends DXRAMModuleConfig {
+public class JobComponentConfig extends ModuleConfig {
     private static final int NUM_WORKERS_MAX = 64;
 
     /**

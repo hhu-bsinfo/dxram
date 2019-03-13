@@ -31,7 +31,7 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
@@ -118,7 +118,7 @@ public class OverlayPeer implements MessageReceiver {
     private static final int MSG_TIMEOUT_MS = 100;
 
     // Attributes
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private NetworkComponent m_network;
     private EventComponent m_event;
 
@@ -145,7 +145,7 @@ public class OverlayPeer implements MessageReceiver {
      *         the EventComponent
      */
     public OverlayPeer(final short p_nodeID, final short p_contactSuperpeer, final int p_initialNumberOfSuperpeers,
-            final AbstractBootComponent p_boot, final NetworkComponent p_network, final EventComponent p_event) {
+            final BootComponent p_boot, final NetworkComponent p_network, final EventComponent p_event) {
         m_boot = p_boot;
         m_network = p_network;
         m_event = p_event;

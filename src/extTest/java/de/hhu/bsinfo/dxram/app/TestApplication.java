@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 
-public class TestApplication extends AbstractApplication {
+public class TestApplication extends Application {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TestApplication.class);
 
     @Override

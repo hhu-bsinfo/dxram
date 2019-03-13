@@ -13,7 +13,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 12.11.2018
  */
-public abstract class AbstractDXRAMModule<T> {
+public abstract class Module<T> {
     protected final Logger LOGGER;
 
     private Attributes m_attributes;
@@ -26,7 +26,7 @@ public abstract class AbstractDXRAMModule<T> {
     /**
      * Constructor
      */
-    AbstractDXRAMModule() {
+    Module() {
         LOGGER = LogManager.getFormatterLogger(getClass());
 
         Annotation[] annotations = getClass().getAnnotations();

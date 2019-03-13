@@ -20,7 +20,7 @@ import java.net.InetSocketAddress;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
+import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
@@ -32,7 +32,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-public abstract class AbstractBootComponent<T> extends AbstractDXRAMComponent<T> {
+public abstract class BootComponent<T> extends Component<T> {
     /**
      * Register a node registry listener
      *

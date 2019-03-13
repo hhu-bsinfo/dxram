@@ -2,8 +2,7 @@ package de.hhu.bsinfo.dxram.function;
 
 import java.util.stream.IntStream;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
-import de.hhu.bsinfo.dxram.function.util.ParameterList;
+import de.hhu.bsinfo.dxram.engine.ServiceProvider;
 import de.hhu.bsinfo.dxutils.serialization.Distributable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
@@ -14,7 +13,7 @@ public class IntAdderFunction implements DistributableFunction<IntAdderFunction.
     public static final String NAME = "de.hhu.bsinfo.dxram.intadder";
 
     @Override
-    public Output execute(DXRAMServiceAccessor p_serviceAccessor, Input p_input) {
+    public Output execute(ServiceProvider p_serviceAccessor, Input p_input) {
         int sum = IntStream.of(p_input.get()).sum();
         return new Output(sum);
     }

@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 01.12.2017
  */
-public class RandomPlacement extends AbstractPlacementStrategy {
+public class RandomPlacement extends PlacementStrategy {
     private static final Logger LOGGER = LogManager.getFormatterLogger(RandomPlacement.class);
 
     private Random m_rand;

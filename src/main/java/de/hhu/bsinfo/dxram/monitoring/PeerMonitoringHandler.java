@@ -133,12 +133,12 @@ public class PeerMonitoringHandler extends Thread {
             sysInfos[3] = SystemState.getHostName();
             sysInfos[4] = SystemState.getUserName();
 
-            dxramInfos[0] = MonitoringDXRAMInformation.getBuildUser();
-            dxramInfos[1] = MonitoringDXRAMInformation.getBuildDate();
-            dxramInfos[2] = MonitoringDXRAMInformation.getCommit();
-            dxramInfos[3] = MonitoringDXRAMInformation.getVersion();
-            dxramInfos[4] = MonitoringDXRAMInformation.getBuildType();
-            boolean isPageCacheInUse = MonitoringDXRAMInformation.isPageCacheInUse();
+            dxramInfos[0] = MonitoringInformation.getBuildUser();
+            dxramInfos[1] = MonitoringInformation.getBuildDate();
+            dxramInfos[2] = MonitoringInformation.getCommit();
+            dxramInfos[3] = MonitoringInformation.getVersion();
+            dxramInfos[4] = MonitoringInformation.getBuildType();
+            boolean isPageCacheInUse = MonitoringInformation.isPageCacheInUse();
 
             MonitoringSysInfoMessage message = new MonitoringSysInfoMessage(m_superpeerNid,
                     sysInfos, dxramInfos, isPageCacheInUse);

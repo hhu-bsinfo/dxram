@@ -8,7 +8,7 @@ import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxmem.core.Address;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
 /**
@@ -19,7 +19,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class ChunkComponentConfig extends DXRAMModuleConfig {
+public class ChunkComponentConfig extends ModuleConfig {
     private static final StorageUnit KEY_VALUE_STORE_SIZE_MIN = new StorageUnit(1L, StorageUnit.MB);
     private static final StorageUnit KEY_VALUE_STORE_SIZE_MAX = new StorageUnit((long) Math.pow(2, Address.WIDTH_BITS),
             StorageUnit.BYTE);

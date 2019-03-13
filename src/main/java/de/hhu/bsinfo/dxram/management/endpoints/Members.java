@@ -1,13 +1,12 @@
 package de.hhu.bsinfo.dxram.management.endpoints;
 
 import io.javalin.Context;
-import io.javalin.Handler;
 import io.javalin.apibuilder.EndpointGroup;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
 import de.hhu.bsinfo.dxutils.NodeID;
@@ -20,7 +19,7 @@ public class Members implements EndpointGroup {
 
     private ZookeeperBootComponent m_bootComponent;
 
-    public Members(final AbstractBootComponent p_bootComponent) {
+    public Members(final BootComponent p_bootComponent) {
         m_bootComponent = (ZookeeperBootComponent) p_bootComponent;
     }
 

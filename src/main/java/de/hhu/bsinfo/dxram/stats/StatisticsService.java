@@ -1,8 +1,8 @@
 package de.hhu.bsinfo.dxram.stats;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
 
@@ -11,8 +11,8 @@ import de.hhu.bsinfo.dxutils.stats.StatisticsManager;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 04.04.2017
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-public class StatisticsService extends AbstractDXRAMService<StatisticsServiceConfig> {
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+public class StatisticsService extends Service<StatisticsServiceConfig> {
     private PrinterThread m_printerThread;
 
     /**
@@ -23,7 +23,7 @@ public class StatisticsService extends AbstractDXRAMService<StatisticsServiceCon
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
 
     }
 

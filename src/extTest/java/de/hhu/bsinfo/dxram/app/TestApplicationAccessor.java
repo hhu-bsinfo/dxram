@@ -7,7 +7,7 @@ import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 
-public class TestApplicationAccessor extends AbstractApplication {
+public class TestApplicationAccessor extends Application {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TestApplicationAccessor.class);
 
     @Override

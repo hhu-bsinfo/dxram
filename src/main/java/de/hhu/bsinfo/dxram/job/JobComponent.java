@@ -19,10 +19,10 @@ package de.hhu.bsinfo.dxram.job;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.job.ws.Worker;
@@ -33,19 +33,19 @@ import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.JOB,
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.JOB,
         priorityShutdown = DXRAMComponentOrder.Shutdown.JOB)
-public class JobComponent extends AbstractDXRAMComponent<JobComponentConfig>
+public class JobComponent extends Component<JobComponentConfig>
         implements WorkerDelegate {
     // component dependencies
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
 
     private boolean m_enabled;
     private Worker[] m_workers;
     private AtomicLong m_unfinishedJobs = new AtomicLong(0);
 
-    public boolean pushJob(final AbstractJob p_job) {
+    public boolean pushJob(final Job p_job) {
         if (!m_enabled) {
             LOGGER.warn("Cannot push job, disabled");
             return false;
@@ -97,8 +97,8 @@ public class JobComponent extends AbstractDXRAMComponent<JobComponentConfig>
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
     }
 
     @Override
@@ -158,8 +158,8 @@ public class JobComponent extends AbstractDXRAMComponent<JobComponentConfig>
     }
 
     @Override
-    public AbstractJob stealJobLocal(final Worker p_thief) {
-        AbstractJob job = null;
+    public Job stealJobLocal(final Worker p_thief) {
+        Job job = null;
 
         for (Worker worker : m_workers) {
             // don't steal from own queue
@@ -180,18 +180,18 @@ public class JobComponent extends AbstractDXRAMComponent<JobComponentConfig>
     }
 
     @Override
-    public void scheduledJob(final AbstractJob p_job) {
+    public void scheduledJob(final Job p_job) {
         m_unfinishedJobs.incrementAndGet();
         p_job.notifyListenersJobScheduledForExecution(m_boot.getNodeId());
     }
 
     @Override
-    public void executingJob(final AbstractJob p_job) {
+    public void executingJob(final Job p_job) {
         p_job.notifyListenersJobStartsExecution(m_boot.getNodeId());
     }
 
     @Override
-    public void finishedJob(final AbstractJob p_job) {
+    public void finishedJob(final Job p_job) {
         m_unfinishedJobs.decrementAndGet();
         p_job.notifyListenersJobFinishedExecution(m_boot.getNodeId());
     }

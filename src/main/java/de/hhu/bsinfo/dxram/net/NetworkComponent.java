@@ -31,10 +31,10 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxnet.core.messages.Messages;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -49,13 +49,13 @@ import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.NETWORK,
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.NETWORK,
         priorityShutdown = DXRAMComponentOrder.Shutdown.NETWORK)
-public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentConfig>
+public class NetworkComponent extends Component<NetworkComponentConfig>
         implements EventListener<NodeFailureEvent>, ConnectionManagerListener {
     // component dependencies
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private EventComponent m_event;
 
     // Attributes
@@ -268,8 +268,8 @@ public class NetworkComponent extends AbstractDXRAMComponent<NetworkComponentCon
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
     }
 

@@ -19,7 +19,7 @@ package de.hhu.bsinfo.dxram.job.ws;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import de.hhu.bsinfo.dxram.job.AbstractJob;
+import de.hhu.bsinfo.dxram.job.Job;
 
 /**
  * Work stealing queue implementation using Java's ConcurrentLinkedDeque
@@ -30,7 +30,7 @@ public class WorkStealingQueueConcurrentDeque implements WorkStealingQueue {
     // keeping track of the queue size because the size
     // call on the queue yields the worst performance possible
     private AtomicInteger m_queueCount = new AtomicInteger(0);
-    private ConcurrentLinkedDeque<AbstractJob> m_queue = new ConcurrentLinkedDeque<AbstractJob>();
+    private ConcurrentLinkedDeque<Job> m_queue = new ConcurrentLinkedDeque<Job>();
 
     /**
      * Constructor
@@ -47,15 +47,15 @@ public class WorkStealingQueueConcurrentDeque implements WorkStealingQueue {
     }
 
     @Override
-    public boolean push(final AbstractJob p_job) {
+    public boolean push(final Job p_job) {
         // queue always returns true
         m_queueCount.incrementAndGet();
         return m_queue.add(p_job);
     }
 
     @Override
-    public AbstractJob pop() {
-        AbstractJob job = m_queue.pollLast();
+    public Job pop() {
+        Job job = m_queue.pollLast();
         if (job != null) {
             m_queueCount.decrementAndGet();
         }
@@ -63,8 +63,8 @@ public class WorkStealingQueueConcurrentDeque implements WorkStealingQueue {
     }
 
     @Override
-    public AbstractJob steal() {
-        AbstractJob job = m_queue.pollFirst();
+    public Job steal() {
+        Job job = m_queue.pollFirst();
         if (job != null) {
             m_queueCount.decrementAndGet();
         }

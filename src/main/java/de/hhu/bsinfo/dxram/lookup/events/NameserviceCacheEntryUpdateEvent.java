@@ -16,14 +16,14 @@
 
 package de.hhu.bsinfo.dxram.lookup.events;
 
-import de.hhu.bsinfo.dxram.event.AbstractEvent;
+import de.hhu.bsinfo.dxram.event.Event;
 
 /**
  * This event is fired when an existing nameservice entry is updated.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 19.04.2016
  */
-public class NameserviceCacheEntryUpdateEvent extends AbstractEvent {
+public class NameserviceCacheEntryUpdateEvent extends Event {
 
     private int m_id;
     private long m_chunkID;

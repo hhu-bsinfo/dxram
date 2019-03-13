@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
 /**
@@ -18,7 +18,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class TemporaryStorageServiceConfig extends DXRAMModuleConfig {
+public class TemporaryStorageServiceConfig extends ModuleConfig {
     private static final int STORAGE_MAX_NUM_ENTRIES_MAX = 100000;
     private static final StorageUnit STORAGE_MAX_SIZE_MAX = new StorageUnit(1, StorageUnit.GB);
 

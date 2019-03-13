@@ -25,12 +25,12 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.log.messages.LogMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
@@ -39,10 +39,10 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.CHUNK,
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.CHUNK,
         priorityShutdown = DXRAMComponentOrder.Shutdown.CHUNK)
-public class ChunkMigrationComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
+public class ChunkMigrationComponent extends Component<ModuleConfig> {
     // component dependencies
     private BackupComponent m_backup;
     private ChunkComponent m_chunk;
@@ -92,7 +92,7 @@ public class ChunkMigrationComponent extends AbstractDXRAMComponent<DXRAMModuleC
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);

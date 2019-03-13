@@ -23,7 +23,7 @@ package de.hhu.bsinfo.dxram.event;
  *         Event to listen to.
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public interface EventListener<T extends AbstractEvent> {
+public interface EventListener<T extends Event> {
     /**
      * Called by the event system if the specified event was fired.
      *

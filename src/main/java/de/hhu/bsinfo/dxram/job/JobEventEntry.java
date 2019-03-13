@@ -7,7 +7,7 @@ package de.hhu.bsinfo.dxram.job;
  */
 public class JobEventEntry {
     private byte m_eventId;
-    private AbstractJob m_job;
+    private Job m_job;
 
     /**
      * Constructor
@@ -17,7 +17,7 @@ public class JobEventEntry {
      * @param p_job
      *         Job to connect to the event id
      */
-    public JobEventEntry(final byte p_eventId, final AbstractJob p_job) {
+    public JobEventEntry(final byte p_eventId, final Job p_job) {
         m_eventId = p_eventId;
         m_job = p_job;
     }
@@ -36,7 +36,7 @@ public class JobEventEntry {
      *
      * @return Job
      */
-    public AbstractJob getJob() {
+    public Job getJob() {
         return m_job;
     }
 }

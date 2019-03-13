@@ -8,12 +8,12 @@ import java.util.HashMap;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 
 /**
@@ -21,13 +21,13 @@ import de.hhu.bsinfo.dxram.plugin.PluginComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.APPLICATION,
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.APPLICATION,
         priorityShutdown = DXRAMComponentOrder.Shutdown.APPLICATION)
-public class ApplicationComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
+public class ApplicationComponent extends Component<ModuleConfig> {
     private PluginComponent m_plugin;
 
-    private final HashMap<String, Class<? extends AbstractApplication>> m_applicationClasses = new HashMap<>();
+    private final HashMap<String, Class<? extends Application>> m_applicationClasses = new HashMap<>();
     private ApplicationRunner m_runner;
 
     private static final String NO_APP = "";
@@ -85,7 +85,7 @@ public class ApplicationComponent extends AbstractDXRAMComponent<DXRAMModuleConf
      * @param p_class
      *         Application class to register
      */
-    public void registerApplicationClass(final Class<? extends AbstractApplication> p_class) {
+    public void registerApplicationClass(final Class<? extends Application> p_class) {
         m_applicationClasses.put(p_class.getName(), p_class);
     }
 
@@ -97,14 +97,14 @@ public class ApplicationComponent extends AbstractDXRAMComponent<DXRAMModuleConf
 
         m_plugin.add(pluginPath);
 
-        List<Class<? extends AbstractApplication>> applicationClasses = m_plugin.getAllSubClasses(
-                AbstractApplication.class, p_archiveName);
+        List<Class<? extends Application>> applicationClasses = m_plugin.getAllSubClasses(
+                Application.class, p_archiveName);
 
         if (applicationClasses.isEmpty()) {
             return NO_APP;
         }
 
-        Class<? extends AbstractApplication> applicationClass = applicationClasses.get(0);
+        Class<? extends Application> applicationClass = applicationClasses.get(0);
 
         registerApplicationClass(applicationClass);
 
@@ -112,16 +112,16 @@ public class ApplicationComponent extends AbstractDXRAMComponent<DXRAMModuleConf
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_plugin = p_componentAccessor.getComponent(PluginComponent.class);
     }
 
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
-        List<Class<? extends AbstractApplication>> applicationClasses = m_plugin.getAllSubClasses(
-                AbstractApplication.class);
+        List<Class<? extends Application>> applicationClasses = m_plugin.getAllSubClasses(
+                Application.class);
 
-        for (Class<? extends AbstractApplication> clazz : applicationClasses) {
+        for (Class<? extends Application> clazz : applicationClasses) {
             m_applicationClasses.put(clazz.getName(), clazz);
         }
 

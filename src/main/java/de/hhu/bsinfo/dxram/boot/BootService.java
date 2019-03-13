@@ -27,11 +27,11 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.boot.messages.ShutdownMessage;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
@@ -43,10 +43,10 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-public class BootService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+public class BootService extends Service<ModuleConfig> implements MessageReceiver {
     // component dependencies
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private NetworkComponent m_network;
 
     /**
@@ -275,8 +275,8 @@ public class BootService extends AbstractDXRAMService<DXRAMModuleConfig> impleme
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 

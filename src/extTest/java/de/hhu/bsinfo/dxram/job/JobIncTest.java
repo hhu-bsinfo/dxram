@@ -5,7 +5,7 @@ package de.hhu.bsinfo.dxram.job;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class JobIncTest extends AbstractJob {
+public class JobIncTest extends Job {
     private int m_value;
 
     public JobIncTest() {

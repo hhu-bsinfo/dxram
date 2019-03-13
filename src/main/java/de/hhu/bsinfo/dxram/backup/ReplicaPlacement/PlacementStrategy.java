@@ -15,8 +15,8 @@ import de.hhu.bsinfo.dxram.backup.BackupRange;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 01.12.2017
  */
-public abstract class AbstractPlacementStrategy {
-    private static final Logger LOGGER = LogManager.getFormatterLogger(AbstractPlacementStrategy.class);
+public abstract class PlacementStrategy {
+    private static final Logger LOGGER = LogManager.getFormatterLogger(PlacementStrategy.class);
 
     int m_replicationFactor;
 
@@ -26,7 +26,7 @@ public abstract class AbstractPlacementStrategy {
     boolean m_rackAware;
     boolean m_switchAware;
 
-    AbstractPlacementStrategy(final int p_replicationFactor, final boolean p_disjunctiveFirstBackupPeer,
+    PlacementStrategy(final int p_replicationFactor, final boolean p_disjunctiveFirstBackupPeer,
             final boolean p_rackAware, final boolean p_switchAware) {
         m_replicationFactor = p_replicationFactor;
 

@@ -23,12 +23,12 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.NULL,
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.NULL,
         priorityShutdown = DXRAMComponentOrder.Shutdown.NULL)
-public class NullComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
+public class NullComponent extends Component<ModuleConfig> {
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         // no dependencies
     }
 

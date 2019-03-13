@@ -14,11 +14,11 @@
 package de.hhu.bsinfo.dxram.chunk.operation;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkLocalService;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -30,7 +30,7 @@ import de.hhu.bsinfo.dxutils.stats.Value;
  * @author Ruslan Curbanov, ruslan.curbanov@uni-duesseldorf.de, 19.02.2019
  *
  */
-public class RawReadLocal extends AbstractOperation {
+public class RawReadLocal extends Operation {
 
     private static final ThroughputPool SOP_RAW_READ_BYTES =
             new ThroughputPool(ChunkLocalService.class, "RawReadBytes", Value.Base.B_10);
@@ -58,8 +58,8 @@ public class RawReadLocal extends AbstractOperation {
      *         Instance of NameserviceComponent
      */
     public RawReadLocal(
-            final Class<? extends AbstractDXRAMService<? extends DXRAMModuleConfig>> p_parentService,
-            final AbstractBootComponent<?> p_boot,
+            final Class<? extends Service<? extends ModuleConfig>> p_parentService,
+            final BootComponent<?> p_boot,
             final BackupComponent p_backup,
             final ChunkComponent p_chunk,
             final NetworkComponent p_network,

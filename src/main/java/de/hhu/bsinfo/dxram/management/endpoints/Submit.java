@@ -7,7 +7,6 @@ import io.javalin.core.util.FileUtil;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -17,13 +16,11 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationSubmitMessage;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxram.plugin.PluginComponent;
-import de.hhu.bsinfo.dxram.util.NodeCapabilities;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
 
@@ -42,8 +39,8 @@ public class Submit implements EndpointGroup {
 
     private static final String QUERY_ARGS = "args";
 
-    public Submit(final DXRAMComponentAccessor p_accessor) {
-        m_boot = (ZookeeperBootComponent) p_accessor.getComponent(AbstractBootComponent.class);
+    public Submit(final ComponentProvider p_accessor) {
+        m_boot = (ZookeeperBootComponent) p_accessor.getComponent(BootComponent.class);
         m_app = p_accessor.getComponent(ApplicationComponent.class);
         m_network = p_accessor.getComponent(NetworkComponent.class);
     }

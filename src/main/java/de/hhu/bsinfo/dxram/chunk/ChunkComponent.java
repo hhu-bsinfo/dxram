@@ -18,10 +18,10 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxmem.DXMem;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 
@@ -30,12 +30,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.CHUNK,
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.CHUNK,
         priorityShutdown = DXRAMComponentOrder.Shutdown.CHUNK)
-public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig> {
+public class ChunkComponent extends Component<ChunkComponentConfig> {
     // component dependencies
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
 
     private DXMem m_memory;
 
@@ -62,8 +62,8 @@ public class ChunkComponent extends AbstractDXRAMComponent<ChunkComponentConfig>
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
     }
 
     @Override

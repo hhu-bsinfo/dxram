@@ -20,7 +20,7 @@ package de.hhu.bsinfo.dxram.monitoring;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
-public class MonitoringDXRAMInformation {
+public class MonitoringInformation {
     private static String ms_buildDate;
     private static String ms_buildUser;
     private static String ms_buildType;
@@ -97,7 +97,7 @@ public class MonitoringDXRAMInformation {
     /**
      * Private construcotr
      */
-    private MonitoringDXRAMInformation() {
+    private MonitoringInformation() {
     }
 }
 

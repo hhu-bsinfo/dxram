@@ -29,12 +29,12 @@ import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.job.event.JobEventListener;
 import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.dxram.job.messages.JobEventTriggeredMessage;
@@ -58,8 +58,8 @@ import de.hhu.bsinfo.dxutils.stats.TimePool;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver, JobEventListener {
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class JobService extends Service<ModuleConfig> implements MessageReceiver, JobEventListener {
     private static final TimePool SOP_CREATE = new TimePool(JobService.class, "Submit");
     private static final TimePool SOP_REMOTE_SUBMIT = new TimePool(JobService.class, "RemoteSubmit");
     private static final TimePool SOP_INCOMING_SUBMIT = new TimePool(JobService.class, "IncomingSubmit");
@@ -71,7 +71,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
     }
 
     // depdendent components
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private JobComponent m_job;
     private NetworkComponent m_network;
     private PluginComponent m_plugin;
@@ -89,7 +89,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
      *         Arguments to provide to the task object
      * @return A task instance
      */
-    public AbstractJob createJobInstance(final String p_jobName, final Object... p_args) {
+    public Job createJobInstance(final String p_jobName, final Object... p_args) {
         Class<?> clazz;
 
         try {
@@ -99,21 +99,21 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
             return null;
         }
 
-        if (!clazz.getSuperclass().equals(AbstractJob.class)) {
-            LOGGER.error("Class '%s' does not extend the AbstractJob class");
+        if (!clazz.getSuperclass().equals(Job.class)) {
+            LOGGER.error("Class '%s' does not extend the Job class");
             return null;
         }
 
         for (Constructor constructor : clazz.getConstructors()) {
 
             try {
-                return (AbstractJob) constructor.newInstance(p_args);
+                return (Job) constructor.newInstance(p_args);
             } catch (final SecurityException | InstantiationException | IllegalAccessException |
                     IllegalArgumentException | InvocationTargetException e) {
             }
         }
 
-        LOGGER.error("Cannot create instance of AbstractJob '%s'", p_jobName);
+        LOGGER.error("Cannot create instance of Job '%s'", p_jobName);
         return null;
     }
 
@@ -124,7 +124,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
      *         Job to be scheduled for execution.
      * @return True if scheduling was successful, false otherwise.
      */
-    public long pushJob(final AbstractJob p_job) {
+    public long pushJob(final Job p_job) {
         SOP_CREATE.start();
 
         long jobId = JobID.createJobID(m_boot.getNodeId(), m_jobIDCounter.incrementAndGet());
@@ -153,7 +153,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
      *         ID of the node to schedule the job on.
      * @return Valid job ID assigned to the submitted job, false otherwise.
      */
-    public long pushJobRemote(final AbstractJob p_job, final short p_nodeID) {
+    public long pushJobRemote(final Job p_job, final short p_nodeID) {
         SOP_REMOTE_SUBMIT.start();
 
         long jobId = JobID.createJobID(m_boot.getNodeId(), m_jobIDCounter.incrementAndGet());
@@ -290,8 +290,8 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
     // --------------------------------------------------------------------------------------------
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_job = p_componentAccessor.getComponent(JobComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_plugin = p_componentAccessor.getComponent(PluginComponent.class);
@@ -416,7 +416,7 @@ public class JobService extends AbstractDXRAMService<DXRAMModuleConfig> implemen
     private void incomingPushJobQueueMessage(final PushJobQueueMessage p_request) {
         SOP_INCOMING_SUBMIT.start();
 
-        AbstractJob job = createJobInstance(p_request.getJobName());
+        Job job = createJobInstance(p_request.getJobName());
         ByteBuffer buffer = ByteBuffer.wrap(p_request.getJobBlob());
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         ByteBufferImExporter importer = new ByteBufferImExporter(buffer);

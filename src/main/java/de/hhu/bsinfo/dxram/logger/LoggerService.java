@@ -26,12 +26,12 @@ import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.logger.messages.LoggerMessages;
 import de.hhu.bsinfo.dxram.logger.messages.SetLogLevelMessage;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -41,11 +41,11 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 02.02.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-public class LoggerService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+public class LoggerService extends Service<ModuleConfig> implements MessageReceiver {
     // component dependencies
     private NetworkComponent m_network;
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
 
     /**
      * Set the log level for the logger.
@@ -114,9 +114,9 @@ public class LoggerService extends AbstractDXRAMService<DXRAMModuleConfig> imple
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
     }
 
     @Override

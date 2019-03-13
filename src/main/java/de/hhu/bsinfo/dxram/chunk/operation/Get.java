@@ -13,7 +13,7 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
@@ -21,7 +21,7 @@ import de.hhu.bsinfo.dxram.chunk.messages.GetMultiRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetMultiResponse;
 import de.hhu.bsinfo.dxram.chunk.messages.GetRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.GetResponse;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
@@ -40,7 +40,7 @@ import de.hhu.bsinfo.dxutils.stats.ValuePool;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
-public class Get extends AbstractOperation implements MessageReceiver {
+public class Get extends Operation implements MessageReceiver {
     private static final ThroughputPool SOP_DEFAULT = new ThroughputPool(ChunkService.class, "Get", Value.Base.B_10);
     private static final ThroughputPool SOP_MULTI =
             new ThroughputPool(ChunkService.class, "GetMulti", Value.Base.B_10);
@@ -89,8 +89,8 @@ public class Get extends AbstractOperation implements MessageReceiver {
      * @param p_nameservice
      *         Instance of NameserviceComponent
      */
-    public Get(final Class<? extends AbstractDXRAMService> p_parentService,
-            final AbstractBootComponent p_boot, final BackupComponent p_backup, final ChunkComponent p_chunk,
+    public Get(final Class<? extends Service> p_parentService,
+            final BootComponent p_boot, final BackupComponent p_backup, final ChunkComponent p_chunk,
             final NetworkComponent p_network, final LookupComponent p_lookup,
             final NameserviceComponent p_nameservice) {
         super(p_parentService, p_boot, p_backup, p_chunk, p_network, p_lookup, p_nameservice);

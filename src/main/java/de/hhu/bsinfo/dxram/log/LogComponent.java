@@ -28,14 +28,14 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitRecoveredBackupRangeRequest;
@@ -48,14 +48,14 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.LOG,
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.LOG,
         priorityShutdown = DXRAMComponentOrder.Shutdown.LOG)
-public final class LogComponent extends AbstractDXRAMComponent<DXRAMModuleConfig> {
+public final class LogComponent extends Component<ModuleConfig> {
 
     // component dependencies
     private NetworkComponent m_network;
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private BackupComponent m_backup;
     private ChunkComponent m_chunk;
 
@@ -226,9 +226,9 @@ public final class LogComponent extends AbstractDXRAMComponent<DXRAMModuleConfig
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
     }

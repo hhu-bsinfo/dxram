@@ -25,11 +25,11 @@ import javax.management.MBeanServer;
 
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -47,15 +47,15 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.MONITORING,
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.MONITORING,
         priorityShutdown = DXRAMComponentOrder.Shutdown.MONITORING)
-public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringComponentConfig> {
+public class MonitoringComponent extends Component<MonitoringComponentConfig> {
     private PeerMonitoringHandler m_peerHandler;
     private PeerDXRAMMonitoringHandler m_dxramPeerHandler;
     private SuperpeerMonitoringHandler m_superpeerHandler;
 
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private NetworkComponent m_network;
     private LookupComponent m_lookup;
     private EventComponent m_event;
@@ -73,8 +73,8 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
@@ -148,7 +148,7 @@ public class MonitoringComponent extends AbstractDXRAMComponent<MonitoringCompon
             String commit = BuildConfig.GIT_COMMIT;
             String version = BuildConfig.DXRAM_VERSION.toString();
 
-            MonitoringDXRAMInformation.setValues(buildDate, buildUser, buildType, version, commit, isPageCacheInUse);
+            MonitoringInformation.setValues(buildDate, buildUser, buildType, version, commit, isPageCacheInUse);
 
             short numberOfCollects = componentConfig.getCollectsPerWindow();
 

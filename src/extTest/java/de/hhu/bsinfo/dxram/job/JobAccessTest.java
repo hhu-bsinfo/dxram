@@ -8,7 +8,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class JobAccessTest extends AbstractJob {
+public class JobAccessTest extends Job {
     private short m_nodeId;
 
     /**

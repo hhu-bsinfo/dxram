@@ -20,11 +20,11 @@ import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.Request;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 
 /**
  * Service to access the backend network service for sending messages
@@ -32,8 +32,8 @@ import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-public class NetworkService extends AbstractDXRAMService<DXRAMModuleConfig> {
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class NetworkService extends Service<ModuleConfig> {
     // component dependencies
     private NetworkComponent m_network;
 
@@ -104,7 +104,7 @@ public class NetworkService extends AbstractDXRAMService<DXRAMModuleConfig> {
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 

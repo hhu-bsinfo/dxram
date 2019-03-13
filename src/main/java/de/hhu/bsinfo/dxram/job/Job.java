@@ -16,24 +16,16 @@
 
 package de.hhu.bsinfo.dxram.job;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ServiceProvider;
 import de.hhu.bsinfo.dxram.job.event.JobEventListener;
 import de.hhu.bsinfo.dxram.job.event.JobEvents;
 import de.hhu.bsinfo.dxutils.serialization.Exportable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importable;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
-import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * Base class for an job that can be executed by the
@@ -44,7 +36,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public abstract class AbstractJob implements Importable, Exportable {
+public abstract class Job implements Importable, Exportable {
     private long m_id = JobID.INVALID_ID;
 
     // allow the job system to access the listeners
@@ -52,12 +44,12 @@ public abstract class AbstractJob implements Importable, Exportable {
 
     // nasty, but the only way to get access to services/the API for
     // external/user code
-    private DXRAMServiceAccessor m_serviceAccessor;
+    private ServiceProvider m_serviceAccessor;
 
     /**
      * Constructor.
      */
-    public AbstractJob() {
+    public Job() {
 
     }
 
@@ -127,7 +119,7 @@ public abstract class AbstractJob implements Importable, Exportable {
      * @param p_serviceAccessor
      *         Service accessor to set.
      */
-    void setServiceAccessor(final DXRAMServiceAccessor p_serviceAccessor) {
+    void setServiceAccessor(final ServiceProvider p_serviceAccessor) {
         m_serviceAccessor = p_serviceAccessor;
     }
 
@@ -188,7 +180,7 @@ public abstract class AbstractJob implements Importable, Exportable {
      *         or abstract class to get the registered instance.
      * @return Reference to the service if available and enabled, null otherwise.
      */
-    protected <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
+    protected <T extends Service> T getService(final Class<T> p_class) {
         if (m_serviceAccessor != null) {
             return m_serviceAccessor.getService(p_class);
         } else {

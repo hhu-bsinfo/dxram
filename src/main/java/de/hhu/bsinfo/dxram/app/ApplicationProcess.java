@@ -24,12 +24,12 @@ import org.jetbrains.annotations.NotNull;
 public class ApplicationProcess {
 
     private final int m_id;
-    private final AbstractApplication m_application;
+    private final Application m_application;
     private final long m_startTime;
 
     private static final String ARGS_DELIMITER = " ";
 
-    public ApplicationProcess(final int p_id, final @NotNull AbstractApplication p_application) {
+    public ApplicationProcess(final int p_id, final @NotNull Application p_application) {
         m_id = p_id;
         m_application = p_application;
         m_startTime = System.currentTimeMillis();

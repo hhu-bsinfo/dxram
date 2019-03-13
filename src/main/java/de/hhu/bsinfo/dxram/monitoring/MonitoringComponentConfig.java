@@ -20,14 +20,13 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
-import java.io.File;
 import java.io.IOException;
 
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxutils.OSValidator;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
@@ -39,7 +38,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class MonitoringComponentConfig extends DXRAMModuleConfig {
+public class MonitoringComponentConfig extends ModuleConfig {
     /**
      * Returns true if monitoring is active.
      */

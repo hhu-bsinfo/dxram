@@ -1,6 +1,5 @@
 package de.hhu.bsinfo.dxram.app;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -13,10 +12,10 @@ import de.hhu.bsinfo.dxram.app.messages.ApplicationMessages;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationStartRequest;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationStartResponse;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationSubmitMessage;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 
@@ -26,11 +25,11 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  * @author Filip Krakowski, Filip.Krakowski@Uni-Duesseldorf.de, 22.08.2018
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-public class ApplicationService extends AbstractDXRAMService<ApplicationServiceConfig> implements MessageReceiver {
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class ApplicationService extends Service<ApplicationServiceConfig> implements MessageReceiver {
     // component dependencies
     private ApplicationComponent m_appComponent;
-    private AbstractBootComponent m_bootComponent;
+    private BootComponent m_bootComponent;
     private NetworkComponent m_networkComponent;
 
     private static final String ARG_SEPERATOR = "@";
@@ -127,7 +126,7 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
      * @param p_class
      *         Application class to register
      */
-    public void registerApplicationClass(final Class<? extends AbstractApplication> p_class) {
+    public void registerApplicationClass(final Class<? extends Application> p_class) {
         m_appComponent.registerApplicationClass(p_class);
     }
 
@@ -154,9 +153,9 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_appComponent = p_componentAccessor.getComponent(ApplicationComponent.class);
-        m_bootComponent = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_bootComponent = p_componentAccessor.getComponent(BootComponent.class);
         m_networkComponent = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
@@ -213,7 +212,7 @@ public class ApplicationService extends AbstractDXRAMService<ApplicationServiceC
         String applicationName = m_appComponent.addApplication(archiveName);
 
         if (applicationName.isEmpty()) {
-            LOGGER.warn("No subclass of AbstractApplication found within %s", archiveName);
+            LOGGER.warn("No subclass of Application found within %s", archiveName);
             return;
         }
 

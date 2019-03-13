@@ -26,17 +26,17 @@ import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.AbstractPlacementStrategy;
+import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.PlacementStrategy;
 import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.CopysetPlacement;
 import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.RandomPlacement;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.event.AbstractEvent;
+import de.hhu.bsinfo.dxram.event.Event;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -57,15 +57,15 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.BACKUP,
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.BACKUP,
         priorityShutdown = DXRAMComponentOrder.Shutdown.BACKUP)
-public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfig>
-        implements EventListener<AbstractEvent> {
+public class BackupComponent extends Component<BackupComponentConfig>
+        implements EventListener<Event> {
     private static final boolean REREPLICATION_ACTIVE = true;
 
     // component dependencies
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private ChunkBackupComponent m_chunkBackup;
     private LookupComponent m_lookup;
     private LogComponent m_log;
@@ -73,7 +73,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     private NetworkComponent m_network;
 
     // private state
-    private AbstractPlacementStrategy m_placementStrategy;
+    private PlacementStrategy m_placementStrategy;
     private short m_nodeID;
     private long m_currentLocalID = -1;
 
@@ -402,7 +402,7 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     }
 
     @Override
-    public void eventTriggered(final AbstractEvent p_event) {
+    public void eventTriggered(final Event p_event) {
         BackupPeer currentBackupPeer;
         BackupPeer newBackupPeer;
         short rangeID;
@@ -502,8 +502,8 @@ public class BackupComponent extends AbstractDXRAMComponent<BackupComponentConfi
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_chunkBackup = p_componentAccessor.getComponent(ChunkBackupComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_log = p_componentAccessor.getComponent(LogComponent.class);

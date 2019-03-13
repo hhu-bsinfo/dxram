@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 
 import de.hhu.bsinfo.dxram.job.JobComponent;
 import de.hhu.bsinfo.dxram.job.JobComponentConfig;
-import de.hhu.bsinfo.dxram.ms.MasterSlaveComputeServiceConfig;
 import de.hhu.bsinfo.dxutils.Poller;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -49,8 +48,8 @@ import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.util.NodeCapabilities;
@@ -64,10 +63,10 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.BOOT,
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.BOOT,
         priorityShutdown = DXRAMComponentOrder.Shutdown.BOOT)
-public class ZookeeperBootComponent extends AbstractBootComponent<ZookeeperBootComponentConfig> {
+public class ZookeeperBootComponent extends BootComponent<ZookeeperBootComponentConfig> {
 
     /**
      * This node's unique id.

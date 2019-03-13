@@ -33,10 +33,10 @@ import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.ms.messages.GetMasterStatusRequest;
@@ -62,13 +62,13 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 22.04.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveComputeServiceConfig>
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class MasterSlaveComputeService extends Service<MasterSlaveComputeServiceConfig>
         implements MessageReceiver, TaskListener {
     // component dependencies
     private NetworkComponent m_network;
     private NameserviceComponent m_nameservice;
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private LookupComponent m_lookup;
     private PluginComponent m_plugin;
 
@@ -399,10 +399,10 @@ public class MasterSlaveComputeService extends AbstractDXRAMService<MasterSlaveC
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_plugin = p_componentAccessor.getComponent(PluginComponent.class);
     }

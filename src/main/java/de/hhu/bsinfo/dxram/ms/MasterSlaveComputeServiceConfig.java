@@ -9,7 +9,7 @@ import java.util.Objects;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class MasterSlaveComputeServiceConfig extends DXRAMModuleConfig {
+public class MasterSlaveComputeServiceConfig extends ModuleConfig {
     private static final TimeUnit PING_INTERVAL_MIN = new TimeUnit(100, TimeUnit.MS);
     private static final TimeUnit PING_INTERVAL_MAX = new TimeUnit(10, TimeUnit.SEC);
 

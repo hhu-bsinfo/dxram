@@ -16,15 +16,9 @@
 
 package de.hhu.bsinfo.dxram.migration;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
-import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.Arrays;
-import java.util.stream.LongStream;
 
 import static org.junit.Assert.*;
 
@@ -33,7 +27,7 @@ public class MigrationManagerTest {
 
     @Test
     public void partition() {
-        long[] partitions = MigrationManager.partition(50, 100, 16);
+        long[] partitions = MigrationService.partition(50, 100, 16);
 
         assertEquals(16 * 2, partitions.length);
 

@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 
 /**
@@ -18,7 +18,7 @@ import de.hhu.bsinfo.dxutils.unit.TimeUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class LookupComponentConfig extends DXRAMModuleConfig {
+public class LookupComponentConfig extends ModuleConfig {
     /**
      * Set to enable client-side lookup caching.
      */

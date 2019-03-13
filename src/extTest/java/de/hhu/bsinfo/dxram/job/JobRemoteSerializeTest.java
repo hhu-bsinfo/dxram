@@ -11,7 +11,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 05.02.2019
  */
-public class JobRemoteSerializeTest extends AbstractJob {
+public class JobRemoteSerializeTest extends Job {
     private static final int VAL1 = 4321;
     private static long VAL2 = 88282828282L;
     private static final byte VAL3 = 123;

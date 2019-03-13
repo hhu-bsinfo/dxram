@@ -19,7 +19,7 @@ package de.hhu.bsinfo.dxram.job.ws;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.job.AbstractJob;
+import de.hhu.bsinfo.dxram.job.Job;
 
 /**
  * Worker thread executing jobs using a work stealing approach.
@@ -70,7 +70,7 @@ public class Worker extends Thread {
      *
      * @return Job stolen or null if nothing to steal or stealing failed.
      */
-    public AbstractJob stealJob() {
+    public Job stealJob() {
         return m_queue.steal();
     }
 
@@ -81,7 +81,7 @@ public class Worker extends Thread {
      *         Job to push to queue.
      * @return True if pushing job was successful, false if it failed (queue full).
      */
-    public boolean pushJob(final AbstractJob p_job) {
+    public boolean pushJob(final Job p_job) {
         m_workerDelegate.scheduledJob(p_job);
         return m_queue.push(p_job);
     }
@@ -136,7 +136,7 @@ public class Worker extends Thread {
         m_running = true;
 
         while (true) {
-            AbstractJob job;
+            Job job;
 
             job = m_queue.pop();
             if (job != null) {

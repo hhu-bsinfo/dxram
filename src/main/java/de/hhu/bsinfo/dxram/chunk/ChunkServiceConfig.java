@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 
 /**
  * Config for the ChunkService
@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class ChunkServiceConfig extends DXRAMModuleConfig {
+public class ChunkServiceConfig extends ModuleConfig {
     /**
      * Size of the queue that stores the remove requests to be processed asynchronously
      */

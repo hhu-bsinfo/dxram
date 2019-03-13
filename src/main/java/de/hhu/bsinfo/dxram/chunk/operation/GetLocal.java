@@ -3,10 +3,10 @@ package de.hhu.bsinfo.dxram.chunk.operation;
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkLockOperation;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkLocalService;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxutils.stats.ValuePool;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
-public class GetLocal extends AbstractOperation {
+public class GetLocal extends Operation {
     private static final ThroughputPool SOP_GET =
             new ThroughputPool(ChunkLocalService.class, "Get", Value.Base.B_10);
 
@@ -49,8 +49,8 @@ public class GetLocal extends AbstractOperation {
      * @param p_nameservice
      *         Instance of NameserviceComponent
      */
-    public GetLocal(final Class<? extends AbstractDXRAMService> p_parentService,
-            final AbstractBootComponent p_boot, final BackupComponent p_backup, final ChunkComponent p_chunk,
+    public GetLocal(final Class<? extends Service> p_parentService,
+            final BootComponent p_boot, final BackupComponent p_backup, final ChunkComponent p_chunk,
             final NetworkComponent p_network, final LookupComponent p_lookup,
             final NameserviceComponent p_nameservice) {
         super(p_parentService, p_boot, p_backup, p_chunk, p_network, p_lookup, p_nameservice);

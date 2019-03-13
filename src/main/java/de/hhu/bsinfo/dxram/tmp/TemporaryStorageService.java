@@ -18,9 +18,9 @@ package de.hhu.bsinfo.dxram.tmp;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.overlay.storage.SuperpeerStorage;
@@ -36,8 +36,8 @@ import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.05.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-public class TemporaryStorageService extends AbstractDXRAMService<TemporaryStorageServiceConfig> {
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class TemporaryStorageService extends Service<TemporaryStorageServiceConfig> {
 
     // component dependencies
     private LookupComponent m_lookup;
@@ -156,7 +156,7 @@ public class TemporaryStorageService extends AbstractDXRAMService<TemporaryStora
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 

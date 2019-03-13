@@ -10,7 +10,7 @@ import de.hhu.bsinfo.dxlog.DXLogConfig;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 
 /**
  * Config for the LogComponent
@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class LogComponentConfig extends DXRAMModuleConfig {
+public class LogComponentConfig extends ModuleConfig {
     /**
      * Get the dxlog configuration values
      */

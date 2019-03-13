@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 
 /**
  * Config for the SynchronizationService
@@ -17,7 +17,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class SynchronizationServiceConfig extends DXRAMModuleConfig {
+public class SynchronizationServiceConfig extends ModuleConfig {
     private static final int MAX_BARRIERS_PER_SUPERPEER_MAX = 100000;
 
     /**

@@ -18,7 +18,7 @@ import org.apache.logging.log4j.Logger;
  */
 @Accessors(prefix = "m_")
 @ToString
-public class DXRAMModuleConfig {
+public class ModuleConfig {
     protected final Logger LOGGER;
 
     /**
@@ -37,7 +37,7 @@ public class DXRAMModuleConfig {
     /**
      * Default constructor for Gson
      */
-    public DXRAMModuleConfig() {
+    public ModuleConfig() {
         LOGGER = LogManager.getFormatterLogger(getClass());
     }
 
@@ -47,7 +47,7 @@ public class DXRAMModuleConfig {
      * @param p_moduleName
      *         Class name of the associated module
      */
-    public DXRAMModuleConfig(final String p_moduleName) {
+    public ModuleConfig(final String p_moduleName) {
         LOGGER = LogManager.getFormatterLogger(getClass());
         m_configClassName = getClass().getName();
         m_moduleClassName = p_moduleName;
@@ -59,7 +59,7 @@ public class DXRAMModuleConfig {
      * @param p_module
      *         Class of the module that uses this configuration
      */
-    public DXRAMModuleConfig(final Class<?> p_module) {
+    public ModuleConfig(final Class<?> p_module) {
         LOGGER = LogManager.getFormatterLogger(getClass());
         m_configClassName = getClass().getName();
         m_moduleClassName = p_module.getSimpleName();

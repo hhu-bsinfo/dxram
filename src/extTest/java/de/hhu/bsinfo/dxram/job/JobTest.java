@@ -10,7 +10,7 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class JobTest extends AbstractJob {
+public class JobTest extends Job {
     static final long TEST_CHUNK_ID = 0x4242424242424242L;
     static final String TEST_CHUNK_NAME = "JBTST";
 

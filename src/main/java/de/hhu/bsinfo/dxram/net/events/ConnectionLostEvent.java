@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.net.events;
 
-import de.hhu.bsinfo.dxram.event.AbstractEvent;
+import de.hhu.bsinfo.dxram.event.Event;
 
 /**
  * An event for connection loss. Triggered by NIOSelector-Thread.
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.dxram.event.AbstractEvent;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
-public class ConnectionLostEvent extends AbstractEvent {
+public class ConnectionLostEvent extends Event {
     private short m_nodeID;
 
     /**

@@ -25,11 +25,11 @@ package de.hhu.bsinfo.dxram.engine;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 25.01.2016
  */
-public abstract class AbstractDXRAMService<T> extends AbstractDXRAMModule<T> {
+public abstract class Service<T> extends Module<T> {
     /**
      * Constructor
      */
-    protected AbstractDXRAMService() {
+    protected Service() {
         super();
     }
 
@@ -61,7 +61,7 @@ public abstract class AbstractDXRAMService<T> extends AbstractDXRAMModule<T> {
      * @param p_componentAccessor
      *         Component accessor that provides access to the components
      */
-    protected abstract void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor);
+    protected abstract void resolveComponentDependencies(final ComponentProvider p_componentAccessor);
 
     /**
      * Called when the service is initialized. Setup data structures, read settings etc.

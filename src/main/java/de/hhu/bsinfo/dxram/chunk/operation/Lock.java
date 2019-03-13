@@ -13,13 +13,13 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.messages.ChunkMessages;
 import de.hhu.bsinfo.dxram.chunk.messages.LockRequest;
 import de.hhu.bsinfo.dxram.chunk.messages.LockResponse;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.lookup.LookupRange;
 import de.hhu.bsinfo.dxram.lookup.LookupState;
@@ -35,7 +35,7 @@ import de.hhu.bsinfo.dxutils.stats.ValuePool;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 09.11.2018
  */
-public class Lock extends AbstractOperation implements MessageReceiver {
+public class Lock extends Operation implements MessageReceiver {
     private static final ThroughputPool SOP_DEFAULT = new ThroughputPool(ChunkService.class, "Lock", Value.Base.B_10);
     private static final ThroughputPool SOP_INCOMING =
             new ThroughputPool(ChunkService.class, "LockIncoming", Value.Base.B_10);
@@ -68,8 +68,8 @@ public class Lock extends AbstractOperation implements MessageReceiver {
      * @param p_nameservice
      *         Instance of NameserviceComponent
      */
-    public Lock(final Class<? extends AbstractDXRAMService> p_parentService,
-            final AbstractBootComponent p_boot, final BackupComponent p_backup, final ChunkComponent p_chunk,
+    public Lock(final Class<? extends Service> p_parentService,
+            final BootComponent p_boot, final BackupComponent p_backup, final ChunkComponent p_chunk,
             final NetworkComponent p_network, final LookupComponent p_lookup,
             final NameserviceComponent p_nameservice) {
         super(p_parentService, p_boot, p_backup, p_chunk, p_network, p_lookup, p_nameservice);

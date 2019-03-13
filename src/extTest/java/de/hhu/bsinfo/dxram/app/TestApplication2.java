@@ -6,7 +6,7 @@ import org.apache.logging.log4j.Logger;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 
-public class TestApplication2 extends AbstractApplication {
+public class TestApplication2 extends Application {
     private static final Logger LOGGER = LogManager.getFormatterLogger(TestApplication2.class);
 
     private volatile boolean m_running = true;

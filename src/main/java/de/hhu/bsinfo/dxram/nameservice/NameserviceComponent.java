@@ -26,9 +26,9 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkIndexComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -41,10 +41,10 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.NAMESERVICE,
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.NAMESERVICE,
         priorityShutdown = DXRAMComponentOrder.Shutdown.NAMESERVICE)
-public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComponentConfig> {
+public class NameserviceComponent extends Component<NameserviceComponentConfig> {
     // component dependencies
     private LookupComponent m_lookup;
     private ChunkIndexComponent m_chunkIndex;
@@ -126,7 +126,7 @@ public class NameserviceComponent extends AbstractDXRAMComponent<NameserviceComp
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
         m_chunkIndex = p_componentAccessor.getComponent(ChunkIndexComponent.class);
     }

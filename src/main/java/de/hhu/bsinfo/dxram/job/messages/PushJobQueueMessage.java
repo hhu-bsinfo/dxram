@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.job.AbstractJob;
+import de.hhu.bsinfo.dxram.job.Job;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
@@ -29,7 +29,7 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class PushJobQueueMessage extends Message {
-    private AbstractJob m_job;
+    private Job m_job;
     private byte m_callbackJobEventBitMask;
 
     // for receiving job data
@@ -55,7 +55,7 @@ public class PushJobQueueMessage extends Message {
      * @param p_callbackJobEventBitMask
      *         Bit mask indicating the events the other node wants to be notified about
      */
-    public PushJobQueueMessage(final short p_destination, final AbstractJob p_job,
+    public PushJobQueueMessage(final short p_destination, final Job p_job,
             final byte p_callbackJobEventBitMask) {
         super(p_destination, DXRAMMessageTypes.JOB_MESSAGES_TYPE, JobMessages.SUBTYPE_PUSH_JOB_QUEUE_MESSAGE);
 

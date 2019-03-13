@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.failure.events;
 
-import de.hhu.bsinfo.dxram.event.AbstractEvent;
+import de.hhu.bsinfo.dxram.event.Event;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 /**
@@ -24,7 +24,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-public class NodeFailureEvent extends AbstractEvent {
+public class NodeFailureEvent extends Event {
 
     private short m_nodeID;
     private NodeRole m_role;

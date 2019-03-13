@@ -42,10 +42,10 @@ import de.hhu.bsinfo.dxram.chunk.ChunkLocalService;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.ChunkServiceConfig;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
+import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.engine.NullComponent;
 import de.hhu.bsinfo.dxram.engine.NullService;
@@ -183,7 +183,7 @@ public final class DXRAM {
      *         the common super class here.
      * @return Service requested or null if the service is not enabled/available.
      */
-    public <T extends AbstractDXRAMService> T getService(final Class<T> p_class) {
+    public <T extends Service> T getService(final Class<T> p_class) {
         return m_engine.getService(p_class);
     }
 
@@ -215,21 +215,21 @@ public final class DXRAM {
      *         DXRAM engine instance to register components at
      */
     private static void registerComponents(final DXRAMEngine p_engine) {
-        p_engine.registerComponent(ApplicationComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(ApplicationComponent.class, ModuleConfig.class);
         p_engine.registerComponent(BackupComponent.class, BackupComponentConfig.class);
-        p_engine.registerComponent(ChunkBackupComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(ChunkBackupComponent.class, ModuleConfig.class);
         p_engine.registerComponent(ChunkComponent.class, ChunkComponentConfig.class);
-        p_engine.registerComponent(ChunkIndexComponent.class, DXRAMModuleConfig.class);
-        p_engine.registerComponent(ChunkMigrationComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(ChunkIndexComponent.class, ModuleConfig.class);
+        p_engine.registerComponent(ChunkMigrationComponent.class, ModuleConfig.class);
         p_engine.registerComponent(MonitoringComponent.class, MonitoringComponentConfig.class);
         p_engine.registerComponent(EventComponent.class, EventComponentConfig.class);
-        p_engine.registerComponent(FailureComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(FailureComponent.class, ModuleConfig.class);
         p_engine.registerComponent(JobComponent.class, JobComponentConfig.class);
         p_engine.registerComponent(LogComponent.class, LogComponentConfig.class);
         p_engine.registerComponent(LookupComponent.class, LookupComponentConfig.class);
         p_engine.registerComponent(NameserviceComponent.class, NameserviceComponentConfig.class);
         p_engine.registerComponent(NetworkComponent.class, NetworkComponentConfig.class);
-        p_engine.registerComponent(NullComponent.class, DXRAMModuleConfig.class);
+        p_engine.registerComponent(NullComponent.class, ModuleConfig.class);
         p_engine.registerComponent(PluginComponent.class, PluginComponentConfig.class);
         p_engine.registerComponent(ZookeeperBootComponent.class, ZookeeperBootComponentConfig.class);
     }
@@ -242,26 +242,26 @@ public final class DXRAM {
      */
     private static void registerServices(final DXRAMEngine p_engine) {
         p_engine.registerService(ApplicationService.class, ApplicationServiceConfig.class);
-        p_engine.registerService(BootService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(ChunkAnonService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(ChunkDebugService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(ChunkLocalService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(BootService.class, ModuleConfig.class);
+        p_engine.registerService(ChunkAnonService.class, ModuleConfig.class);
+        p_engine.registerService(ChunkDebugService.class, ModuleConfig.class);
+        p_engine.registerService(ChunkLocalService.class, ModuleConfig.class);
         p_engine.registerService(ChunkService.class, ChunkServiceConfig.class);
-        p_engine.registerService(JobService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(LogService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(LoggerService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(LookupService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(JobService.class, ModuleConfig.class);
+        p_engine.registerService(LogService.class, ModuleConfig.class);
+        p_engine.registerService(LoggerService.class, ModuleConfig.class);
+        p_engine.registerService(LookupService.class, ModuleConfig.class);
         p_engine.registerService(MasterSlaveComputeService.class, MasterSlaveComputeServiceConfig.class);
-        p_engine.registerService(MigrationService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(MonitoringService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(NameserviceService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(NetworkService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(NullService.class, DXRAMModuleConfig.class);
-        p_engine.registerService(RecoveryService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(MigrationService.class, ModuleConfig.class);
+        p_engine.registerService(MonitoringService.class, ModuleConfig.class);
+        p_engine.registerService(NameserviceService.class, ModuleConfig.class);
+        p_engine.registerService(NetworkService.class, ModuleConfig.class);
+        p_engine.registerService(NullService.class, ModuleConfig.class);
+        p_engine.registerService(RecoveryService.class, ModuleConfig.class);
         p_engine.registerService(StatisticsService.class, StatisticsServiceConfig.class);
         p_engine.registerService(SynchronizationService.class, SynchronizationServiceConfig.class);
         p_engine.registerService(TemporaryStorageService.class, TemporaryStorageServiceConfig.class);
-        p_engine.registerService(FunctionService.class, DXRAMModuleConfig.class);
+        p_engine.registerService(FunctionService.class, ModuleConfig.class);
         p_engine.registerService(ManagementService.class, ManagementServiceConfig.class);
     }
 

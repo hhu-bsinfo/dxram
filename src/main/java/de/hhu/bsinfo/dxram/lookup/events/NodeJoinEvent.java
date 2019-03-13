@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.lookup.events;
 
-import de.hhu.bsinfo.dxram.event.AbstractEvent;
+import de.hhu.bsinfo.dxram.event.Event;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
 
@@ -26,7 +26,7 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 12.03.2017
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
-public class NodeJoinEvent extends AbstractEvent {
+public class NodeJoinEvent extends Event {
     private short m_nodeID;
     private NodeRole m_role;
     private int m_capabilities;

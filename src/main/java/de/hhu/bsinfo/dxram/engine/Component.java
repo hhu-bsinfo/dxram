@@ -30,13 +30,13 @@ import java.lang.annotation.RetentionPolicy;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public abstract class AbstractDXRAMComponent<T> extends AbstractDXRAMModule<T> {
+public abstract class Component<T> extends Module<T> {
     private Attributes m_attributes;
 
     /**
      * Constructor
      */
-    protected AbstractDXRAMComponent() {
+    protected Component() {
         super();
 
         Annotation[] annotations = getClass().getAnnotations();
@@ -82,7 +82,7 @@ public abstract class AbstractDXRAMComponent<T> extends AbstractDXRAMModule<T> {
      * @param p_componentAccessor
      *         Component accessor that provides access to other components
      */
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
     }
 
     /**

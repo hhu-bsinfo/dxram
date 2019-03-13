@@ -38,7 +38,7 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.event.EventComponent;
@@ -143,7 +143,7 @@ public class OverlaySuperpeer implements MessageReceiver {
 
     // Attributes
     private NetworkComponent m_network;
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private EventComponent m_event;
 
     private boolean m_backupActive;
@@ -198,7 +198,7 @@ public class OverlaySuperpeer implements MessageReceiver {
      */
     public OverlaySuperpeer(final short p_nodeID, final short p_contactSuperpeer, final int p_initialNumberOfSuperpeers,
             final int p_sleepInterval, final int p_maxNumOfBarriers, final int p_storageMaxNumEntries,
-            final int p_storageMaxSizeBytes, final boolean p_backupActive, final AbstractBootComponent p_boot,
+            final int p_storageMaxSizeBytes, final boolean p_backupActive, final BootComponent p_boot,
             final NetworkComponent p_network, final EventComponent p_event) {
         m_boot = p_boot;
         m_network = p_network;

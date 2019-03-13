@@ -24,15 +24,15 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxram.event.AbstractEvent;
+import de.hhu.bsinfo.dxram.event.Event;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -62,15 +62,15 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  *
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.LOOKUP,
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.LOOKUP,
         priorityShutdown = DXRAMComponentOrder.Shutdown.LOOKUP)
-public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfig>
-        implements EventListener<AbstractEvent> {
+public class LookupComponent extends Component<LookupComponentConfig>
+        implements EventListener<Event> {
     private static final short ORDER = 10;
 
     // component dependencies
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
     private BackupComponent m_backup;
     private EventComponent m_event;
     private NetworkComponent m_network;
@@ -658,7 +658,7 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     }
 
     @Override
-    public void eventTriggered(final AbstractEvent p_event) {
+    public void eventTriggered(final Event p_event) {
         if (p_event instanceof NodeFailureEvent) {
 
             NodeFailureEvent event = (NodeFailureEvent) p_event;
@@ -691,9 +691,9 @@ public class LookupComponent extends AbstractDXRAMComponent<LookupComponentConfi
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_boot = p_componentAccessor.getComponent(AbstractBootComponent.class);
+        m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }

@@ -23,7 +23,7 @@ import lombok.experimental.Accessors;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.DXRAM;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 
 /**
  * Config for the PluginComponent
@@ -33,7 +33,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class PluginComponentConfig extends DXRAMModuleConfig {
+public class PluginComponentConfig extends ModuleConfig {
     /**
      * Path to scan for plugin jar files
      */

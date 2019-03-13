@@ -7,12 +7,11 @@ import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionMessage;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionRequest;
 import de.hhu.bsinfo.dxram.function.messages.ExecuteFunctionResponse;
@@ -22,8 +21,8 @@ import de.hhu.bsinfo.dxram.function.messages.RegisterFunctionResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxutils.serialization.Distributable;
 
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> implements MessageReceiver {
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public class FunctionService extends Service<ModuleConfig> implements MessageReceiver {
 
     private final Map<String, DistributableFunction> m_functions = new ConcurrentHashMap<>();
 
@@ -110,7 +109,7 @@ public class FunctionService extends AbstractDXRAMService<DXRAMModuleConfig> imp
     }
 
     @Override
-    protected void resolveComponentDependencies(DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(ComponentProvider p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 

@@ -17,8 +17,8 @@
 package de.hhu.bsinfo.dxram.monitoring;
 
 import de.hhu.bsinfo.dxmonitor.state.SystemState;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
-import de.hhu.bsinfo.dxram.event.AbstractEvent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.event.Event;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventListener;
 import de.hhu.bsinfo.dxram.failure.events.NodeFailureEvent;
@@ -39,7 +39,7 @@ import java.util.Map;
  *
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
-public class SuperpeerMonitoringHandler extends Thread implements EventListener<AbstractEvent> {
+public class SuperpeerMonitoringHandler extends Thread implements EventListener<Event> {
     private static final Logger LOGGER = LogManager.getFormatterLogger(
             SuperpeerMonitoringHandler.class);
 
@@ -47,7 +47,7 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
     private volatile boolean m_shouldShutdown;
     private HashMap<Short, MonitoringSysDxramWrapper> m_sysInfos;
 
-    private AbstractBootComponent m_bootComponent;
+    private BootComponent m_bootComponent;
     private EventComponent m_eventComponent;
 
     private String m_monitoringFolder;
@@ -63,7 +63,7 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
      * @param p_eventComponent   EventComponent Instance
      * @param p_monitoringFolder path to monitoring folder
      */
-    SuperpeerMonitoringHandler(final float p_secondDelay, final AbstractBootComponent p_bootComponent,
+    SuperpeerMonitoringHandler(final float p_secondDelay, final BootComponent p_bootComponent,
                                final EventComponent p_eventComponent, final String p_monitoringFolder) {
         m_collectedData = new ArrayList<>();
         m_sysInfos = new HashMap<>();
@@ -109,12 +109,12 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
         sysInfos[3] = SystemState.getHostName();
         sysInfos[4] = SystemState.getUserName();
 
-        dxramInfos[0] = MonitoringDXRAMInformation.getBuildUser();
-        dxramInfos[1] = MonitoringDXRAMInformation.getBuildDate();
-        dxramInfos[2] = MonitoringDXRAMInformation.getCommit();
-        dxramInfos[3] = MonitoringDXRAMInformation.getVersion();
-        dxramInfos[4] = MonitoringDXRAMInformation.getBuildType();
-        boolean isPageCacheInUse = MonitoringDXRAMInformation.isPageCacheInUse();
+        dxramInfos[0] = MonitoringInformation.getBuildUser();
+        dxramInfos[1] = MonitoringInformation.getBuildDate();
+        dxramInfos[2] = MonitoringInformation.getCommit();
+        dxramInfos[3] = MonitoringInformation.getVersion();
+        dxramInfos[4] = MonitoringInformation.getBuildType();
+        boolean isPageCacheInUse = MonitoringInformation.isPageCacheInUse();
 
         m_sysInfos.put(m_bootComponent.getNodeId(),
                 new MonitoringSysDxramWrapper(sysInfos, dxramInfos, isPageCacheInUse));
@@ -202,7 +202,7 @@ public class SuperpeerMonitoringHandler extends Thread implements EventListener<
     }
 
     @Override
-    public void eventTriggered(final AbstractEvent p_event) {
+    public void eventTriggered(final Event p_event) {
         if (p_event instanceof NodeFailureEvent) {
             m_sysInfos.remove(((NodeFailureEvent) p_event).getNodeID());
         }

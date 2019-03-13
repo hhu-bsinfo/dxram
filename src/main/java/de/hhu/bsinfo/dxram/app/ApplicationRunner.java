@@ -12,7 +12,7 @@ import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxram.engine.ServiceProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 
 /**
@@ -23,9 +23,9 @@ import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 public class ApplicationRunner implements ApplicationCallbackHandler {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ApplicationRunner.class);
 
-    private final HashMap<String, Class<? extends AbstractApplication>> m_applicationClasses;
+    private final HashMap<String, Class<? extends Application>> m_applicationClasses;
     private final DXRAMVersion m_dxramVersion;
-    private final DXRAMServiceAccessor m_dxramServiceAccessor;
+    private final ServiceProvider m_serviceProvider;
 
     private HashMap<String, ApplicationProcess> m_runningProcesses;
 
@@ -40,14 +40,14 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
      *         Map of available application classes
      * @param p_dxramVersion
      *         Version of DXRAM running on
-     * @param p_dxramServiceAccessor
+     * @param p_serviceProvider
      *         DXRAM service accessor
      */
-    ApplicationRunner(final HashMap<String, Class<? extends AbstractApplication>> p_applicationClasses,
-            final DXRAMVersion p_dxramVersion, final DXRAMServiceAccessor p_dxramServiceAccessor) {
+    ApplicationRunner(final HashMap<String, Class<? extends Application>> p_applicationClasses,
+            final DXRAMVersion p_dxramVersion, final ServiceProvider p_serviceProvider) {
         m_applicationClasses = p_applicationClasses;
         m_dxramVersion = p_dxramVersion;
-        m_dxramServiceAccessor = p_dxramServiceAccessor;
+        m_serviceProvider = p_serviceProvider;
 
         m_runningProcesses = new HashMap<>();
     }
@@ -71,14 +71,14 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
             return false;
         }
 
-        Class<? extends AbstractApplication> appClass = m_applicationClasses.get(p_class);
+        Class<? extends Application> appClass = m_applicationClasses.get(p_class);
 
         if (appClass == null) {
             LOGGER.warn("Application class %s was not found", p_class);
             return false;
         }
 
-        AbstractApplication app;
+        Application app;
 
         try {
             app = appClass.newInstance();
@@ -96,7 +96,7 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
             return false;
         }
 
-        app.init(m_dxramServiceAccessor, this, p_args);
+        app.init(m_serviceProvider, this, p_args);
 
         LOGGER.info("Starting %s", app.getApplicationName());
 
@@ -165,7 +165,7 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
     }
 
     @Override
-    public void started(final AbstractApplication p_application) {
+    public void started(final Application p_application) {
         LOGGER.debug("Application started: %s", p_application);
 
         Integer processId = m_processIds.pollFirst();
@@ -178,7 +178,7 @@ public class ApplicationRunner implements ApplicationCallbackHandler {
     }
 
     @Override
-    public void finished(final AbstractApplication p_application) {
+    public void finished(final Application p_application) {
         LOGGER.debug("Application finished: %s", p_application);
 
         ApplicationProcess process = m_runningProcesses.remove(p_application.getClass().getName());

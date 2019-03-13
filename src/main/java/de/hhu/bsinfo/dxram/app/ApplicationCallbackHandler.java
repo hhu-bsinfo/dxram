@@ -12,7 +12,7 @@ public interface ApplicationCallbackHandler {
      * @param p_application
      *         Application instance
      */
-    void started(final AbstractApplication p_application);
+    void started(final Application p_application);
 
     /**
      * Application has finished
@@ -20,5 +20,5 @@ public interface ApplicationCallbackHandler {
      * @param p_application
      *         Application instance
      */
-    void finished(final AbstractApplication p_application);
+    void finished(final Application p_application);
 }

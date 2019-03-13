@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.ms;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMServiceAccessor;
+import de.hhu.bsinfo.dxram.engine.ServiceProvider;
 
 /**
  * Context for a task payload to give access to various data and interfaces.
@@ -27,10 +27,10 @@ public class TaskContext {
 
     private TaskContextData m_ctxData;
     private TaskSignalInterface m_signalInterface;
-    private DXRAMServiceAccessor m_dxramAccessor;
+    private ServiceProvider m_dxramAccessor;
 
     TaskContext(final TaskContextData p_ctxData, final TaskSignalInterface p_signalInterface,
-            final DXRAMServiceAccessor p_dxramAccessor) {
+            final ServiceProvider p_dxramAccessor) {
         m_ctxData = p_ctxData;
         m_signalInterface = p_signalInterface;
         m_dxramAccessor = p_dxramAccessor;
@@ -57,9 +57,9 @@ public class TaskContext {
     /**
      * Get the DXRAM service accessor to access services in the task.
      *
-     * @return DXRAMServiceAccessor
+     * @return ServiceProvider
      */
-    public DXRAMServiceAccessor getDXRAMServiceAccessor() {
+    public ServiceProvider getDXRAMServiceAccessor() {
         return m_dxramAccessor;
     }
 }

@@ -56,7 +56,7 @@ final class DXRAMGsonContext {
      */
     static Gson createGsonInstance() {
         return new GsonBuilder().setPrettyPrinting().excludeFieldsWithoutExposeAnnotation()
-                .registerTypeAdapter(DXRAMModuleConfig.class, new ModuleConfigSerializer())
+                .registerTypeAdapter(ModuleConfig.class, new ModuleConfigSerializer())
                 .registerTypeAdapter(StorageUnit.class, new StorageUnitGsonSerializer()).registerTypeAdapter(
                         TimeUnit.class, new TimeUnitGsonSerializer())
                 .create();
@@ -66,9 +66,9 @@ final class DXRAMGsonContext {
      * Gson serializer and deserializer for module configs
      */
     private static class ModuleConfigSerializer
-            implements JsonDeserializer<DXRAMModuleConfig>, JsonSerializer<DXRAMModuleConfig> {
+            implements JsonDeserializer<ModuleConfig>, JsonSerializer<ModuleConfig> {
         @Override
-        public DXRAMModuleConfig deserialize(final JsonElement p_jsonElement, final Type p_type,
+        public ModuleConfig deserialize(final JsonElement p_jsonElement, final Type p_type,
                 final JsonDeserializationContext p_jsonDeserializationContext) {
             JsonObject jsonObj = p_jsonElement.getAsJsonObject();
             String className = jsonObj.get("m_configClassName").getAsString();
@@ -82,15 +82,15 @@ final class DXRAMGsonContext {
                 return null;
             }
 
-            if (clazz.equals(DXRAMModuleConfig.class)) {
-                return new DXRAMModuleConfig(jsonObj.get("m_moduleClassName").getAsString());
+            if (clazz.equals(ModuleConfig.class)) {
+                return new ModuleConfig(jsonObj.get("m_moduleClassName").getAsString());
             } else {
                 return p_jsonDeserializationContext.deserialize(p_jsonElement, clazz);
             }
         }
 
         @Override
-        public JsonElement serialize(final DXRAMModuleConfig p_moduleConfig, final Type p_type,
+        public JsonElement serialize(final ModuleConfig p_moduleConfig, final Type p_type,
                 final JsonSerializationContext p_jsonSerializationContext) {
 
             Class<?> clazz;
@@ -101,7 +101,7 @@ final class DXRAMGsonContext {
                 return null;
             }
 
-            if (clazz.equals(DXRAMModuleConfig.class)) {
+            if (clazz.equals(ModuleConfig.class)) {
                 JsonObject obj = new JsonObject();
 
                 obj.addProperty("m_configClassName", p_moduleConfig.getConfigClassName());

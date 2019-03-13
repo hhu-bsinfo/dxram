@@ -25,8 +25,8 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxutils.PluginManager;
@@ -37,10 +37,10 @@ import de.hhu.bsinfo.dxutils.PluginManager;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.02.2019
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.PLUGIN,
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.PLUGIN,
         priorityShutdown = DXRAMComponentOrder.Shutdown.PLUGIN)
-public class PluginComponent extends AbstractDXRAMComponent<PluginComponentConfig> {
+public class PluginComponent extends Component<PluginComponentConfig> {
     private PluginManager m_pluginManager;
 
     /**

@@ -30,5 +30,5 @@ public interface EventInterface {
      * @param p_event
      *         Event to fire.
      */
-    <T extends AbstractEvent> void fireEvent(final T p_event);
+    <T extends Event> void fireEvent(final T p_event);
 }

@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.hhu.bsinfo.dxnet.NodeMap;
-import de.hhu.bsinfo.dxram.boot.AbstractBootComponent;
+import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 
 /**
@@ -31,7 +31,7 @@ import de.hhu.bsinfo.dxram.boot.NodeRegistry;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 class NodeMappings implements NodeMap, NodeRegistry.Listener {
-    private AbstractBootComponent m_boot;
+    private BootComponent m_boot;
 
     private List<NodeMap.Listener> m_listener;
 
@@ -41,7 +41,7 @@ class NodeMappings implements NodeMap, NodeRegistry.Listener {
      * @param p_bootComponent
      *         Boot component instance to wrap.
      */
-    NodeMappings(final AbstractBootComponent p_bootComponent) {
+    NodeMappings(final BootComponent p_bootComponent) {
         m_boot = p_bootComponent;
         m_listener = new ArrayList<>();
 

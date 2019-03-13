@@ -1,7 +1,7 @@
 package de.hhu.bsinfo.dxram.migration.progress;
 
 import de.hhu.bsinfo.dxram.migration.LongRange;
-import de.hhu.bsinfo.dxram.migration.MigrationManager;
+import de.hhu.bsinfo.dxram.migration.MigrationService;
 import de.hhu.bsinfo.dxram.migration.MigrationStatus;
 import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +15,7 @@ import java.util.concurrent.Executors;
 
 public class MigrationProgressTracker {
 
-    private final ExecutorService m_completableExecutor = Executors.newSingleThreadExecutor(MigrationManager.THREAD_FACTORY);
+    private final ExecutorService m_completableExecutor = Executors.newSingleThreadExecutor(MigrationService.THREAD_FACTORY);
 
     private final Map<MigrationIdentifier, MigrationProgress> m_progressMap = new ConcurrentHashMap<>();
 

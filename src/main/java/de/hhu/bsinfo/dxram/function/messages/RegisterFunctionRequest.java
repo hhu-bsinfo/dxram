@@ -18,13 +18,10 @@ package de.hhu.bsinfo.dxram.function.messages;
 
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
-import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.function.DistributableFunction;
 import de.hhu.bsinfo.dxram.function.util.FunctionSerializer;
-import de.hhu.bsinfo.dxram.job.AbstractJob;
-import de.hhu.bsinfo.dxram.job.messages.JobMessages;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 public class RegisterFunctionRequest extends Request {

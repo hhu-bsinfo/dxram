@@ -21,9 +21,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 
@@ -33,12 +33,12 @@ import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@AbstractDXRAMComponent.Attributes(priorityInit = DXRAMComponentOrder.Init.EVENT,
+@Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
+@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.EVENT,
         priorityShutdown = DXRAMComponentOrder.Shutdown.EVENT)
-public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig> implements EventInterface {
+public class EventComponent extends Component<EventComponentConfig> implements EventInterface {
     // private state
-    private Map<String, ArrayList<EventListener<? extends AbstractEvent>>> m_eventListener = new HashMap<>();
+    private Map<String, ArrayList<EventListener<? extends Event>>> m_eventListener = new HashMap<>();
     private TaskExecutor m_executor;
 
     /**
@@ -51,7 +51,7 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
      * @param p_class
      *         Event to listen to.
      */
-    public <T extends AbstractEvent> void registerListener(final EventListener<T> p_listener, final Class<?> p_class) {
+    public <T extends Event> void registerListener(final EventListener<T> p_listener, final Class<?> p_class) {
         ArrayList<EventListener<?>> listeners = m_eventListener.get(p_class.getName());
         if (listeners == null) {
             listeners = new ArrayList<>();
@@ -73,7 +73,7 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
      *         Event to fire.
      */
     @Override
-    public <T extends AbstractEvent> void fireEvent(final T p_event) {
+    public <T extends Event> void fireEvent(final T p_event) {
 
         LOGGER.trace("Event fired: %s", p_event);
 
@@ -86,7 +86,7 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         // no dependencies
     }
 
@@ -124,8 +124,8 @@ public class EventComponent extends AbstractDXRAMComponent<EventComponentConfig>
      *         Type of the event.
      * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
      */
-    private static class FireEvent<T extends AbstractEvent> implements Runnable {
-        private AbstractEvent m_event;
+    private static class FireEvent<T extends Event> implements Runnable {
+        private Event m_event;
         private ArrayList<EventListener<?>> m_listener;
 
         /**

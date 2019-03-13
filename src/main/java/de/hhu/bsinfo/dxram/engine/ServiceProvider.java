@@ -27,7 +27,7 @@ package de.hhu.bsinfo.dxram.engine;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public interface DXRAMServiceAccessor {
+public interface ServiceProvider {
     /**
      * Get a service from DXRAM.
      *
@@ -38,7 +38,7 @@ public interface DXRAMServiceAccessor {
      *         Class extending DXRAMService
      * @return Reference to the service if available and enabled, null otherwise.
      */
-    <T extends AbstractDXRAMService> T getService(final Class<T> p_class);
+    <T extends Service> T getService(final Class<T> p_class);
 
     /**
      * Check if a service is available
@@ -48,5 +48,5 @@ public interface DXRAMServiceAccessor {
      *         or abstract class to get the registered instance.
      * @return True if available, false otherwise
      */
-    boolean isServiceAvailable(final Class<? extends AbstractDXRAMService> p_class);
+    boolean isServiceAvailable(final Class<? extends Service> p_class);
 }

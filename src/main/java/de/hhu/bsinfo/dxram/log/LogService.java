@@ -22,11 +22,11 @@ import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponent;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMModule;
-import de.hhu.bsinfo.dxram.engine.AbstractDXRAMService;
-import de.hhu.bsinfo.dxram.engine.DXRAMComponentAccessor;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.engine.Service;
+import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.log.messages.GetUtilizationRequest;
 import de.hhu.bsinfo.dxram.log.messages.GetUtilizationResponse;
 import de.hhu.bsinfo.dxram.log.messages.InitBackupRangeRequest;
@@ -45,8 +45,8 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-@AbstractDXRAMModule.Attributes(supportsSuperpeer = false, supportsPeer = true)
-public final class LogService extends AbstractDXRAMService<DXRAMModuleConfig> implements SpecialMessageReceiver {
+@Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
+public final class LogService extends Service<ModuleConfig> implements SpecialMessageReceiver {
     // component dependencies
     private NetworkComponent m_network;
     private LogComponent m_log;
@@ -124,7 +124,7 @@ public final class LogService extends AbstractDXRAMService<DXRAMModuleConfig> im
     }
 
     @Override
-    protected void resolveComponentDependencies(final DXRAMComponentAccessor p_componentAccessor) {
+    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_log = p_componentAccessor.getComponent(LogComponent.class);
         m_boot = p_componentAccessor.getComponent(ZookeeperBootComponent.class);

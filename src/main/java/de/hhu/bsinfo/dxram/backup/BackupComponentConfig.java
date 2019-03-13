@@ -7,7 +7,7 @@ import lombok.experimental.Accessors;
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 
 /**
@@ -18,7 +18,7 @@ import de.hhu.bsinfo.dxutils.unit.StorageUnit;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class BackupComponentConfig extends DXRAMModuleConfig {
+public class BackupComponentConfig extends ModuleConfig {
     /**
      * Activate/Disable the backup. This parameter should be either active for all nodes or inactive for all nodes
      */

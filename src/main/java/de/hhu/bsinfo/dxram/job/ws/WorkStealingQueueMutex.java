@@ -22,7 +22,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import de.hhu.bsinfo.dxram.job.AbstractJob;
+import de.hhu.bsinfo.dxram.job.Job;
 
 /**
  * Simple mutex implementation of a work stealing queue.
@@ -30,7 +30,7 @@ import de.hhu.bsinfo.dxram.job.AbstractJob;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 public class WorkStealingQueueMutex implements WorkStealingQueue {
-    private Deque<AbstractJob> m_queue = new LinkedList<AbstractJob>();
+    private Deque<Job> m_queue = new LinkedList<Job>();
     private Lock m_lock = new ReentrantLock();
 
     /**
@@ -48,7 +48,7 @@ public class WorkStealingQueueMutex implements WorkStealingQueue {
     }
 
     @Override
-    public boolean push(final AbstractJob p_job) {
+    public boolean push(final Job p_job) {
         m_lock.lock();
         m_queue.push(p_job);
         m_lock.unlock();
@@ -56,8 +56,8 @@ public class WorkStealingQueueMutex implements WorkStealingQueue {
     }
 
     @Override
-    public AbstractJob pop() {
-        AbstractJob job = null;
+    public Job pop() {
+        Job job = null;
 
         m_lock.lock();
         try {
@@ -71,8 +71,8 @@ public class WorkStealingQueueMutex implements WorkStealingQueue {
     }
 
     @Override
-    public AbstractJob steal() {
-        AbstractJob job = null;
+    public Job steal() {
+        Job job = null;
 
         m_lock.lock();
         try {

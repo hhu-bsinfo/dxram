@@ -21,7 +21,7 @@ package de.hhu.bsinfo.dxram.event;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public abstract class AbstractEvent {
+public abstract class Event {
     private String m_sourceClass;
 
     /**
@@ -30,7 +30,7 @@ public abstract class AbstractEvent {
      * @param p_sourceClass
      *         Source class this event originates from.
      */
-    protected AbstractEvent(final String p_sourceClass) {
+    protected Event(final String p_sourceClass) {
         m_sourceClass = p_sourceClass;
     }
 

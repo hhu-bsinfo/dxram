@@ -24,7 +24,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
-public class JobNull extends AbstractJob {
+public class JobNull extends Job {
     private static final Logger LOGGER = LogManager.getFormatterLogger(JobNull.class);
 
     /**

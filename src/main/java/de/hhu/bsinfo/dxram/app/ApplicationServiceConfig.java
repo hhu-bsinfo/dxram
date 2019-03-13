@@ -9,7 +9,7 @@ import java.util.List;
 
 import com.google.gson.annotations.Expose;
 
-import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
+import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 
 /**
  * Config for the ApplicationService
@@ -19,7 +19,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMModuleConfig;
 @Data
 @Accessors(prefix = "m_")
 @EqualsAndHashCode(callSuper = false)
-public class ApplicationServiceConfig extends DXRAMModuleConfig {
+public class ApplicationServiceConfig extends ModuleConfig {
     @Data
     @Accessors(prefix = "m_")
     public static class ApplicationEntry {

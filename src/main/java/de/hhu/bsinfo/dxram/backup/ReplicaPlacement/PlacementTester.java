@@ -75,13 +75,13 @@ public final class PlacementTester {
         initialSetOfPeers.addAll(availablePeers);
 
         /* Replace class here to switch placement strategy */
-        AbstractPlacementStrategy strategy = new CopysetPlacement(replicationFactor, disjunctive, rackAware,
+        PlacementStrategy strategy = new CopysetPlacement(replicationFactor, disjunctive, rackAware,
                 switchAware);
         if (!strategy.initialize(initialSetOfPeers)) {
             strategy = new RandomPlacement(replicationFactor, disjunctive, rackAware, switchAware);
         }
 
-        final AbstractPlacementStrategy strat = strategy;
+        final PlacementStrategy strat = strategy;
         Runnable task = () -> {
             LOGGER.info("Determine %d backup ranges for initial set of peers.", backupRanges);
             BackupRange oldBackupRange = null;
