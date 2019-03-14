@@ -32,10 +32,13 @@ public class Start implements Runnable {
     @CommandLine.Option(names = "--superpeer", description = "Runs this instance as an superpeer.")
     private boolean m_isSuperpeer = false;
 
-    @CommandLine.Option(names = "--join", description = "The bootstrapper's connection information")
+    @CommandLine.Option(names = "--join", description = "The bootstrapper's connection information.")
     private String m_bootstrapAddress = "127.0.0.1:2181";
 
-    @CommandLine.Option(names = "--level", description = "The log level to use")
+    @CommandLine.Option(names = "--bind", description = "The local IP-address to bind to.")
+    private String m_bindAddress = "127.0.0.1:22222";
+
+    @CommandLine.Option(names = "--level", description = "The log level to use.")
     private String m_logLevel = "INFO";
 
     @CommandLine.Option(
@@ -98,6 +101,9 @@ public class Start implements Runnable {
 
         // Set specified node role
         overridenConfig.getEngineConfig().setRole(m_isSuperpeer ? NodeRole.SUPERPEER_STR : NodeRole.PEER_STR);
+
+        String[] bindAddress = m_bindAddress.split(":");
+        overridenConfig.getEngineConfig().setAddress(new IPV4Unit(bindAddress[0], Integer.parseInt(bindAddress[1])));
 
         // Set bootstrap flag
         ZookeeperBootComponentConfig bootConfig = overridenConfig.getComponentConfig(ZookeeperBootComponent.class);
