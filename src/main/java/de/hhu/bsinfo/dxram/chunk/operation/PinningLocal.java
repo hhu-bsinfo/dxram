@@ -98,6 +98,16 @@ public class PinningLocal extends Operation {
     }
 
     /**
+     * Translates a pinned chunk ID into the raw address.
+     *
+     * @param p_cid The chunk ID to translate
+     * @return The raw address of the chunk in memory
+     */
+    public long translate(final long p_cid) {
+        return m_chunk.getMemory().pinning().translate(p_cid);
+    }
+
+    /**
      * Unpin a pinned chunk. Depending on how many chunks are currently stored, this call is very slow because it
      * has to perform a depth search on the CIDTable to find the CIDTable entry.
      *

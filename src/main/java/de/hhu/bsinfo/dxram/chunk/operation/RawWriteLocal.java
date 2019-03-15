@@ -69,6 +69,22 @@ public class RawWriteLocal extends Operation {
     }
 
     /**
+     * Write a single boolean to the specified address + offset.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to the address.
+     * @param p_value
+     *         Boolean value to write.
+     */
+    public void writeBoolean(final long p_address, final int p_addressOffset, final boolean p_value) {
+        SOP_RAW_WRITE_BYTES.start(Byte.BYTES);
+        m_chunk.getMemory().rawWrite().writeBoolean(p_address, p_addressOffset, p_value);
+        SOP_RAW_WRITE_BYTES.stop();
+    }
+
+    /**
      * Write a single byte to the specified address + offset.
      *
      * @param p_address
@@ -79,7 +95,7 @@ public class RawWriteLocal extends Operation {
      *         Byte value to write.
      */
     public void writeByte(final long p_address, final int p_addressOffset, final byte p_value) {
-        SOP_RAW_WRITE_BYTES.start(1);
+        SOP_RAW_WRITE_BYTES.start(Byte.BYTES);
         m_chunk.getMemory().rawWrite().writeByte(p_address, p_addressOffset, p_value);
         SOP_RAW_WRITE_BYTES.stop();
     }
@@ -95,7 +111,7 @@ public class RawWriteLocal extends Operation {
      *         Char value to write.
      */
     public void writeChar(final long p_address, final int p_addressOffset, final char p_value) {
-        SOP_RAW_WRITE_BYTES.start(1);
+        SOP_RAW_WRITE_BYTES.start(Character.BYTES);
         m_chunk.getMemory().rawWrite().writeChar(p_address, p_addressOffset, p_value);
         SOP_RAW_WRITE_BYTES.stop();
     }
@@ -111,7 +127,7 @@ public class RawWriteLocal extends Operation {
      *         Int value to write.
      */
     public void writeInt(final long p_address, final int p_addressOffset, final int p_value) {
-        SOP_RAW_WRITE_BYTES.start(1);
+        SOP_RAW_WRITE_BYTES.start(Integer.BYTES);
         m_chunk.getMemory().rawWrite().writeInt(p_address, p_addressOffset, p_value);
         SOP_RAW_WRITE_BYTES.stop();
     }
@@ -127,7 +143,7 @@ public class RawWriteLocal extends Operation {
      *         Long value to write.
      */
     public void writeLong(final long p_address, final int p_addressOffset, final long p_value) {
-        SOP_RAW_WRITE_BYTES.start(1);
+        SOP_RAW_WRITE_BYTES.start(Long.BYTES);
         m_chunk.getMemory().rawWrite().writeLong(p_address, p_addressOffset, p_value);
         SOP_RAW_WRITE_BYTES.stop();
     }
@@ -143,8 +159,56 @@ public class RawWriteLocal extends Operation {
      *         Short value to write.
      */
     public void writeShort(final long p_address, final int p_addressOffset, final short p_value) {
-        SOP_RAW_WRITE_BYTES.start(1);
+        SOP_RAW_WRITE_BYTES.start(Short.BYTES);
         m_chunk.getMemory().rawWrite().writeShort(p_address, p_addressOffset, p_value);
+        SOP_RAW_WRITE_BYTES.stop();
+    }
+
+    /**
+     * Write a single double to the specified address + offset.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to the address.
+     * @param p_value
+     *         Double value to write.
+     */
+    public void writeDouble(final long p_address, final int p_addressOffset, final double p_value) {
+        SOP_RAW_WRITE_BYTES.start(Double.BYTES);
+        m_chunk.getMemory().rawWrite().writeDouble(p_address, p_addressOffset, p_value);
+        SOP_RAW_WRITE_BYTES.stop();
+    }
+
+    /**
+     * Write a single float to the specified address + offset.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to the address.
+     * @param p_value
+     *         Float value to write.
+     */
+    public void writeFloat(final long p_address, final int p_addressOffset, final float p_value) {
+        SOP_RAW_WRITE_BYTES.start(Float.BYTES);
+        m_chunk.getMemory().rawWrite().writeFloat(p_address, p_addressOffset, p_value);
+        SOP_RAW_WRITE_BYTES.stop();
+    }
+
+    /**
+     * Write data from a boolean array to the specified address + offset.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to start address.
+     * @param p_array
+     *         Array to write.
+     */
+    public void writeBooleanArray(final long p_address, final int p_addressOffset, final boolean[] p_array) {
+        SOP_RAW_WRITE_BYTES.start(p_array.length);
+        m_chunk.getMemory().rawWrite().write(p_address, p_addressOffset, p_array);
         SOP_RAW_WRITE_BYTES.stop();
     }
 
@@ -224,6 +288,38 @@ public class RawWriteLocal extends Operation {
      */
     public void writeShortArray(final long p_address, final int p_addressOffset, final short[] p_array) {
         SOP_RAW_WRITE_BYTES.start(p_array.length * Short.BYTES);
+        m_chunk.getMemory().rawWrite().write(p_address, p_addressOffset, p_array);
+        SOP_RAW_WRITE_BYTES.stop();
+    }
+
+    /**
+     * Write data from a double array to the specified address + offset.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to start address.
+     * @param p_array
+     *         Array to write.
+     */
+    public void writeDoubleArray(final long p_address, final int p_addressOffset, final double[] p_array) {
+        SOP_RAW_WRITE_BYTES.start(p_array.length * Double.BYTES);
+        m_chunk.getMemory().rawWrite().write(p_address, p_addressOffset, p_array);
+        SOP_RAW_WRITE_BYTES.stop();
+    }
+
+    /**
+     * Write data from a float array to the specified address + offset.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to start address.
+     * @param p_array
+     *         Array to write.
+     */
+    public void writeFloatArray(final long p_address, final int p_addressOffset, final float[] p_array) {
+        SOP_RAW_WRITE_BYTES.start(p_array.length * Float.BYTES);
         m_chunk.getMemory().rawWrite().write(p_address, p_addressOffset, p_array);
         SOP_RAW_WRITE_BYTES.stop();
     }

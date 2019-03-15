@@ -69,6 +69,22 @@ public class RawReadLocal extends Operation {
     }
 
     /**
+     * Read a single boolean from the specified address + offset.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to the address.
+     * @return Boolean read.
+     */
+    public boolean readBoolean(final long p_address, final int p_addressOffset) {
+                SOP_RAW_READ_BYTES.start(Byte.BYTES);
+                final boolean tmpByte = m_chunk.getMemory().rawRead().readBoolean(p_address, p_addressOffset);
+                SOP_RAW_READ_BYTES.stop();
+                return tmpByte;
+    }
+
+    /**
      * Read a single byte from the specified address + offset.
      *
      * @param p_address
@@ -78,7 +94,7 @@ public class RawReadLocal extends Operation {
      * @return Byte read.
      */
     public byte readByte(final long p_address, final int p_addressOffset) {
-        SOP_RAW_READ_BYTES.start(1);
+        SOP_RAW_READ_BYTES.start(Byte.BYTES);
         final byte tmpByte = m_chunk.getMemory().rawRead().readByte(p_address, p_addressOffset);
         SOP_RAW_READ_BYTES.stop();
         return tmpByte;
@@ -94,7 +110,7 @@ public class RawReadLocal extends Operation {
      * @return Char read.
      */
     public char readChar(final long p_address, final int p_addressOffset) {
-        SOP_RAW_READ_BYTES.start(1);
+        SOP_RAW_READ_BYTES.start(Character.BYTES);
         final char tmpChar = m_chunk.getMemory().rawRead().readChar(p_address, p_addressOffset);
         SOP_RAW_READ_BYTES.stop();
         return tmpChar;
@@ -110,7 +126,7 @@ public class RawReadLocal extends Operation {
      * @return Int read.
      */
     public int readInt(final long p_address, final int p_addressOffset) {
-        SOP_RAW_READ_BYTES.start(1);
+        SOP_RAW_READ_BYTES.start(Integer.BYTES);
         final int tmpInt = m_chunk.getMemory().rawRead().readInt(p_address, p_addressOffset);
         SOP_RAW_READ_BYTES.stop();
         return tmpInt;
@@ -126,7 +142,7 @@ public class RawReadLocal extends Operation {
      * @return Long read.
      */
     public long readLong(final long p_address, final int p_addressOffset) {
-        SOP_RAW_READ_BYTES.start(1);
+        SOP_RAW_READ_BYTES.start(Long.BYTES);
         final long tmpLong = m_chunk.getMemory().rawRead().readLong(p_address, p_addressOffset);
         SOP_RAW_READ_BYTES.stop();
         return tmpLong;
@@ -142,10 +158,77 @@ public class RawReadLocal extends Operation {
      * @return Short read.
      */
     public short readShort(final long p_address, final int p_addressOffset) {
-        SOP_RAW_READ_BYTES.start(1);
+        SOP_RAW_READ_BYTES.start(Short.BYTES);
         final short tmpShort = m_chunk.getMemory().rawRead().readShort(p_address, p_addressOffset);
         SOP_RAW_READ_BYTES.stop();
         return tmpShort;
+    }
+
+    /**
+     * Read a single double from the specified address + offset.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to the address.
+     * @return Double read.
+     */
+    public double readDouble(final long p_address, final int p_addressOffset) {
+        SOP_RAW_READ_BYTES.start(Double.BYTES);
+        final double tmpShort = m_chunk.getMemory().rawRead().readDouble(p_address, p_addressOffset);
+        SOP_RAW_READ_BYTES.stop();
+        return tmpShort;
+    }
+
+    /**
+     * Read a single float from the specified address + offset.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to the address.
+     * @return Float read.
+     */
+    public float readFloat(final long p_address, final int p_addressOffset) {
+        SOP_RAW_READ_BYTES.start(Float.BYTES);
+        final float tmpShort = m_chunk.getMemory().rawRead().readFloat(p_address, p_addressOffset);
+        SOP_RAW_READ_BYTES.stop();
+        return tmpShort;
+    }
+
+    /**
+     * Read data into a boolean array.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to start address.
+     * @param p_array
+     *         Array to read into.
+     */
+    public void readBooleanArray(final long p_address, final int p_addressOffset, final boolean[] p_array) {
+        SOP_RAW_READ_BYTES.start(p_array.length);
+        m_chunk.getMemory().rawRead().read(p_address, p_addressOffset, p_array);
+        SOP_RAW_READ_BYTES.stop();
+    }
+
+    /**
+     * Read data into a new boolean array.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to start address.
+     * @param p_count
+     *         Number of booleans/bytes to read.
+     * @return A new boolean array with the read data.
+     */
+    public boolean[] readBooleanArray(final long p_address, final int p_addressOffset, final int p_count) {
+        SOP_RAW_READ_BYTES.start(p_count);
+        final boolean[] tmpArray = new boolean[p_count];
+        m_chunk.getMemory().rawRead().read(p_address, p_addressOffset, tmpArray);
+        SOP_RAW_READ_BYTES.stop();
+        return tmpArray;
     }
 
     /**
@@ -318,6 +401,76 @@ public class RawReadLocal extends Operation {
     public short[] readShortArray(final long p_address, final int p_addressOffset, final int p_count) {
         SOP_RAW_READ_BYTES.start(p_count * Short.BYTES);
         final short[] tmpArray = new short[p_count];
+        m_chunk.getMemory().rawRead().read(p_address, p_addressOffset, tmpArray);
+        SOP_RAW_READ_BYTES.stop();
+        return tmpArray;
+    }
+
+    /**
+     * Read data into a double array.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to start address.
+     * @param p_array
+     *         Array to read into.
+     */
+    public void readDoubleArray(final long p_address, final int p_addressOffset, final double[] p_array) {
+        SOP_RAW_READ_BYTES.start(p_array.length * Double.BYTES);
+        m_chunk.getMemory().rawRead().read(p_address, p_addressOffset, p_array);
+        SOP_RAW_READ_BYTES.stop();
+    }
+
+    /**
+     * Read data into a new double array.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to start address.
+     * @param p_count
+     *         Number of doubles to read.
+     * @return A new double array with the read data.
+     */
+    public double[] readDoubleArray(final long p_address, final int p_addressOffset, final int p_count) {
+        SOP_RAW_READ_BYTES.start(p_count * Double.BYTES);
+        final double[] tmpArray = new double[p_count];
+        m_chunk.getMemory().rawRead().read(p_address, p_addressOffset, tmpArray);
+        SOP_RAW_READ_BYTES.stop();
+        return tmpArray;
+    }
+
+    /**
+     * Read data into a float array.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to start address.
+     * @param p_array
+     *         Array to read into.
+     */
+    public void readFloatArray(final long p_address, final int p_addressOffset, final float[] p_array) {
+        SOP_RAW_READ_BYTES.start(p_array.length * Float.BYTES);
+        m_chunk.getMemory().rawRead().read(p_address, p_addressOffset, p_array);
+        SOP_RAW_READ_BYTES.stop();
+    }
+
+    /**
+     * Read data into a new float array.
+     *
+     * @param p_address
+     *         (Start) address of allocated memory block (taken from table entry)
+     * @param p_addressOffset
+     *         Offset to add to start address.
+     * @param p_count
+     *         Number of floats to read.
+     * @return A new float array with the read data.
+     */
+    public float[] readFloatArray(final long p_address, final int p_addressOffset, final int p_count) {
+        SOP_RAW_READ_BYTES.start(p_count * Float.BYTES);
+        final float[] tmpArray = new float[p_count];
         m_chunk.getMemory().rawRead().read(p_address, p_addressOffset, tmpArray);
         SOP_RAW_READ_BYTES.stop();
         return tmpArray;
