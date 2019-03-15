@@ -17,7 +17,6 @@
 package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxmem.DXMem;
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxutils.module.Dependency;

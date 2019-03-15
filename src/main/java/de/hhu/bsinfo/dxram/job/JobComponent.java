@@ -18,7 +18,6 @@ package de.hhu.bsinfo.dxram.job;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxutils.module.Dependency;

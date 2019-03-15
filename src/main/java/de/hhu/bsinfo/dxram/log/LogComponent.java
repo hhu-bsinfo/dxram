@@ -24,7 +24,6 @@ import de.hhu.bsinfo.dxlog.storage.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;

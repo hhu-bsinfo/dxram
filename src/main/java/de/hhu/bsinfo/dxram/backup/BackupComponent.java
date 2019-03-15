@@ -24,7 +24,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import de.hhu.bsinfo.dxlog.storage.recovery.RecoveryMetadata;
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.PlacementStrategy;
 import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.CopysetPlacement;

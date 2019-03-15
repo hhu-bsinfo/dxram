@@ -22,7 +22,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkIndexComponent;

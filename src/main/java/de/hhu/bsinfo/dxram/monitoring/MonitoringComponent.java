@@ -24,7 +24,6 @@ import java.nio.file.Paths;
 import javax.management.MBeanServer;
 
 import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.Component;

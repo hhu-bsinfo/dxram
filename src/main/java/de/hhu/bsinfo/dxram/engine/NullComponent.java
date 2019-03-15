@@ -16,7 +16,6 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 
 /**
  * Dummy component implementation for testing.

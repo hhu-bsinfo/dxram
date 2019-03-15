@@ -30,7 +30,6 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxnet.core.messages.Messages;
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxutils.module.Dependency;

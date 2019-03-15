@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
-import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
