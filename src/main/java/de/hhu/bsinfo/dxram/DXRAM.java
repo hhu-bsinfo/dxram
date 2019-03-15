@@ -157,7 +157,7 @@ public final class DXRAM {
      * @return True if initializing was successful, false otherwise.
      */
     public boolean initialize(final DXRAMConfig p_config, final boolean p_autoShutdown) {
-        boolean ret = m_engine.init(p_config);
+        boolean ret = m_engine.initialize(p_config);
         if (!ret) {
             return false;
         }

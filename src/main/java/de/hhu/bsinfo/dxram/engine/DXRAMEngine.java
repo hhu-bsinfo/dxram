@@ -16,9 +16,14 @@
 
 package de.hhu.bsinfo.dxram.engine;
 
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.Lock;
@@ -27,17 +32,20 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import de.hhu.bsinfo.dxutils.module.DependencyManager;
+
 /**
  * Engine class running DXRAM with components and services.
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public class DXRAMEngine implements ServiceProvider, ComponentProvider {
+public class DXRAMEngine implements ServiceProvider, ComponentProvider, DependencyProvider {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DXRAMEngine.class);
 
     private final DXRAMVersion m_version;
-    private final ModuleManager m_componentManager;
-    private final ModuleManager m_serviceManager;
+    private final ModuleManager m_moduleManager;
+
+    private final DependencyManager<Module> m_moduleDependencyManager = new DependencyManager<>();
 
     private boolean m_isInitialized;
     private DXRAMConfig m_config;
@@ -59,8 +67,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
      */
     public DXRAMEngine(final DXRAMVersion p_version) {
         m_version = Objects.requireNonNull(p_version);
-        m_componentManager = new ModuleManager();
-        m_serviceManager = new ModuleManager();
+        m_moduleManager = new ModuleManager(this);
     }
 
     /**
@@ -86,7 +93,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
             throw new IllegalStateException("Invalid initialization state");
         }
 
-        m_componentManager.register(p_class, p_configClass);
+        m_moduleManager.register(p_class, p_configClass);
     }
 
     /**
@@ -103,7 +110,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
             throw new IllegalStateException("Invalid initialization state");
         }
 
-        m_serviceManager.register(p_class, p_configClass);
+        m_moduleManager.register(p_class, p_configClass);
     }
 
     /**
@@ -117,7 +124,9 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
             throw new IllegalStateException("Invalid initialization state");
         }
 
-        return new DXRAMConfig(m_componentManager.createDefaultConfigs(), m_serviceManager.createDefaultConfigs());
+        Map<String, ModuleConfig> moduleConfigs = m_moduleManager.createDefaultConfigs();
+
+        return new DXRAMConfig(moduleConfigs, moduleConfigs);
     }
 
     /**
@@ -127,7 +136,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
      *         Configuration for DXRAM
      * @return True if initialization successful, false on error or if a new configuration was generated
      */
-    public boolean init(final DXRAMConfig p_config) {
+    public boolean initialize(final DXRAMConfig p_config) {
         if (m_isInitialized) {
             throw new IllegalStateException("Invalid initialization state");
         }
@@ -157,16 +166,12 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
         LOGGER.debug("Configuration verification successful");
 
         LOGGER.debug("Initializing component manager...");
-        m_componentManager.init(p_config.getEngineConfig().getRole(), p_config.m_componentConfigs, this);
-
-        LOGGER.debug("Initializing service manager...");
-        m_serviceManager.init(p_config.getEngineConfig().getRole(), p_config.m_serviceConfigs, this);
+        m_moduleManager.initialize(p_config.getEngineConfig().getRole(), p_config.m_componentConfigs);
 
         // -----------------------------
 
         // sort list by initialization priority
-        List<Component> components = m_componentManager.getModules(Component.class);
-        components.sort(Comparator.comparingInt(Component::getPriorityInit));
+        List<Component> components = m_moduleManager.getModules(Component.class);
 
         LOGGER.info("Initializing %d components", components.size());
 
@@ -181,7 +186,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
 
         // -----------------------------
 
-        List<Service> services = m_serviceManager.getModules(Service.class);
+        List<Service> services = m_moduleManager.getModules(Service.class);
 
         LOGGER.info("Initializing %d services", services.size());
 
@@ -271,7 +276,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
 
         // -----------------------------
 
-        List<Service> services = m_serviceManager.getModules(Service.class);
+        List<Service> services = m_moduleManager.getModules(Service.class);
 
         LOGGER.info("Shutting down %d services", services.size());
 
@@ -282,8 +287,8 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
 
         // -----------------------------
 
-        List<Component> components = m_componentManager.getModules(Component.class);
-        components.sort(Comparator.comparingInt(Component::getPriorityShutdown));
+        List<Component> components = m_moduleManager.getModules(Component.class);
+        Collections.reverse(components);
 
         LOGGER.info("Shutting down %d components", components.size());
 
@@ -300,7 +305,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
     }
 
     private boolean reboot() {
-        return shutdown() || init(m_config);
+        return shutdown() || initialize(m_config);
     }
 
     /**
@@ -336,7 +341,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
         // don't check for initialized because this call is used to resolve component
         // dependencies during initialization
 
-        return m_componentManager.getModule(p_class);
+        return m_moduleManager.getModule(p_class);
     }
 
     @Override
@@ -345,7 +350,12 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
             throw new IllegalStateException("Invalid initialization state");
         }
 
-        return m_serviceManager.getModule(p_class);
+        return m_moduleManager.getModule(p_class);
+    }
+
+    @Override
+    public Object get(Class p_class) {
+        return m_moduleManager.getModule(p_class);
     }
 
     @Override
@@ -354,7 +364,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider {
             throw new IllegalStateException("Invalid initialization state");
         }
 
-        return m_serviceManager.getModule(p_class) != null;
+        return m_moduleManager.getModule(p_class) != null;
     }
 
     /**

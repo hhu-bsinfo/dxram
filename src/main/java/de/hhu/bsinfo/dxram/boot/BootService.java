@@ -27,7 +27,7 @@ import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.messages.BootMessages;
 import de.hhu.bsinfo.dxram.boot.messages.ShutdownMessage;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -47,10 +47,10 @@ import de.hhu.bsinfo.dxutils.NodeID;
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class BootService extends Service<ModuleConfig> implements MessageReceiver {
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
     /**

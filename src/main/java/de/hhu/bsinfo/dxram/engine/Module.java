@@ -78,8 +78,6 @@ public abstract class Module<T> {
 
         LOGGER.debug("Initializing module...");
 
-        injectDependencies(p_engine);
-
         boolean success = moduleInit(p_engine);
 
         if (!success) {
@@ -91,38 +89,6 @@ public abstract class Module<T> {
         }
 
         return success;
-    }
-
-    private void injectDependencies(final ComponentProvider p_provider) {
-        List<Field> injectableFields = Arrays.stream(getClass().getDeclaredFields())
-                .filter(field -> field.getDeclaredAnnotation(Inject.class) != null)
-                .collect(Collectors.toList());
-
-        for (Field injectableField : injectableFields) {
-            if (Modifier.isFinal(injectableField.getModifiers())){
-                throw new RuntimeException("Injecting final fields is not supported");
-            }
-
-            Class type = injectableField.getType();
-
-            if (!Component.class.isAssignableFrom(type)) {
-                throw new InjectionException(String.format("%s does not extend %s", type.getCanonicalName(), Component.class.getCanonicalName()));
-            }
-
-            Component component = p_provider.getComponent(type);
-
-            if (component == null) {
-                LOGGER.warn("Could not find component %s", type.getCanonicalName());
-                continue;
-            }
-
-            try {
-                injectableField.setAccessible(true);
-                injectableField.set(this, component);
-            } catch (IllegalAccessException e) {
-                throw new InjectionException(String.format("Could not inject %s within %s", injectableField.getName(), getClass().getCanonicalName()));
-            }
-        }
     }
 
     /**

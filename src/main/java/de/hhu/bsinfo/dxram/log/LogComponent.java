@@ -26,12 +26,13 @@ import de.hhu.bsinfo.dxnet.core.MessageHeader;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
+import de.hhu.bsinfo.dxram.backup.BackupComponentConfig;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -50,20 +51,15 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.LOG,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.LOG)
 public final class LogComponent extends Component<ModuleConfig> {
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
-    @Inject
-    private BackupComponent m_backup;
-
-    @Inject
+    @Dependency
     private ChunkComponent m_chunk;
 
     // private state
@@ -236,20 +232,20 @@ public final class LogComponent extends Component<ModuleConfig> {
     protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
         m_boot = p_componentAccessor.getComponent(BootComponent.class);
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
     }
 
     @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
-        m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && m_backup.isActiveAndAvailableForBackup();
-
         LogComponentConfig logConfig = p_config.getComponentConfig(LogComponent.class);
+        BackupComponentConfig backupConfig = p_config.getComponentConfig(BackupComponent.class);
+
+        m_loggingIsActive = m_boot.getNodeRole() == NodeRole.PEER && backupConfig.isBackupActive() && backupConfig.isAvailableForBackup();
 
         if (m_loggingIsActive) {
             m_dxlog = new DXLog(logConfig.getDxlogConfig(), p_config.getEngineConfig().getJniPath(),
-                    m_boot.getNodeId(), m_backup.getConfig().getBackupDirectory(),
-                    (int) m_backup.getConfig().getBackupRangeSize().getBytes() * 2, m_chunk.getMemory().recovery());
+                    m_boot.getNodeId(), backupConfig.getBackupDirectory(),
+                    (int) backupConfig.getBackupRangeSize().getBytes() * 2, m_chunk.getMemory().recovery());
         }
 
         return true;

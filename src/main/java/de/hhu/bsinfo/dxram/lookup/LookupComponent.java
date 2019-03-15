@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -64,22 +64,17 @@ import de.hhu.bsinfo.dxutils.unit.IPV4Unit;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.LOOKUP,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.LOOKUP)
 public class LookupComponent extends Component<LookupComponentConfig>
         implements EventListener<Event> {
     private static final short ORDER = 10;
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
-    @Inject
-    private BackupComponent m_backup;
-
-    @Inject
+    @Dependency
     private EventComponent m_event;
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
     private OverlaySuperpeer m_superpeer;
@@ -87,6 +82,8 @@ public class LookupComponent extends Component<LookupComponentConfig>
 
     private CacheTree m_chunkIDCacheTree;
     private Cache<Integer, Long> m_applicationIDCache;
+
+    private boolean m_isActiveAndAvailableForBackup = false;
 
     /**
      * Get the number of entries in name service
@@ -692,14 +689,13 @@ public class LookupComponent extends Component<LookupComponentConfig>
             NodeRegistry.NodeDetails details = m_boot.getDetails();
 
             // Inform superpeer that this peer finished its startup process
-            m_peer.finishStartup(m_boot.getRack(), m_boot.getSwitch(), m_backup.isActiveAndAvailableForBackup(),
+            m_peer.finishStartup(m_boot.getRack(), m_boot.getSwitch(), m_isActiveAndAvailableForBackup,
                     details.getCapabilities(), new IPV4Unit(details.getIp(), details.getPort()));
         }
     }
 
     @Override
     protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
         m_boot = p_componentAccessor.getComponent(BootComponent.class);
         m_event = p_componentAccessor.getComponent(EventComponent.class);
         m_network = p_componentAccessor.getComponent(NetworkComponent.class);
@@ -712,6 +708,8 @@ public class LookupComponent extends Component<LookupComponentConfig>
         NameserviceComponentConfig nameserviceConfig = p_config.getComponentConfig(NameserviceComponent.class);
         SynchronizationServiceConfig synchronizationConfig = p_config.getServiceConfig(SynchronizationService.class);
         TemporaryStorageServiceConfig temporaryStorageConfig = p_config.getServiceConfig(TemporaryStorageService.class);
+
+        m_isActiveAndAvailableForBackup = backupConfig.isAvailableForBackup() && backupConfig.isBackupActive();
 
         BackupRange.setReplicationFactor(backupConfig.getReplicationFactor());
         BackupRange.setBackupRangeSize(backupConfig.getBackupRangeSize().getBytes());

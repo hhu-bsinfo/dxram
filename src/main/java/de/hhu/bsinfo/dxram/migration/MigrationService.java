@@ -44,12 +44,11 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.log.messages.RemoveMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.migration.data.MigrationIdentifier;
@@ -74,22 +73,22 @@ public class MigrationService extends Service<MigrationServiceConfig> implements
 
     public static final ThreadFactory THREAD_FACTORY = new MigrationThreadFactory();
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
-    @Inject
+    @Dependency
     private BackupComponent m_backup;
 
-    @Inject
+    @Dependency
     private ChunkMigrationComponent m_chunkMigration;
 
-    @Inject
+    @Dependency
     private ChunkComponent m_chunk;
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
-    @Inject
+    @Dependency
     private LookupComponent m_lookup;
 
     private ExecutorService m_executor;

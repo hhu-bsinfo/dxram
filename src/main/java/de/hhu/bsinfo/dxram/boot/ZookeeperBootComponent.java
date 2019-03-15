@@ -64,8 +64,6 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Filip Krakowski, Filip.Krakowski@hhu.de, 18.05.2018
  */
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.BOOT,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.BOOT)
 public class ZookeeperBootComponent extends BootComponent<ZookeeperBootComponentConfig> {
 
     /**

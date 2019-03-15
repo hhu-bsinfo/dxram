@@ -27,7 +27,7 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -45,10 +45,10 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class LoggerService extends Service<ModuleConfig> implements MessageReceiver {
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
     /**

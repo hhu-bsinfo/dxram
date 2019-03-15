@@ -26,7 +26,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -52,23 +52,21 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 05.10.2016
  */
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.FAILURE,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.FAILURE)
 public class FailureComponent extends Component<ModuleConfig>
         implements MessageReceiver, EventListener<Event> {
 
     private static final int EVENT_TIMEOUT = 1000;
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
-    @Inject
+    @Dependency
     private LookupComponent m_lookup;
 
-    @Inject
+    @Dependency
     private EventComponent m_event;
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
     private final byte[] m_nodeStatus = new byte[Short.MAX_VALUE * 2 / 8];

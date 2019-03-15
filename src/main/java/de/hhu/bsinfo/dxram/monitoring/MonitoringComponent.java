@@ -28,7 +28,7 @@ import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -49,26 +49,24 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Burak Akguel, burak.akguel@hhu.de, 14.07.2018
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.MONITORING,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.MONITORING)
 public class MonitoringComponent extends Component<MonitoringComponentConfig> {
     private PeerMonitoringHandler m_peerHandler;
     private PeerDXRAMMonitoringHandler m_dxramPeerHandler;
     private SuperpeerMonitoringHandler m_superpeerHandler;
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
-    @Inject
+    @Dependency
     private LookupComponent m_lookup;
 
-    @Inject
+    @Dependency
     private EventComponent m_event;
 
-    @Inject
+    @Dependency
     private ChunkComponent m_chunk;
 
     private static final String VIRTUALMACHINE_CLASS = "com.sun.tools.attach.VirtualMachine";

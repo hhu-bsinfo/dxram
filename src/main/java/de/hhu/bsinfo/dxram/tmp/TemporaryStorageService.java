@@ -18,7 +18,7 @@ package de.hhu.bsinfo.dxram.tmp;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -40,7 +40,7 @@ import de.hhu.bsinfo.dxram.nameservice.NameServiceStringConverter;
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class TemporaryStorageService extends Service<TemporaryStorageServiceConfig> {
 
-    @Inject
+    @Dependency
     private LookupComponent m_lookup;
 
     private NameServiceStringConverter m_idConverter = new NameServiceStringConverter("NAME");

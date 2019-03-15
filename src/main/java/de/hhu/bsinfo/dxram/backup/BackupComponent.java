@@ -32,7 +32,7 @@ import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.RandomPlacement;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -59,28 +59,26 @@ import de.hhu.bsinfo.dxutils.NodeID;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.BACKUP,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.BACKUP)
 public class BackupComponent extends Component<BackupComponentConfig>
         implements EventListener<Event> {
     private static final boolean REREPLICATION_ACTIVE = true;
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
-    @Inject
+    @Dependency
     private ChunkBackupComponent m_chunkBackup;
 
-    @Inject
+    @Dependency
     private LookupComponent m_lookup;
 
-    @Inject
+    @Dependency
     private LogComponent m_log;
 
-    @Inject
+    @Dependency
     private EventComponent m_event;
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
     // private state

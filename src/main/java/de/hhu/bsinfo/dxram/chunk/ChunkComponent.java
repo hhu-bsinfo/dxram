@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxmem.DXMem;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -32,11 +32,9 @@ import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 31.08.2018
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.CHUNK,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.CHUNK)
 public class ChunkComponent extends Component<ChunkComponentConfig> {
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
     private DXMem m_memory;

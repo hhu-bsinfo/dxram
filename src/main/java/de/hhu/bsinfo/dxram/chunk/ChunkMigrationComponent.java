@@ -26,7 +26,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupPeer;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -41,17 +41,15 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
  * @author Kevin Beineke, kevin.beineke@hhu.de, 30.03.2016
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.CHUNK,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.CHUNK)
 public class ChunkMigrationComponent extends Component<ModuleConfig> {
 
-    @Inject
+    @Dependency
     private BackupComponent m_backup;
 
-    @Inject
+    @Dependency
     private ChunkComponent m_chunk;
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
     /**

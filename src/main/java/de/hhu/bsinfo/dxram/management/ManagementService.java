@@ -3,16 +3,11 @@ package de.hhu.bsinfo.dxram.management;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinJson;
 
-import java.lang.management.ManagementFactory;
-
-import javax.management.MBeanServer;
-
 import com.google.gson.Gson;
 
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponentConfig;
-import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -25,7 +20,7 @@ public class ManagementService extends Service<ManagementServiceConfig> {
 
     private final Gson m_gson = new Gson();
 
-    @Inject
+    @Dependency
     private BootComponent<ZookeeperBootComponentConfig> m_bootComponent;
 
     private ComponentProvider m_componentAccessor;

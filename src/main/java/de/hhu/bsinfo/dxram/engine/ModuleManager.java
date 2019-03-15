@@ -19,22 +19,20 @@ package de.hhu.bsinfo.dxram.engine;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.dependency.CircularDependencyException;
 import de.hhu.bsinfo.dxutils.dependency.DependencyGraph;
+import de.hhu.bsinfo.dxutils.module.DependencyManager;
 
 /**
  * Manager for modules (components and/or services) in DXRAM. All modules used in DXRAM must be registered here to
@@ -43,9 +41,22 @@ import de.hhu.bsinfo.dxutils.dependency.DependencyGraph;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 12.11.2018
  */
 class ModuleManager {
+
+    enum Order {
+        INIT, FINISH
+    }
+
     private static final Logger LOGGER = LogManager.getFormatterLogger(ModuleManager.class);
 
-    private Map<String, ModuleContainer> m_modules = new HashMap<>();
+    private final DependencyManager<Module> m_dependencyManager = new DependencyManager<>();
+
+    private final DependencyInjector m_injector;
+
+    private final Map<Class<? extends Module>, ModuleManager.ModuleContainer> m_modules = new HashMap<>();
+
+    public ModuleManager(final DependencyProvider p_dependencyProvider) {
+        m_injector = new DependencyInjector(p_dependencyProvider);
+    }
 
     /**
      * Register a module
@@ -55,9 +66,20 @@ class ModuleManager {
      * @param p_configClass
      *         Configuration class to associate with the specified module
      */
-    void register(final Class<? extends Module> p_class,
-            final Class<? extends ModuleConfig> p_configClass) {
-        m_modules.put(p_class.getSimpleName(), new ModuleContainer(p_class.getSimpleName(), p_class, p_configClass));
+    void register(final Class<? extends Module> p_class, final Class<? extends ModuleConfig> p_configClass) {
+        Class<? extends Module> moduleClass = findModuleClass(p_class);
+        m_modules.put(moduleClass, new ModuleContainer(p_class, p_configClass));
+        m_dependencyManager.register(moduleClass);
+    }
+
+    private Class<? extends Module> findModuleClass(Class<?> p_class) {
+        if (p_class.getSuperclass() == null) {
+            return null;
+        } else if (p_class.getSuperclass().equals(Component.class) || p_class.getSuperclass().equals(Service.class)) {
+            return (Class<? extends Module>) p_class;
+        }
+
+        return findModuleClass(p_class.getSuperclass());
     }
 
     /**
@@ -79,41 +101,35 @@ class ModuleManager {
     /**
      * Initialize the manager
      *
-     * @param p_currentInstanceNodeRole
+     * @param p_nodeRole
      *         The node role of the current instance
      * @param p_configs
      *         Map with configurations to use for creating instances of modules
      */
-    void init(final NodeRole p_currentInstanceNodeRole, final Map<String, ModuleConfig> p_configs, final ComponentProvider p_componentProvider) {
-        for (ModuleConfig config : p_configs.values()) {
-            ModuleContainer module = m_modules.get(config.getModuleClassName());
+    void initialize(final NodeRole p_nodeRole, final Map<String, ModuleConfig> p_configs) {
+        Stream.of(Component.class, Service.class)
+                .forEach(moduleClass -> m_dependencyManager.getOrderedDependencies(moduleClass)
+                        .forEach(module -> {
+                            ModuleContainer container = m_modules.get(module);
+                            Module.Attributes attributes = getModuleAttributes(container.getModuleClass());
+                            if (p_nodeRole == NodeRole.PEER && attributes.supportsPeer() ||
+                                    p_nodeRole == NodeRole.SUPERPEER && attributes.supportsSuperpeer()) {
+                                ModuleConfig config = p_configs.get(container.getName());
+                                LOGGER.debug("Creating an instance of %s", container.getName());
+                                container.newInstance(config);
+                                m_injector.inject(container.getInstance());
+                            }
+                        }));
+    }
 
-            if (module == null) {
-                throw new RuntimeException("Cannot find module " + config.getModuleClassName() +
-                        " for configuration instance " + config.getConfigClassName());
-            }
+    private static Module.Attributes getModuleAttributes(final Class p_class) {
+        return (Module.Attributes) p_class.getAnnotation(Module.Attributes.class);
+    }
 
-            Annotation[] annotations = module.getModuleClass().getAnnotations();
-            Module.Attributes attributes = null;
-
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof Module.Attributes) {
-                    attributes = (Module.Attributes) annotation;
-                    break;
-                }
-            }
-
-            if (attributes == null) {
-                throw new IllegalStateException("Missing attributes for module " + module.getName());
-            }
-
-            if (p_currentInstanceNodeRole == NodeRole.SUPERPEER && attributes.supportsSuperpeer() ||
-                    p_currentInstanceNodeRole == NodeRole.PEER && attributes.supportsPeer()) {
-                LOGGER.debug("Creating instance of %s", module.getName());
-
-                module.newModuleInstance(config, p_componentProvider);
-            }
-        }
+    private static Class findModule(final Class superclass, final List<Class> p_classes) {
+        return p_classes.stream()
+                .filter(current -> superclass.isAssignableFrom(current))
+                .findFirst().orElse(null);
     }
 
     /**
@@ -129,17 +145,15 @@ class ModuleManager {
     <T extends Module> T getModule(final Class<T> p_class) {
         T module = null;
 
-        ModuleContainer moduleContainer = m_modules.get(p_class.getSimpleName());
+        ModuleContainer moduleContainer = m_modules.get(p_class);
 
         if (moduleContainer == null) {
             // check for any kind of instance of the specified class
             // we might have another interface/abstract class between the
             // class we request and an instance we could serve
-            for (Map.Entry<String, ModuleContainer> entry : m_modules.entrySet()) {
-                ModuleContainer mod = entry.getValue();
-
-                if (p_class.isInstance(mod.getInstance())) {
-                    module = p_class.cast(mod.getInstance());
+            for (ModuleContainer container : m_modules.values()) {
+                if (p_class.isInstance(container.getInstance())) {
+                    module = p_class.cast(container.getInstance());
                     break;
                 }
             }
@@ -160,18 +174,11 @@ class ModuleManager {
      * @return List of modules that match the specified sub-type
      */
     <T extends Module> List<T> getModules(final Class<T> p_type) {
-        List<T> list = new ArrayList<>();
-
-        for (ModuleContainer module : m_modules.values()) {
-            Module mod = module.getInstance();
-
-            // don't return non instanciated modules (non supported modules on current node type)
-            if (mod != null) {
-                list.add(p_type.cast(mod));
-            }
-        }
-
-        return list;
+        return m_dependencyManager.getOrderedDependencies(p_type).stream()
+                .map(dependency -> m_modules.get(dependency))
+                .map(container -> (T) container.getInstance())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -179,7 +186,7 @@ class ModuleManager {
      */
     @Data
     @Accessors(prefix = "m_")
-    private static class ModuleContainer {
+    public static class ModuleContainer {
         private final String m_name;
         private final Class<? extends Module> m_moduleClass;
         private final Class<? extends ModuleConfig> m_configClass;
@@ -189,16 +196,13 @@ class ModuleManager {
         /**
          * Constructor
          *
-         * @param p_name
-         *         Name of the module
          * @param p_moduleClass
          *         Class of the module
          * @param p_configClass
          *         Configuration class of the module
          */
-        ModuleContainer(final String p_name, final Class<? extends Module> p_moduleClass,
-                final Class<? extends ModuleConfig> p_configClass) {
-            m_name = p_name;
+        ModuleContainer(final Class<? extends Module> p_moduleClass, final Class<? extends ModuleConfig> p_configClass) {
+            m_name = p_moduleClass.getSimpleName();
             m_moduleClass = p_moduleClass;
             m_configClass = p_configClass;
         }
@@ -231,7 +235,7 @@ class ModuleManager {
          *         Configuration to use for module to instantiate
          * @return New module instance (also tracked internally)
          */
-        Module newModuleInstance(final ModuleConfig p_config, final ComponentProvider p_componentProvider) {
+        Module newInstance(final ModuleConfig p_config) {
             // allow single module instance, only
             if (m_instance != null) {
                 throw new IllegalStateException("An instance of the module was already created: " +
@@ -245,19 +249,6 @@ class ModuleManager {
             }
 
             m_instance.setConfig(p_config);
-
-            return m_instance;
-        }
-
-        /**
-         * Get the instance of the module (newModuleInstnace must have been called previously)
-         *
-         * @return The module instance
-         */
-        Module getModuleInstance() {
-            if (m_instance == null) {
-                throw new IllegalStateException("No instance of module created: " + m_moduleClass.getSimpleName());
-            }
 
             return m_instance;
         }

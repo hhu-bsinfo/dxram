@@ -33,7 +33,7 @@ import de.hhu.bsinfo.dxnet.core.messages.Messages;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -51,15 +51,13 @@ import de.hhu.bsinfo.dxram.net.events.ResponseDelayedEvent;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.NETWORK,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.NETWORK)
 public class NetworkComponent extends Component<NetworkComponentConfig>
         implements EventListener<NodeFailureEvent>, ConnectionManagerListener {
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
-    @Inject
+    @Dependency
     private EventComponent m_event;
 
     // Attributes

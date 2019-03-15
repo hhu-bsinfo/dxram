@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import de.hhu.bsinfo.dxram.DXRAMComponentOrder;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -35,12 +35,10 @@ import de.hhu.bsinfo.dxram.job.ws.WorkerDelegate;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.JOB,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.JOB)
 public class JobComponent extends Component<JobComponentConfig>
         implements WorkerDelegate {
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
     private boolean m_enabled;

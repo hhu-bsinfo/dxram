@@ -31,27 +31,12 @@ import java.lang.annotation.RetentionPolicy;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 public abstract class Component<T> extends Module<T> {
-    private Attributes m_attributes;
 
     /**
      * Constructor
      */
     protected Component() {
         super();
-
-        Annotation[] annotations = getClass().getAnnotations();
-
-        for (Annotation annotation : annotations) {
-            if (annotation instanceof Attributes) {
-                m_attributes = (Attributes) annotation;
-                break;
-            }
-        }
-
-        if (m_attributes == null) {
-            throw new IllegalStateException("No Attributes annotation on component: " +
-                    this.getClass().getSimpleName());
-        }
     }
 
     @Override
@@ -102,39 +87,4 @@ public abstract class Component<T> extends Module<T> {
      * @return True if shutdown was successful, false otherwise.
      */
     protected abstract boolean shutdownComponent();
-
-    /**
-     * Get the init priority.
-     *
-     * @return Init priority.
-     */
-    int getPriorityInit() {
-        return m_attributes.priorityInit();
-    }
-
-    /**
-     * Get the shutdown priority.
-     *
-     * @return Shutdown priority.
-     */
-    int getPriorityShutdown() {
-        return m_attributes.priorityShutdown();
-    }
-
-    /**
-     * Attributes for components
-     */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Inherited
-    public @interface Attributes {
-        /**
-         * The init priority to determine initialization order
-         */
-        short priorityInit();
-
-        /**
-         * The shutdown priority to determine shutdown order
-         */
-        short priorityShutdown();
-    }
 }

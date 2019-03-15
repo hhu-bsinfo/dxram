@@ -34,8 +34,6 @@ import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 03.02.2016
  */
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.EVENT,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.EVENT)
 public class EventComponent extends Component<EventComponentConfig> implements EventInterface {
     // private state
     private Map<String, ArrayList<EventListener<? extends Event>>> m_eventListener = new HashMap<>();

@@ -15,6 +15,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.plugin.PluginComponent;
+import de.hhu.bsinfo.dxutils.module.Dependency;;
 
 /**
  * Component to run applications locally on the DXRAM instance with access to all exposed services
@@ -22,9 +23,9 @@ import de.hhu.bsinfo.dxram.plugin.PluginComponent;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.APPLICATION,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.APPLICATION)
 public class ApplicationComponent extends Component<ModuleConfig> {
+
+    @Dependency
     private PluginComponent m_plugin;
 
     private final HashMap<String, Class<? extends Application>> m_applicationClasses = new HashMap<>();

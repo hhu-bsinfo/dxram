@@ -30,7 +30,7 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -71,16 +71,16 @@ public class JobService extends Service<ModuleConfig> implements MessageReceiver
         StatisticsManager.get().registerOperation(JobService.class, SOP_INCOMING_SUBMIT);
     }
 
-    @Inject
+    @Dependency
     private BootComponent m_boot;
 
-    @Inject
+    @Dependency
     private JobComponent m_job;
 
-    @Inject
+    @Dependency
     private NetworkComponent m_network;
 
-    @Inject
+    @Dependency
     private PluginComponent m_plugin;
 
     private final AtomicLong m_jobIDCounter = new AtomicLong(0);

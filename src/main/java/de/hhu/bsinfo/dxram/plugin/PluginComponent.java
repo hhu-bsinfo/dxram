@@ -38,8 +38,6 @@ import de.hhu.bsinfo.dxutils.PluginManager;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 18.02.2019
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.PLUGIN,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.PLUGIN)
 public class PluginComponent extends Component<PluginComponentConfig> {
     private PluginManager m_pluginManager;
 

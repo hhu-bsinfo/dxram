@@ -27,7 +27,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkIndexComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Inject;
+import de.hhu.bsinfo.dxutils.module.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -43,14 +43,12 @@ import de.hhu.bsinfo.dxram.lookup.overlay.storage.NameserviceEntry;
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
-@Component.Attributes(priorityInit = DXRAMComponentOrder.Init.NAMESERVICE,
-        priorityShutdown = DXRAMComponentOrder.Shutdown.NAMESERVICE)
 public class NameserviceComponent extends Component<NameserviceComponentConfig> {
 
-    @Inject
+    @Dependency
     private LookupComponent m_lookup;
 
-    @Inject
+    @Dependency
     private ChunkIndexComponent m_chunkIndex;
 
     private NameServiceStringConverter m_converter;
