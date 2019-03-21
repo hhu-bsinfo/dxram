@@ -43,8 +43,6 @@ public abstract class Component<T> extends Module<T> {
     protected boolean moduleInit(final DXRAMEngine p_engine) {
         boolean ret;
 
-        resolveComponentDependencies(p_engine);
-
         try {
             ret = initComponent(p_engine.getConfig(), p_engine.getJNIManager());
         } catch (final Exception e) {
@@ -59,15 +57,6 @@ public abstract class Component<T> extends Module<T> {
     @Override
     protected boolean moduleShutdown() {
         return shutdownComponent();
-    }
-
-    /**
-     * Called before the component is initialized. Get all the components your own component depends on.
-     *
-     * @param p_componentAccessor
-     *         Component accessor that provides access to other components
-     */
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
     }
 
     /**

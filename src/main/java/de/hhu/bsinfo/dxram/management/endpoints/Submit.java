@@ -32,17 +32,15 @@ public class Submit implements EndpointGroup {
     private static final Logger LOGGER = LogManager.getFormatterLogger(Submit.class);
 
     private final ZookeeperBootComponent m_boot;
-    private final ApplicationComponent m_app;
     private final NetworkComponent m_network;
 
     private static final String QUERY_NODE = "node";
 
     private static final String QUERY_ARGS = "args";
 
-    public Submit(final ComponentProvider p_accessor) {
-        m_boot = (ZookeeperBootComponent) p_accessor.getComponent(BootComponent.class);
-        m_app = p_accessor.getComponent(ApplicationComponent.class);
-        m_network = p_accessor.getComponent(NetworkComponent.class);
+    public Submit(final BootComponent p_boot, final NetworkComponent p_network) {
+        m_boot = (ZookeeperBootComponent) p_boot;
+        m_network = p_network;
     }
 
     @Override

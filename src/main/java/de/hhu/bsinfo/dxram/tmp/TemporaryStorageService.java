@@ -18,7 +18,7 @@ package de.hhu.bsinfo.dxram.tmp;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -154,11 +154,6 @@ public class TemporaryStorageService extends Service<TemporaryStorageServiceConf
      */
     public boolean remove(final AbstractChunk p_chunk) {
         return m_lookup.superpeerStorageRemove(p_chunk);
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
     @Override

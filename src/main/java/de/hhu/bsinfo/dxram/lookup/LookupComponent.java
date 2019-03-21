@@ -27,7 +27,7 @@ import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.NodeRegistry;
 import de.hhu.bsinfo.dxram.chunk.data.ChunkAnon;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -691,13 +691,6 @@ public class LookupComponent extends Component<LookupComponentConfig>
             m_peer.finishStartup(m_boot.getRack(), m_boot.getSwitch(), m_isActiveAndAvailableForBackup,
                     details.getCapabilities(), new IPV4Unit(details.getIp(), details.getPort()));
         }
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(BootComponent.class);
-        m_event = p_componentAccessor.getComponent(EventComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

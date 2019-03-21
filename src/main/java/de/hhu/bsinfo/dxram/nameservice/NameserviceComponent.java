@@ -26,7 +26,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponentConfig;
 import de.hhu.bsinfo.dxram.chunk.ChunkIndexComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -124,12 +124,6 @@ public class NameserviceComponent extends Component<NameserviceComponentConfig> 
 
         shutdownName();
         initName();
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_chunkIndex = p_componentAccessor.getComponent(ChunkIndexComponent.class);
     }
 
     @Override

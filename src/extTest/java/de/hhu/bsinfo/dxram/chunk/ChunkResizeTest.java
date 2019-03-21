@@ -1,5 +1,8 @@
 package de.hhu.bsinfo.dxram.chunk;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import org.junit.runner.RunWith;
 
 import de.hhu.bsinfo.dxram.DXRAM;

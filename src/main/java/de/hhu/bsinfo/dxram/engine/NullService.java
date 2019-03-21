@@ -23,10 +23,6 @@ package de.hhu.bsinfo.dxram.engine;
  */
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class NullService extends Service<ModuleConfig> {
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        // no dependencies
-    }
 
     @Override
     protected boolean startService(final DXRAMConfig p_config) {

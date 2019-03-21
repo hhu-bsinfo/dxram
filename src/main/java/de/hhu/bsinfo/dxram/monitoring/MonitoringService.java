@@ -21,7 +21,7 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -48,13 +48,6 @@ public class MonitoringService extends Service<ModuleConfig> implements MessageR
 
     @Dependency
     private NetworkComponent m_network;
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_monitor = p_componentAccessor.getComponent(MonitoringComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_boot = p_componentAccessor.getComponent(BootComponent.class);
-    }
 
     @Override
     protected boolean startService(final DXRAMConfig p_config) {

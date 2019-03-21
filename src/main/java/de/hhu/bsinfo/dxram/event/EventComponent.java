@@ -83,11 +83,6 @@ public class EventComponent extends Component<EventComponentConfig> implements E
     }
 
     @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        // no dependencies
-    }
-
-    @Override
     protected boolean initComponent(final DXRAMConfig p_config, final DXRAMJNIManager p_jniManager) {
         LOGGER.debug("EventExecutor: Initialising %d threads", getConfig().getThreadCount());
 

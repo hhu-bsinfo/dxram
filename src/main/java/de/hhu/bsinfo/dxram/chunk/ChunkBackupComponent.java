@@ -24,7 +24,7 @@ import de.hhu.bsinfo.dxmem.data.ChunkState;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -156,13 +156,6 @@ public class ChunkBackupComponent extends Component<ModuleConfig> {
         allCounter += counter;
 
         return allCounter;
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(BootComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

@@ -26,7 +26,7 @@ import de.hhu.bsinfo.dxram.chunk.operation.Put;
 import de.hhu.bsinfo.dxram.chunk.operation.Remove;
 import de.hhu.bsinfo.dxram.chunk.operation.Resize;
 import de.hhu.bsinfo.dxram.chunk.operation.Status;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -141,16 +141,6 @@ public class ChunkService extends Service<ChunkServiceConfig> {
      */
     public Lock lock() {
         return m_lock;
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(BootComponent.class);
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
     }
 
     @Override

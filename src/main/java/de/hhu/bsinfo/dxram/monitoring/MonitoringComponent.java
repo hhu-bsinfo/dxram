@@ -27,7 +27,7 @@ import de.hhu.bsinfo.dxmonitor.util.DeviceLister;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -77,15 +77,6 @@ public class MonitoringComponent extends Component<MonitoringComponentConfig> {
      */
     public boolean isActive() {
         return getConfig().isMonitoringActive();
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(BootComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_event = p_componentAccessor.getComponent(EventComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
     }
 
     @Override

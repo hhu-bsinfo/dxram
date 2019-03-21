@@ -16,7 +16,7 @@
 
 package de.hhu.bsinfo.dxram.sync;
 
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -108,11 +108,6 @@ public class SynchronizationService extends Service<SynchronizationServiceConfig
      */
     public BarrierStatus barrierGetStatus(final int p_barrierId) {
         return m_lookup.barrierGetStatus(p_barrierId);
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
     }
 
     @Override

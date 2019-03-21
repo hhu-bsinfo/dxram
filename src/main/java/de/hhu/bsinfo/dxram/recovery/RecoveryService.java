@@ -32,7 +32,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.backup.BackupRange;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -97,16 +97,6 @@ public class RecoveryService extends Service<ModuleConfig> implements MessageRec
                 }
             }
         }
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(BootComponent.class);
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunkBackup = p_componentAccessor.getComponent(ChunkBackupComponent.class);
-        m_log = p_componentAccessor.getComponent(LogComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

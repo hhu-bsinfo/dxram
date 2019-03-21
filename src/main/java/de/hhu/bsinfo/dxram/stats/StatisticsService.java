@@ -23,11 +23,6 @@ public class StatisticsService extends Service<StatisticsServiceConfig> {
     }
 
     @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-
-    }
-
-    @Override
     protected boolean startService(final DXRAMConfig p_config) {
         int printThreadPeriodMs = getConfig().getPrintStatsPeriodMs();
 

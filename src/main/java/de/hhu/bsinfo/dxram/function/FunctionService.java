@@ -7,7 +7,7 @@ import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -109,12 +109,6 @@ public class FunctionService extends Service<ModuleConfig> implements MessageRec
 
         return null;
     }
-
-    @Override
-    protected void resolveComponentDependencies(ComponentProvider p_componentAccessor) {
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-    }
-
     @Override
     protected boolean startService(DXRAMConfig p_config) {
         registerMessageTypes();

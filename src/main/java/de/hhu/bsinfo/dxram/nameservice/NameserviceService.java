@@ -19,7 +19,7 @@ package de.hhu.bsinfo.dxram.nameservice;
 import java.util.ArrayList;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -102,11 +102,6 @@ public class NameserviceService extends Service<ModuleConfig> {
      */
     public long getChunkID(final String p_name, final int p_timeoutMs) {
         return m_nameservice.getChunkID(p_name, p_timeoutMs);
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
     }
 
     @Override

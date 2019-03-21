@@ -13,7 +13,7 @@ import de.hhu.bsinfo.dxram.app.messages.ApplicationStartRequest;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationStartResponse;
 import de.hhu.bsinfo.dxram.app.messages.ApplicationSubmitMessage;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -156,13 +156,6 @@ public class ApplicationService extends Service<ApplicationServiceConfig> implem
         }
 
         LOGGER.trace("Exiting incomingMessage");
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_appComponent = p_componentAccessor.getComponent(ApplicationComponent.class);
-        m_bootComponent = p_componentAccessor.getComponent(BootComponent.class);
-        m_networkComponent = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

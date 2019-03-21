@@ -20,7 +20,7 @@ import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.operation.GetAnon;
 import de.hhu.bsinfo.dxram.chunk.operation.PutAnon;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
@@ -76,16 +76,6 @@ public class ChunkAnonService extends Service<ModuleConfig> {
      */
     public PutAnon putAnon() {
         return m_putAnon;
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(BootComponent.class);
-        m_backup = p_componentAccessor.getComponent(BackupComponent.class);
-        m_chunk = p_componentAccessor.getComponent(ChunkComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_nameservice = p_componentAccessor.getComponent(NameserviceComponent.class);
     }
 
     @Override

@@ -37,8 +37,6 @@ public abstract class Service<T> extends Module<T> {
     protected boolean moduleInit(final DXRAMEngine p_engine) {
         boolean ret;
 
-        resolveComponentDependencies(p_engine);
-
         try {
             ret = startService(p_engine.getConfig());
         } catch (final Exception e) {
@@ -54,14 +52,6 @@ public abstract class Service<T> extends Module<T> {
     protected boolean moduleShutdown() {
         return shutdownService();
     }
-
-    /**
-     * Called before the service is initialized. Get all the components your service depends on.
-     *
-     * @param p_componentAccessor
-     *         Component accessor that provides access to the components
-     */
-    protected abstract void resolveComponentDependencies(final ComponentProvider p_componentAccessor);
 
     /**
      * Called when the service is initialized. Setup data structures, read settings etc.

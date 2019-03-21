@@ -19,7 +19,7 @@ package de.hhu.bsinfo.dxram.chunk;
 import de.hhu.bsinfo.dxmem.DXMem;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -58,11 +58,6 @@ public class ChunkComponent extends Component<ChunkComponentConfig> {
         }
 
         return m_memory;
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(BootComponent.class);
     }
 
     @Override

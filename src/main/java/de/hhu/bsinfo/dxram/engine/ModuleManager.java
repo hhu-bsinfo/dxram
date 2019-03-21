@@ -30,9 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxutils.dependency.CircularDependencyException;
-import de.hhu.bsinfo.dxutils.dependency.DependencyGraph;
-import de.hhu.bsinfo.dxutils.module.DependencyManager;
+import de.hhu.bsinfo.dxutils.dependency.DependencyManager;
 
 /**
  * Manager for modules (components and/or services) in DXRAM. All modules used in DXRAM must be registered here to

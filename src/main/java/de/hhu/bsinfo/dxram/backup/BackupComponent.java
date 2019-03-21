@@ -31,7 +31,7 @@ import de.hhu.bsinfo.dxram.backup.ReplicaPlacement.RandomPlacement;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkBackupComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxutils.module.Dependency;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -507,16 +507,6 @@ public class BackupComponent extends Component<BackupComponentConfig>
                 }
             }
         }
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_boot = p_componentAccessor.getComponent(BootComponent.class);
-        m_chunkBackup = p_componentAccessor.getComponent(ChunkBackupComponent.class);
-        m_lookup = p_componentAccessor.getComponent(LookupComponent.class);
-        m_log = p_componentAccessor.getComponent(LogComponent.class);
-        m_event = p_componentAccessor.getComponent(EventComponent.class);
-        m_network = p_componentAccessor.getComponent(NetworkComponent.class);
     }
 
     @Override

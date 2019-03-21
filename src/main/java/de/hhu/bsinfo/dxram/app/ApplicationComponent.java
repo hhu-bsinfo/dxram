@@ -14,7 +14,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.plugin.PluginComponent;
-import de.hhu.bsinfo.dxutils.module.Dependency;;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;;
 
 /**
  * Component to run applications locally on the DXRAM instance with access to all exposed services
@@ -109,11 +109,6 @@ public class ApplicationComponent extends Component<ModuleConfig> {
         registerApplicationClass(applicationClass);
 
         return applicationClass.getName();
-    }
-
-    @Override
-    protected void resolveComponentDependencies(final ComponentProvider p_componentAccessor) {
-        m_plugin = p_componentAccessor.getComponent(PluginComponent.class);
     }
 
     @Override
