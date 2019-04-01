@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.commands;
 
+import de.hhu.bsinfo.dxnet.NetworkDeviceType;
 import picocli.CommandLine;
 
 import org.apache.logging.log4j.Level;
@@ -37,6 +38,9 @@ public class Start implements Runnable {
 
     @CommandLine.Option(names = "--bind", description = "The local IP-address to bind to.")
     private String m_bindAddress = "127.0.0.1:22222";
+
+    @CommandLine.Option(names = "--netdev", description = "The network device type to be used (ethernet/infiniband).")
+    private String m_networkDevice = NetworkDeviceType.ETHERNET.toString();
 
     @CommandLine.Option(names = "--level", description = "The log level to use.")
     private String m_logLevel = "INFO";
@@ -120,6 +124,9 @@ public class Start implements Runnable {
         // Set Number of threads to spawn for handling incoming and assembled network messages
         NetworkComponentConfig netConfig = overridenConfig.getComponentConfig(NetworkComponent.class);
         netConfig.getCoreConfig().setNumMessageHandlerThreads(m_handler);
+
+        // Set the network device type
+        netConfig.getCoreConfig().setDevice(m_networkDevice);
 
         // Set the compute role and compute group id to assign to the current instance (master, slave or none)
         MasterSlaveComputeServiceConfig msConfig = overridenConfig.getServiceConfig(MasterSlaveComputeService.class);
