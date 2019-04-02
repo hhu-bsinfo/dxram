@@ -165,7 +165,7 @@ public class ZookeeperBootComponent extends BootComponent<ZookeeperBootComponent
 
         m_port = getNextOpenPort(m_port);
 
-        LOGGER.debug("Initializing with address %s:%d and role %s", m_address, m_port, m_role);
+        LOGGER.info("Initializing with address %s:%d and role %s", m_address, m_port, m_role);
 
         establishCuratorConnection();
         configureCurator();
