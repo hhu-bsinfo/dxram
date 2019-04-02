@@ -54,6 +54,11 @@ public class Start implements Runnable {
     private InetSocketAddress m_bindAddress = new InetSocketAddress(NetworkUtil.getSiteLocalAddress(), 22222);
 
     @CommandLine.Option(
+            names = "--local",
+            description = "Runs this instance using the loopback interface.")
+    private boolean m_isLoopback = false;
+
+    @CommandLine.Option(
             names = "--netdev",
             description = "The network device type to be used (ethernet/infiniband).",
             paramLabel = "<NET_DEV>")
@@ -98,6 +103,10 @@ public class Start implements Runnable {
 
         if (m_isBootstrap) {
             m_isSuperpeer = true;
+        }
+
+        if (m_isLoopback) {
+            m_bindAddress = new InetSocketAddress("127.0.0.1", 22222);
         }
 
         DXRAM dxram = new DXRAM();
