@@ -21,8 +21,8 @@ public class LoaderService extends Service<ModuleConfig> {
         m_loader.cleanLoaderDir();
     }
 
-    public void registerJar(Path p_jarPath){
-        m_loader.registerJar(p_jarPath);
+    public void addJar(Path p_jarPath){
+        m_loader.addJarToLoader(p_jarPath);
     }
 
     @Override

@@ -7,31 +7,31 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
-public class ClassTable extends AbstractChunk {
-    private HashMap<String, String> m_jarMap;
-    private static final Logger LOGGER = LogManager.getFormatterLogger(ClassTable.class);
+public class LoaderTable extends AbstractChunk {
+    private HashMap<String, String> m_packageJarMap;
+    private HashMap<String, byte[]> m_jarByteArrays;
+    private static final Logger LOGGER = LogManager.getFormatterLogger(LoaderTable.class);
 
-    public ClassTable() {
-        m_jarMap = new HashMap<>();
-    }
-
-    public ClassTable(HashMap<String, String> p_jarMap) {
-        m_jarMap = p_jarMap;
+    public LoaderTable() {
+        m_packageJarMap = new HashMap<>();
+        m_jarByteArrays = new HashMap<>();
     }
 
     private void registerClass(String p_name, String p_jarName) {
-        if (!m_jarMap.containsKey(p_name)) {
-            m_jarMap.put(p_name, p_jarName);
+        if (!m_packageJarMap.containsKey(p_name)) {
+            m_packageJarMap.put(p_name, p_jarName);
             LOGGER.info(String.format("added %s from %s", p_name, p_jarName));
         }
     }
 
     public byte[] serializeMap() {
-        Object o = m_jarMap;
+        Object o = m_packageJarMap;
 
         byte[] yourBytes = null;
 
@@ -47,14 +47,42 @@ public class ClassTable extends AbstractChunk {
         return yourBytes;
     }
 
-    public String getJarName(String p_className) {
-        String myPackage = p_className.substring(0, p_className.lastIndexOf('.'));
-        return m_jarMap.get(myPackage);
+    public String getJarName(String p_packageName) throws NotInClusterException {
+        String myPackage = p_packageName.substring(0, p_packageName.lastIndexOf('.'));
+        if (m_packageJarMap.containsKey(myPackage)) {
+            return m_packageJarMap.get(myPackage);
+        }else{
+            throw new NotInClusterException();
+        }
+
+    }
+
+    public byte[] getJarByte(String p_jarName) {
+        return m_jarByteArrays.get(p_jarName);
+    }
+
+    private byte[] getByteStreamFromFile(Path p_filePath){
+        File file = p_filePath.toFile();
+        byte[] fileBytes = new byte[(int)file.length()];
+        try (FileInputStream fi = new FileInputStream(file)) {
+            fi.read(fileBytes);
+        }catch(FileNotFoundException e) {
+            e.printStackTrace();
+        }catch(IOException e) {
+            e.printStackTrace();
+        }
+        return fileBytes;
     }
 
     public void registerJar(String p_name) {
+        registerJarBytes(p_name, getByteStreamFromFile(Paths.get(p_name)));
+    }
+
+    public void registerJarBytes(String p_name, byte[] p_jarBytes) {
         try {
-            JarInputStream jarFile = new JarInputStream(new FileInputStream(p_name));
+            m_jarByteArrays.put(p_name, p_jarBytes);
+
+            JarInputStream jarFile = new JarInputStream(new ByteArrayInputStream(p_jarBytes));
             JarEntry entry;
 
             while (true) {
@@ -77,7 +105,7 @@ public class ClassTable extends AbstractChunk {
         } catch (Exception e) {
             LOGGER.error(String.format("Oops.. Encounter an issue while parsing jar: %s", e));
         }
-        LOGGER.info(String.format("ClassTable size: %s", m_jarMap.size()));
+        LOGGER.info(String.format("LoaderTable size: %s", m_packageJarMap.size()));
     }
 
     @Override
@@ -92,7 +120,7 @@ public class ClassTable extends AbstractChunk {
 
     @Override
     public int sizeofObject() {
-        int hashMapSize = 32 * m_jarMap.size() + 4 * 16;
+        int hashMapSize = 32 * m_packageJarMap.size() + 4 * 16;
 
         return hashMapSize;
     }

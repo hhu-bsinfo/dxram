@@ -121,6 +121,7 @@ public class PluginComponent extends Component<PluginComponentConfig> {
             StringBuilder strBuilder = new StringBuilder();
 
             for (String plugin : plugins) {
+                m_loader.addJarToLoader(Paths.get(plugin));
                 strBuilder.append(plugin);
                 strBuilder.append(", ");
             }

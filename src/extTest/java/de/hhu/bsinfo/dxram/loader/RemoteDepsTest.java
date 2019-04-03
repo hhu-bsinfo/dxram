@@ -20,7 +20,7 @@ public class RemoteDepsTest {
     @TestInstance(runOnNodeIdx = 0)
     public void initSuperpeer(final DXRAM p_instance) throws Exception {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.registerJar(Paths.get("dxrest.jar"));
+        loaderService.addJar(Paths.get("dxrest.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 1)
