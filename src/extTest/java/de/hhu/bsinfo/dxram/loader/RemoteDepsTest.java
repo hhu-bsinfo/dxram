@@ -14,18 +14,20 @@ import java.nio.file.Paths;
 @DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
+
         })
 public class RemoteDepsTest {
-    @TestInstance(runOnNodeIdx = 0)
+    @TestInstance(runOnNodeIdx = 1)
     public void initSuperpeer(final DXRAM p_instance) throws Exception {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         loaderService.addJar(Paths.get("dxrest.jar"));
     }
 
-    @TestInstance(runOnNodeIdx = 1)
+    @TestInstance(runOnNodeIdx = 2)
     public void simpleTest(final DXRAM p_instance) throws Exception {
-        Thread.yield();
+        Thread.sleep(100);
 
         ApplicationService applicationService = p_instance.getService(ApplicationService.class);
         applicationService.startApplication("de.hhu.bsinfo.dxapp.HelloApplication");
