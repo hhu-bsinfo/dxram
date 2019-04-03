@@ -24,11 +24,15 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import de.hhu.bsinfo.dxram.chunk.ChunkComponent;
 import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
+import de.hhu.bsinfo.dxram.loader.DistributedLoader;
+import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxutils.PluginManager;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 
 /**
  * Manage loadable jar files as plugins which are used by the application, job and master slave sub-systems
@@ -38,6 +42,13 @@ import de.hhu.bsinfo.dxutils.PluginManager;
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class PluginComponent extends Component<PluginComponentConfig> {
+
+    @Dependency
+    private NameserviceComponent m_name;
+
+    @Dependency
+    private ChunkComponent m_chunk;
+
     private PluginManager m_pluginManager;
 
     /**
@@ -88,7 +99,9 @@ public class PluginComponent extends Component<PluginComponentConfig> {
 
         while (true) {
             try {
-                m_pluginManager = new PluginManager(config.getPluginsPath());
+                DistributedLoader loader = new DistributedLoader(Paths.get(config.getPluginsPath()), m_chunk, m_name);
+
+                m_pluginManager = new PluginManager(config.getPluginsPath(), loader);
                 break;
             } catch (final FileNotFoundException e) {
                 File file = new File(config.getPluginsPath());
