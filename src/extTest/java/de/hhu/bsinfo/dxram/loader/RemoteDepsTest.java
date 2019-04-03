@@ -16,9 +16,7 @@ import java.nio.file.Paths;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
-public class DistributedLoaderTest {
-    boolean node1finished = false;
-
+public class RemoteDepsTest {
     @TestInstance(runOnNodeIdx = 0)
     public void initSuperpeer(final DXRAM p_instance) throws Exception {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
@@ -29,8 +27,7 @@ public class DistributedLoaderTest {
     public void simpleTest(final DXRAM p_instance) throws Exception {
         Thread.yield();
 
-        LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
-        loaderService.cleanLoaderDir();
+        ApplicationService applicationService = p_instance.getService(ApplicationService.class);
+        applicationService.startApplication("de.hhu.bsinfo.dxapp.HelloApplication");
     }
 }

@@ -4,15 +4,11 @@ import de.hhu.bsinfo.dxutils.loader.JarClassLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.*;
 import java.net.URLStreamHandlerFactory;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Comparator;
 
 public class DistributedLoader extends JarClassLoader {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DistributedLoader.class);
-    private ClassTable m_classTable;
     private final Path m_baseDir;
     private LoaderComponent m_loader;
 
