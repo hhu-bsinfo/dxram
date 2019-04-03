@@ -35,10 +35,10 @@ public class DistributedLoader extends JarClassLoader {
     protected Class<?> findClass(String p_name) throws ClassNotFoundException {
         Class<?> result;
         try {
-            LOGGER.info(String.format("Try to find class %s", p_name));
+            LOGGER.info(String.format("Try to find class %s local", p_name));
             result = super.findClass(p_name);
         } catch (ClassNotFoundException e) {
-            LOGGER.info(String.format("Class %s not found, DXClassloader tries to download jar...", p_name));
+            LOGGER.info(String.format("Class %s not found local, try to find remote...", p_name));
             getJar(p_name);
             result = super.findClass(p_name);
         }

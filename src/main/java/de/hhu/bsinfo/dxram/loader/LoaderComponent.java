@@ -132,7 +132,6 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REQUEST, h -> {
                 ClassRequestMessage requestMessage = (ClassRequestMessage) h;
                 String jarName = m_classtable.getJarName(requestMessage.getM_packageName());
-                LOGGER.info(String.format("Found %s in %s", requestMessage.getM_packageName(), jarName));
 
                 ClassResponseMessage responseMessage;
                 if (jarName != null) {
@@ -145,16 +144,17 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
                     }catch(IOException e) {
                         e.printStackTrace();
                     }
-
+                    LOGGER.info(String.format("Found %s in %s, sending ClassResponseMessage",
+                            requestMessage.getM_packageName(), jarName));
                     responseMessage = new ClassResponseMessage(requestMessage.getSource(), jarName, fileBytes);
                 }else{
+                    LOGGER.error(String.format("Class not found in cluster"));
                     responseMessage = new ClassResponseMessage(requestMessage.getSource(), "NOT_FOUND", new byte[1]);
                 }
 
                 try {
-                    LOGGER.info(String.format("Sending ClassResponseMessage with jar: %s", jarName));
                     m_net.sendMessage(responseMessage);
-                    LOGGER.info(String.format("Sending %s completed", jarName));
+                    LOGGER.info(String.format("Sending response completed", jarName));
                 } catch (NetworkException e) {
                     LOGGER.error(e);
                 }

@@ -17,8 +17,6 @@ import java.nio.file.Paths;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
 public class DistributedLoaderTest {
-    boolean node1finished = false;
-
     @TestInstance(runOnNodeIdx = 0)
     public void initSuperpeer(final DXRAM p_instance) throws Exception {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
