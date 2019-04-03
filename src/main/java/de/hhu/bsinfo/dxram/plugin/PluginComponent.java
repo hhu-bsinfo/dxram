@@ -30,6 +30,7 @@ import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.loader.DistributedLoader;
+import de.hhu.bsinfo.dxram.loader.LoaderComponent;
 import de.hhu.bsinfo.dxram.nameservice.NameserviceComponent;
 import de.hhu.bsinfo.dxutils.PluginManager;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
@@ -42,12 +43,8 @@ import de.hhu.bsinfo.dxutils.dependency.Dependency;
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class PluginComponent extends Component<PluginComponentConfig> {
-
     @Dependency
-    private NameserviceComponent m_name;
-
-    @Dependency
-    private ChunkComponent m_chunk;
+    private LoaderComponent m_loader;
 
     private PluginManager m_pluginManager;
 
@@ -99,9 +96,7 @@ public class PluginComponent extends Component<PluginComponentConfig> {
 
         while (true) {
             try {
-                DistributedLoader loader = new DistributedLoader(Paths.get(config.getPluginsPath()), m_chunk, m_name);
-
-                m_pluginManager = new PluginManager(config.getPluginsPath(), loader);
+                m_pluginManager = new PluginManager(config.getPluginsPath(), m_loader.getM_loader());
                 break;
             } catch (final FileNotFoundException e) {
                 File file = new File(config.getPluginsPath());

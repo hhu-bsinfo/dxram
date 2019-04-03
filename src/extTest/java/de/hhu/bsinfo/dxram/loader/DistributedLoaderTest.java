@@ -16,46 +16,29 @@ import sun.net.spi.nameservice.NameService;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 
 @RunWith(DXRAMJunitRunner.class)
 @DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
 public class DistributedLoaderTest {
     boolean node1finished = false;
 
-    @TestInstance(runOnNodeIdx = 1)
-    public void simpleTest(final DXRAM p_instance) throws Exception {
-        ChunkService chunkService = p_instance.getService(ChunkService.class);
-        BootService bootService = p_instance.getService(BootService.class);
-        NameserviceService nameserviceService = p_instance.getService(NameserviceService.class);
-
-        File testFile = new File("dxrest.jar");
-
-        short peer = bootService.getOnlinePeerNodeIDs()
-                .stream()
-                .findFirst().orElse(NodeID.INVALID_ID);
-
-        FileChunk fileChunk = new FileChunk(testFile);
-        chunkService.create().create(peer, fileChunk);
-        chunkService.put().put(fileChunk);
-
-        nameserviceService.register(fileChunk.getID(), "c1");
-
+    @TestInstance(runOnNodeIdx = 0)
+    public void initSuperpeer(final DXRAM p_instance) throws Exception {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
-
-        node1finished = true;
+        loaderService.registerJar(Paths.get("dxrest.jar"));
     }
 
-    @TestInstance(runOnNodeIdx = 2)
-    public void simpleTest2(final DXRAM p_instance) {
-        while(!node1finished) {
-            Thread.yield();
-        }
+    @TestInstance(runOnNodeIdx = 1)
+    public void simpleTest(final DXRAM p_instance) throws Exception {
+        Thread.yield();
+        LoaderService loaderService = p_instance.getService(LoaderService.class);
+        loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
+        loaderService.cleanLoaderDir();
     }
 }

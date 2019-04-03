@@ -5,7 +5,8 @@ import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
-import lombok.Getter;
+
+import java.nio.file.Path;
 
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class LoaderService extends Service<ModuleConfig> {
@@ -14,6 +15,14 @@ public class LoaderService extends Service<ModuleConfig> {
 
     public DistributedLoader getClassLoader() {
         return m_loader.getM_loader();
+    }
+
+    public void cleanLoaderDir() {
+        m_loader.cleanLoaderDir();
+    }
+
+    public void registerJar(Path p_jarPath){
+        m_loader.registerJar(p_jarPath);
     }
 
     @Override
