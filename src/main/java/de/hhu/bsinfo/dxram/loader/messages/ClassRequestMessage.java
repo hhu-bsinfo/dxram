@@ -1,13 +1,14 @@
 package de.hhu.bsinfo.dxram.loader.messages;
 
-import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
-import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 import lombok.Getter;
 
-public class ClassRequestMessage extends Message {
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Request;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
+
+public class ClassRequestMessage extends Request {
     @Getter
     private String m_packageName;
 

@@ -1,11 +1,12 @@
 package de.hhu.bsinfo.dxram.loader;
 
-import de.hhu.bsinfo.dxutils.loader.JarClassLoader;
+import java.net.URLStreamHandlerFactory;
+import java.nio.file.Path;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.net.URLStreamHandlerFactory;
-import java.nio.file.Path;
+import de.hhu.bsinfo.dxutils.loader.JarClassLoader;
 
 public class DistributedLoader extends JarClassLoader {
     private static final Logger LOGGER = LogManager.getFormatterLogger(DistributedLoader.class);

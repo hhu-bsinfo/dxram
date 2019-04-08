@@ -1,17 +1,20 @@
 package de.hhu.bsinfo.dxram.loader;
 
-import de.hhu.bsinfo.dxmem.data.AbstractChunk;
-import de.hhu.bsinfo.dxutils.serialization.Exporter;
-import de.hhu.bsinfo.dxutils.serialization.Importer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
 
 public class LoaderTable extends AbstractChunk {
     private HashMap<String, String> m_packageJarMap;

@@ -1,12 +1,12 @@
 package de.hhu.bsinfo.dxram.loader;
 
+import java.nio.file.Path;
+
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
-
-import java.nio.file.Path;
 
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class LoaderService extends Service<ModuleConfig> {

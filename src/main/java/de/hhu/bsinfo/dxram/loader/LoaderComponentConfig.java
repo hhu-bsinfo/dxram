@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.loader;
 
 import com.google.gson.annotations.Expose;
+
 import de.hhu.bsinfo.dxnet.core.CoreConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.ModuleConfig;

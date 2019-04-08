@@ -1,8 +1,5 @@
 package de.hhu.bsinfo.dxram.loader;
 
-import de.hhu.bsinfo.dxmem.data.AbstractChunk;
-import de.hhu.bsinfo.dxutils.serialization.Exporter;
-import de.hhu.bsinfo.dxutils.serialization.Importer;
 import lombok.Getter;
 
 import java.io.File;
@@ -11,6 +8,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import de.hhu.bsinfo.dxmem.data.AbstractChunk;
+import de.hhu.bsinfo.dxutils.serialization.Exporter;
+import de.hhu.bsinfo.dxutils.serialization.Importer;
 
 public class FileChunk extends AbstractChunk {
     @Getter

@@ -40,7 +40,6 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
     @Getter
     private DistributedLoader m_loader;
     private LoaderTable m_loaderTable;
-    private String m_jarName;
     private NodeRole m_role;
     private final String m_loaderDir = "loadedJars";
     private Random m_random;
@@ -92,21 +91,26 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
 
         ClassRequestMessage requestMessage = new ClassRequestMessage(id, p_name);
         try {
-            m_net.sendMessage(requestMessage);
-            while (m_jarName.isEmpty()) {
-                Thread.yield();
-            }
+            m_net.sendSync(requestMessage, true);
 
         } catch (NetworkException e) {
             LOGGER.error(e);
         }
-        if (CLASS_NOT_FOUND.equals(m_jarName)) {
-            throw new ClassNotFoundException();
-        }
-        String jarName = m_jarName;
-        m_jarName = "";
+        ClassResponseMessage response = (ClassResponseMessage) requestMessage.getResponse();
 
-        return Paths.get(m_loaderDir + File.separator + jarName);
+        if (CLASS_NOT_FOUND.equals(response.getM_jarName())) {
+            throw new ClassNotFoundException();
+        }else {
+            try {
+                LOGGER.info(String.format("write file %s", m_loaderDir + File.separator + response.getM_jarName()));
+                Files.write(Paths.get(m_loaderDir + File.separator + response.getM_jarName()),
+                        response.getM_jarBytes());
+            } catch (IOException e) {
+                LOGGER.error(e);
+            }
+        }
+
+        return Paths.get(m_loaderDir + File.separator + response.getM_jarName());
     }
 
     private int getRandomNumberInRange(int min, int max) {
@@ -161,24 +165,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
                 DistributeJarMessage.class);
 
         if (m_role == NodeRole.PEER) {
-            m_jarName = "";
             m_loader = new DistributedLoader(Paths.get("dxapp"), this);
-
-            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_RESPONSE, h -> {
-                ClassResponseMessage message = (ClassResponseMessage) h;
-                String jarName = message.getM_jarName();
-
-                if (!CLASS_NOT_FOUND.equals(jarName)) {
-                    try {
-                        LOGGER.info(String.format("write file %s", m_loaderDir + File.separator + jarName));
-                        Files.write(Paths.get(m_loaderDir + File.separator + jarName), message.getM_jarBytes());
-                    } catch (IOException e) {
-                        LOGGER.error(e);
-                    }
-                }
-
-                m_jarName = jarName;
-            });
         } else {
             m_loaderTable = new LoaderTable();
 
@@ -191,12 +178,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
 
                     LOGGER.info(String.format("Found %s in %s, sending ClassResponseMessage",
                             requestMessage.getM_packageName(), jarName));
-                    responseMessage = new ClassResponseMessage(requestMessage.getSource(), jarName,
+                    responseMessage = new ClassResponseMessage(requestMessage, jarName,
                             m_loaderTable.getJarByte(jarName));
 
                 } catch (NotInClusterException e) {
                     LOGGER.error("Class not found in cluster");
-                    responseMessage = new ClassResponseMessage(requestMessage.getSource(),
+                    responseMessage = new ClassResponseMessage(requestMessage,
                             CLASS_NOT_FOUND, new byte[1]);
                 }
 

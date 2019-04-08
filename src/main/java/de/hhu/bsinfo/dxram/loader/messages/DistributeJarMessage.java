@@ -1,11 +1,12 @@
 package de.hhu.bsinfo.dxram.loader.messages;
 
+import lombok.Getter;
+
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
-import lombok.Getter;
 
 public class DistributeJarMessage extends Message {
     @Getter

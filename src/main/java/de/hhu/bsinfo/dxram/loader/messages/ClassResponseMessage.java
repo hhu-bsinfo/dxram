@@ -1,13 +1,13 @@
 package de.hhu.bsinfo.dxram.loader.messages;
 
-import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
-import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
-import de.hhu.bsinfo.dxnet.core.Message;
-import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 import lombok.Getter;
 
-public class ClassResponseMessage extends Message {
+import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
+import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
+
+public class ClassResponseMessage extends Response {
     @Getter
     private byte[] m_jarBytes;
     @Getter
@@ -17,8 +17,8 @@ public class ClassResponseMessage extends Message {
         super();
     }
 
-    public ClassResponseMessage(final short p_destination, final String p_jarName, final byte[] p_jarBytes) {
-        super(p_destination, DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_RESPONSE);
+    public ClassResponseMessage(final ClassRequestMessage p_request, final String p_jarName, final byte[] p_jarBytes) {
+        super(p_request, LoaderMessages.SUBTYPE_CLASS_RESPONSE);
         m_jarName = p_jarName;
         m_jarBytes = p_jarBytes;
     }
