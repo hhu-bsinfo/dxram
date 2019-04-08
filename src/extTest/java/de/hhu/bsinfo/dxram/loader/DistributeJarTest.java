@@ -2,6 +2,7 @@ package de.hhu.bsinfo.dxram.loader;
 
 import java.nio.file.Paths;
 
+import org.junit.Assert;
 import org.junit.runner.RunWith;
 
 import de.hhu.bsinfo.dxram.DXRAM;
@@ -14,23 +15,29 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 @DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
-
         })
-public class DistributedLoaderTest {
-    @TestInstance(runOnNodeIdx = 1)
-    public void initSuperpeer(final DXRAM p_instance) throws Exception {
+public class DistributeJarTest {
+    @TestInstance(runOnNodeIdx = 3)
+    public void register(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         loaderService.addJar(Paths.get("dxrest.jar"));
     }
 
-    @TestInstance(runOnNodeIdx = 2)
-    public void simpleTest(final DXRAM p_instance) throws Exception {
-        Thread.sleep(100);
-
+    @TestInstance(runOnNodeIdx = 0)
+    public void check0(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
-        loaderService.cleanLoaderDir();
+    }
+
+    @TestInstance(runOnNodeIdx = 1)
+    public void check1(final DXRAM p_instance) {
+        LoaderService loaderService = p_instance.getService(LoaderService.class);
+    }
+
+    @TestInstance(runOnNodeIdx = 2)
+    public void check2(final DXRAM p_instance) {
+        LoaderService loaderService = p_instance.getService(LoaderService.class);
     }
 }

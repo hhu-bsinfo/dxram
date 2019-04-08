@@ -57,25 +57,12 @@ public class LoaderTable extends AbstractChunk {
 
     }
 
+    public boolean containsJar(String name) {
+        return m_packageJarMap.containsKey(name);
+    }
+
     public byte[] getJarByte(String p_jarName) {
         return m_jarByteArrays.get(p_jarName);
-    }
-
-    private byte[] getByteStreamFromFile(Path p_filePath){
-        File file = p_filePath.toFile();
-        byte[] fileBytes = new byte[(int)file.length()];
-        try (FileInputStream fi = new FileInputStream(file)) {
-            fi.read(fileBytes);
-        }catch(FileNotFoundException e) {
-            e.printStackTrace();
-        }catch(IOException e) {
-            e.printStackTrace();
-        }
-        return fileBytes;
-    }
-
-    public void registerJar(String p_name) {
-        registerJarBytes(p_name, getByteStreamFromFile(Paths.get(p_name)));
     }
 
     public void registerJarBytes(String p_name, byte[] p_jarBytes) {
@@ -106,6 +93,10 @@ public class LoaderTable extends AbstractChunk {
             LOGGER.error(String.format("Oops.. Encounter an issue while parsing jar: %s", e));
         }
         LOGGER.info(String.format("LoaderTable size: %s", m_packageJarMap.size()));
+    }
+
+    public int jarMapSize(){
+        return m_packageJarMap.size();
     }
 
     @Override

@@ -1,14 +1,15 @@
 package de.hhu.bsinfo.dxram.loader;
 
+import java.nio.file.Paths;
+
+import org.junit.runner.RunWith;
+
 import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.app.ApplicationService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import org.junit.runner.RunWith;
-
-import java.nio.file.Paths;
 
 @RunWith(DXRAMJunitRunner.class)
 @DXRAMTestConfiguration(
@@ -30,6 +31,8 @@ public class RemoteDepsTest {
         Thread.sleep(100);
 
         ApplicationService applicationService = p_instance.getService(ApplicationService.class);
+        //applicationService.registerApplicationClass(ExternalDepsApp.class);
+        //applicationService.startApplication("de.hhu.bsinfo.dxram.loader.ExternalDepsApp");
         applicationService.startApplication("de.hhu.bsinfo.dxapp.HelloApplication");
     }
 }

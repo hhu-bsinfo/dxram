@@ -7,18 +7,18 @@ import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 import lombok.Getter;
 
-public class ClassResponseMessage extends Message {
+public class DistributeJarMessage extends Message {
     @Getter
     private byte[] m_jarBytes;
     @Getter
     private String m_jarName;
 
-    public ClassResponseMessage(){
+    public DistributeJarMessage(){
         super();
     }
 
-    public ClassResponseMessage(final short p_destination, final String p_jarName, final byte[] p_jarBytes) {
-        super(p_destination, DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_RESPONSE);
+    public DistributeJarMessage(final short p_destination, final String p_jarName, final byte[] p_jarBytes) {
+        super(p_destination, DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE);
         m_jarName = p_jarName;
         m_jarBytes = p_jarBytes;
     }

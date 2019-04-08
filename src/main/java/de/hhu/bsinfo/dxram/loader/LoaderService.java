@@ -25,6 +25,10 @@ public class LoaderService extends Service<ModuleConfig> {
         m_loader.addJarToLoader(p_jarPath);
     }
 
+    public int numberLoadedEntries(){
+        return m_loader.numberLoadedEntries();
+    }
+
     @Override
     protected boolean startService(DXRAMConfig p_config) {
         return true;
