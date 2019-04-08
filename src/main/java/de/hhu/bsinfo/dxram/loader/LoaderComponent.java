@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.Random;
 
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class LoaderComponent extends Component<LoaderComponentConfig> {
@@ -44,6 +45,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
     private String m_jarName;
     private NodeRole m_role;
     private final String m_loaderDir = "loadedJars";
+    private Random m_random;
 
     public void cleanLoaderDir() {
         try {
@@ -59,7 +61,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
         LOGGER.info("Loader dir cleanup finished.");
     }
 
-    //todo use not static super peer nid
+    //todo distribute to all superpeers (flooding? check if getOnlineSuperpeerIds is ordered)
     public boolean addJarToLoader(Path p_jarPath){
         short id = (short) m_boot.getOnlineSuperpeerIds().get(0);
 
@@ -78,9 +80,10 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
         }
     }
 
-    //todo use not static super peer nid
     public Path getJar(String p_name) throws ClassNotFoundException {
-        short id = (short) m_boot.getOnlineSuperpeerIds().get(0);
+        int randomInt = getRandomNumberInRange(0, m_boot.getOnlineSuperpeerIds().size() - 1);
+        short id = (short)m_boot.getOnlineSuperpeerIds().get(randomInt);
+
         ClassRequestMessage requestMessage = new ClassRequestMessage(id, p_name);
         try {
             m_net.sendMessage(requestMessage);
@@ -100,6 +103,16 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
         return Paths.get(m_loaderDir + File.separator + jarName);
     }
 
+    private int getRandomNumberInRange(int min, int max) {
+        if (max == 0) {
+            return 0;
+        }else if(min >= max) {
+            throw new IllegalArgumentException("max must be greater than min");
+        }
+
+        return m_random.nextInt((max - min) + 1) + min;
+    }
+
     private void registerJarBytes(String p_jarName, byte[] p_jarBytes){
         if(m_role.equals(NodeRole.SUPERPEER)) {
             m_loaderTable.registerJarBytes(p_jarName, p_jarBytes);
@@ -111,6 +124,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
 
     @Override
     protected boolean initComponent(DXRAMConfig p_config, DXRAMJNIManager p_jniManager) {
+        m_random = new Random();
         m_role = p_config.getEngineConfig().getRole();
 
         if (m_role.equals(NodeRole.PEER)) {
