@@ -59,6 +59,13 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
         LOGGER.info("Loader dir cleanup finished.");
     }
 
+    /**
+     * Add jar file from specific path to cluster, after successful operation, the package is on all superpeers
+     *
+     * @param p_jarPath
+     *         path to jar file
+     * @return
+     */
     public boolean addJarToLoader(Path p_jarPath) {
         int randomInt = getRandomNumberInRange(0, m_boot.getOnlineSuperpeerIds().size() - 1);
         short id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
@@ -70,7 +77,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
             m_net.sendMessage(registerJarMessage);
             return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error(e);
             return false;
         } catch (NetworkException e) {
             LOGGER.error(e);
@@ -81,9 +88,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
     /**
      * Get jar from superpeer, this is called in the classloader
      *
-     * @param p_name package name of the requested class
+     * @param p_name
+     *         package name of the requested class
      * @return returns the path to the jar file
-     * @throws ClassNotFoundException class not found in cluster
+     * @throws ClassNotFoundException
+     *         class not found in cluster
      */
     public Path getJar(String p_name) throws ClassNotFoundException {
         int randomInt = getRandomNumberInRange(0, m_boot.getOnlineSuperpeerIds().size() - 1);
@@ -100,7 +109,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
 
         if (CLASS_NOT_FOUND.equals(response.getM_jarName())) {
             throw new ClassNotFoundException();
-        }else {
+        } else {
             try {
                 LOGGER.info(String.format("write file %s", m_loaderDir + File.separator + response.getM_jarName()));
                 Files.write(Paths.get(m_loaderDir + File.separator + response.getM_jarName()),
@@ -126,8 +135,10 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
     /**
      * Register a jar file from a RegisterJarMessage or a DistributeJarMessage (on superpeer)
      *
-     * @param p_jarName name of the jar file
-     * @param p_jarBytes byte array of the jar file
+     * @param p_jarName
+     *         name of the jar file
+     * @param p_jarBytes
+     *         byte array of the jar file
      */
     private void registerJarBytes(String p_jarName, byte[] p_jarBytes) {
         if (m_role == NodeRole.SUPERPEER) {
@@ -139,13 +150,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
     }
 
     /**
-     *
      * @return number of local registered jars
      */
-    public int numberLoadedEntries(){
-        if (m_role == NodeRole.SUPERPEER){
+    public int numberLoadedEntries() {
+        if (m_role == NodeRole.SUPERPEER) {
             return m_loaderTable.jarMapSize();
-        }else{
+        } else {
             LOGGER.warn("Only superpeers contain jar byte arrays");
             return 0;
         }
@@ -165,7 +175,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
                 DistributeJarMessage.class);
 
         if (m_role == NodeRole.PEER) {
-            m_loader = new DistributedLoader(Paths.get("dxapp"), this);
+            m_loader = new DistributedLoader(Paths.get("dxapp"));
+            m_loader.registerLoaderComponent(this);
         } else {
             m_loaderTable = new LoaderTable();
 
@@ -214,7 +225,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
                             LOGGER.error(e);
                         }
                     }
-                }else{
+                } else {
                     LOGGER.info("The cluster already registered this jar.");
                 }
             });

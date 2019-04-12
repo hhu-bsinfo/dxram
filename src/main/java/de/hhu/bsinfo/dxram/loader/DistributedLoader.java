@@ -13,23 +13,19 @@ public class DistributedLoader extends JarClassLoader {
     private final Path m_baseDir;
     private LoaderComponent m_loader;
 
-
-    public DistributedLoader(Path p_baseDir, ClassLoader p_parent, LoaderComponent p_loader) {
+    public DistributedLoader(Path p_baseDir, ClassLoader p_parent) {
         super(p_baseDir, p_parent);
         m_baseDir = p_baseDir;
-        m_loader = p_loader;
     }
 
-    public DistributedLoader(Path p_baseDir, LoaderComponent p_loader) {
+    public DistributedLoader(Path p_baseDir) {
         super(p_baseDir);
         m_baseDir = p_baseDir;
-        m_loader = p_loader;
     }
 
-    public DistributedLoader(Path p_baseDir, ClassLoader p_parent, URLStreamHandlerFactory p_factory, LoaderComponent p_loader) {
+    public DistributedLoader(Path p_baseDir, ClassLoader p_parent, URLStreamHandlerFactory p_factory) {
         super(p_baseDir, p_parent, p_factory);
         m_baseDir = p_baseDir;
-        m_loader = p_loader;
     }
 
     @Override
@@ -46,10 +42,19 @@ public class DistributedLoader extends JarClassLoader {
         return result;
     }
 
+    public void registerLoaderComponent(LoaderComponent p_loader) {
+        m_loader = p_loader;
+    }
+
     private void getJar(String p_name) throws ClassNotFoundException {
         String myPackage = p_name.substring(0, p_name.lastIndexOf('.'));
         LOGGER.info(String.format("Ask LoaderComponent for %s", myPackage));
-        add(m_loader.getJar(myPackage));
+        try {
+            add(m_loader.getJar(myPackage));
+        } catch (NullPointerException e) {
+            LOGGER.error("LoaderComponent not registered.");
+        }
+
         LOGGER.info(String.format("Added %s to ClassLoader", myPackage));
     }
 

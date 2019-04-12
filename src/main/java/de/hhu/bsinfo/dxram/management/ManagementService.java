@@ -8,14 +8,13 @@ import com.google.gson.Gson;
 import de.hhu.bsinfo.dxram.app.ApplicationComponent;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
 import de.hhu.bsinfo.dxram.boot.ZookeeperBootComponentConfig;
-import de.hhu.bsinfo.dxram.net.NetworkComponent;
-import de.hhu.bsinfo.dxutils.dependency.Dependency;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
-import de.hhu.bsinfo.dxram.engine.ComponentProvider;
-import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.management.endpoints.Members;
 import de.hhu.bsinfo.dxram.management.endpoints.Submit;
+import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
 
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = false)
 public class ManagementService extends Service<ManagementServiceConfig> {
@@ -54,6 +53,10 @@ public class ManagementService extends Service<ManagementServiceConfig> {
 
     @Override
     protected boolean shutdownService() {
+        if (!m_bootComponent.getConfig().isBootstrap()) {
+            return true;
+        }
+
         m_server.stop();
         return true;
     }

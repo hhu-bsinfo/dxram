@@ -1,6 +1,7 @@
 package de.hhu.bsinfo.dxram.loader;
 
 import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.runner.RunWith;
@@ -20,6 +21,8 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
 public class DistributeJarTest {
+    int barrierId = 0;
+
     @TestInstance(runOnNodeIdx = 3)
     public void register(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
@@ -27,17 +30,23 @@ public class DistributeJarTest {
     }
 
     @TestInstance(runOnNodeIdx = 0)
-    public void check0(final DXRAM p_instance) {
+    public void check0(final DXRAM p_instance) throws InterruptedException {
+        TimeUnit.SECONDS.sleep(1);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
+        Assert.assertEquals(5, loaderService.numberLoadedEntries());
     }
 
     @TestInstance(runOnNodeIdx = 1)
-    public void check1(final DXRAM p_instance) {
+    public void check1(final DXRAM p_instance) throws InterruptedException {
+        TimeUnit.SECONDS.sleep(1);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
+        Assert.assertEquals(5, loaderService.numberLoadedEntries());
     }
 
     @TestInstance(runOnNodeIdx = 2)
-    public void check2(final DXRAM p_instance) {
+    public void check2(final DXRAM p_instance) throws InterruptedException {
+        TimeUnit.SECONDS.sleep(1);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
+        Assert.assertEquals(5, loaderService.numberLoadedEntries());
     }
 }

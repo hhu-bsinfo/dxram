@@ -2,6 +2,7 @@ package de.hhu.bsinfo.dxram.loader;
 
 import java.nio.file.Paths;
 
+import org.junit.Assert;
 import org.junit.runner.RunWith;
 
 import de.hhu.bsinfo.dxram.DXRAM;
@@ -30,7 +31,10 @@ public class DistributedLoaderTest {
         Thread.sleep(100);
 
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
+
+        Class test = loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
+        Assert.assertNotNull(test.newInstance());
         loaderService.cleanLoaderDir();
+
     }
 }
