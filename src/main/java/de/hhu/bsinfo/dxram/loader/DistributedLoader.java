@@ -47,7 +47,13 @@ public class DistributedLoader extends JarClassLoader {
     }
 
     private void getJar(String p_name) throws ClassNotFoundException {
-        String myPackage = p_name.substring(0, p_name.lastIndexOf('.'));
+        String myPackage;
+        if (p_name.lastIndexOf('.') != -1){
+            myPackage = p_name.substring(0, p_name.lastIndexOf('.'));
+        }else {
+            myPackage = p_name;
+        }
+
         LOGGER.info(String.format("Ask LoaderComponent for %s", myPackage));
         try {
             add(m_loader.getJar(myPackage));

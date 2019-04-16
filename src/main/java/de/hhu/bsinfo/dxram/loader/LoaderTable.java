@@ -50,8 +50,14 @@ public class LoaderTable extends AbstractChunk {
         return yourBytes;
     }
 
-    public String getJarName(String p_packageName) throws NotInClusterException {
-        String myPackage = p_packageName.substring(0, p_packageName.lastIndexOf('.'));
+    public String getJarName(String p_name) throws NotInClusterException {
+        String myPackage;
+        if (p_name.lastIndexOf('.') != -1){
+            myPackage = p_name.substring(0, p_name.lastIndexOf('.'));
+        }else {
+            myPackage = p_name;
+        }
+
         if (m_packageJarMap.containsKey(myPackage)) {
             return m_packageJarMap.get(myPackage);
         }else{

@@ -21,20 +21,32 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
         })
 public class DistributedLoaderTest {
     @TestInstance(runOnNodeIdx = 1)
-    public void initSuperpeer(final DXRAM p_instance) throws Exception {
+    public void initSuperpeer(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         loaderService.addJar(Paths.get("dxrest.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 2)
-    public void simpleTest(final DXRAM p_instance) throws Exception {
+    public void simpleTest(final DXRAM p_instance) throws InterruptedException{
         Thread.sleep(100);
 
         LoaderService loaderService = p_instance.getService(LoaderService.class);
 
-        Class test = loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
-        Assert.assertNotNull(test.newInstance());
-        loaderService.cleanLoaderDir();
+        Class test = null;
+        try {
+            test = loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
+        }catch (ClassNotFoundException e) {
+            Assert.fail("Oups, classloading failed.");
+        }
+
+        Assert.assertNotNull(test);
+
+        try {
+            loaderService.getClassLoader().loadClass("BestClass");
+            Assert.fail("This class should not exist.");
+        }catch (ClassNotFoundException e) {
+            // this is nice
+        }
 
     }
 }

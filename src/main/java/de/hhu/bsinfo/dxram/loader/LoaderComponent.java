@@ -50,6 +50,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private Random m_random;
     final private String CLASS_NOT_FOUND = "NOT_FOUND";
 
+    /**
+     * Clean folder with requested jars from loader
+     */
     public void cleanLoaderDir() {
         try {
             Files.walk(Paths.get(m_loaderDir))
@@ -180,6 +183,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 DistributeJarMessage.class);
 
         if (m_role == NodeRole.PEER) {
+            //todo load plugin path from config
             m_loader = new DistributedLoader(Paths.get("dxapp"));
             m_loader.registerLoaderComponent(this);
         } else {
@@ -205,6 +209,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         return true;
     }
 
+    /**
+     * Lookup of jar for requested package and send response with jar or CLASS_NOT_FOUND
+     *
+     * @param p_message
+     */
     private void onIncomingClassRequest(Message p_message) {
         ClassRequestMessage requestMessage = (ClassRequestMessage) p_message;
 
@@ -220,7 +229,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         } catch (NotInClusterException e) {
             LOGGER.error("Class not found in cluster");
             responseMessage = new ClassResponseMessage(requestMessage,
-                    CLASS_NOT_FOUND, new byte[1]);
+                    CLASS_NOT_FOUND, new byte[0]);
         }
 
         try {
@@ -230,6 +239,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
     }
 
+    /**
+     * Register jar byte array from peer and distribute to other superpeers
+     *
+     * @param p_message
+     */
     private void onIncomingClassRegister(Message p_message) {
         RegisterJarMessage registerJarMessage = (RegisterJarMessage) p_message;
 
@@ -255,6 +269,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
     }
 
+    /**
+     * Register jar byte array from distribute message
+     *
+     * @param p_message
+     */
     private void onIncomingClassDistribute(Message p_message) {
         DistributeJarMessage distributeJarMessage = (DistributeJarMessage) p_message;
         registerJarBytes(distributeJarMessage.getM_jarName(), distributeJarMessage.getM_jarBytes());
