@@ -11,6 +11,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
+import de.hhu.bsinfo.dxnet.MessageReceiver;
+import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
@@ -24,18 +26,21 @@ import de.hhu.bsinfo.dxram.loader.messages.ClassResponseMessage;
 import de.hhu.bsinfo.dxram.loader.messages.DistributeJarMessage;
 import de.hhu.bsinfo.dxram.loader.messages.LoaderMessages;
 import de.hhu.bsinfo.dxram.loader.messages.RegisterJarMessage;
+import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
 
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
-public class LoaderComponent extends Component<LoaderComponentConfig> {
+public class LoaderComponent extends Component<LoaderComponentConfig> implements MessageReceiver {
     @Dependency
     private NetworkComponent m_net;
     @Dependency
     private BootComponent m_boot;
     @Dependency
     private EventComponent m_event;
+    @Dependency
+    private LookupComponent m_lookup;
 
     @Getter
     private DistributedLoader m_loader;
@@ -180,8 +185,31 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
         } else {
             m_loaderTable = new LoaderTable();
 
-            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REQUEST, h -> {
-                ClassRequestMessage requestMessage = (ClassRequestMessage) h;
+            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REQUEST, this);
+            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REGISTER, this);
+            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, this);
+        }
+        return true;
+    }
+
+    @Override
+    protected boolean shutdownComponent() {
+        if (m_role == NodeRole.SUPERPEER) {
+            m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REQUEST, this);
+            m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REGISTER, this);
+            m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, this);
+        }else {
+            cleanLoaderDir();
+        }
+
+        return true;
+    }
+
+    @Override
+    public void onIncomingMessage(Message p_message) {
+        switch (p_message.getSubtype()) {
+            case LoaderMessages.SUBTYPE_CLASS_REQUEST:
+                ClassRequestMessage requestMessage = (ClassRequestMessage) p_message;
 
                 ClassResponseMessage responseMessage;
                 try {
@@ -203,10 +231,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
                 } catch (NetworkException e) {
                     LOGGER.error(e);
                 }
-            });
-
-            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REGISTER, h -> {
-                RegisterJarMessage registerJarMessage = (RegisterJarMessage) h;
+                break;
+            case LoaderMessages.SUBTYPE_CLASS_REGISTER:
+                RegisterJarMessage registerJarMessage = (RegisterJarMessage) p_message;
 
                 if (!m_loaderTable.containsJar(registerJarMessage.getM_jarName())) {
                     registerJarBytes(registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes());
@@ -228,19 +255,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> {
                 } else {
                     LOGGER.info("The cluster already registered this jar.");
                 }
-            });
-
-            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, h -> {
-                DistributeJarMessage distributeJarMessage = (DistributeJarMessage) h;
+                break;
+            case LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE:
+                DistributeJarMessage distributeJarMessage = (DistributeJarMessage) p_message;
                 registerJarBytes(distributeJarMessage.getM_jarName(), distributeJarMessage.getM_jarBytes());
-            });
-
+                break;
         }
-        return true;
-    }
-
-    @Override
-    protected boolean shutdownComponent() {
-        return true;
     }
 }
