@@ -205,60 +205,72 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         return true;
     }
 
+    private void onIncomingClassRequest(Message p_message) {
+        ClassRequestMessage requestMessage = (ClassRequestMessage) p_message;
+
+        ClassResponseMessage responseMessage;
+        try {
+            String jarName = m_loaderTable.getJarName(requestMessage.getM_packageName());
+
+            LOGGER.info(String.format("Found %s in %s, sending ClassResponseMessage",
+                    requestMessage.getM_packageName(), jarName));
+            responseMessage = new ClassResponseMessage(requestMessage, jarName,
+                    m_loaderTable.getJarByte(jarName));
+
+        } catch (NotInClusterException e) {
+            LOGGER.error("Class not found in cluster");
+            responseMessage = new ClassResponseMessage(requestMessage,
+                    CLASS_NOT_FOUND, new byte[1]);
+        }
+
+        try {
+            m_net.sendMessage(responseMessage);
+        } catch (NetworkException e) {
+            LOGGER.error(e);
+        }
+    }
+
+    private void onIncomingClassRegister(Message p_message) {
+        RegisterJarMessage registerJarMessage = (RegisterJarMessage) p_message;
+
+        if (!m_loaderTable.containsJar(registerJarMessage.getM_jarName())) {
+            registerJarBytes(registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes());
+
+            List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
+            //todo geOnlineSuperpeerIds should not contain own id?
+            superPeers.remove((Short) m_boot.getNodeId());
+            LOGGER.info(String.format("Distribute %s to other superpeers: %s",
+                    registerJarMessage.getM_jarName(), superPeers));
+            for (Short superPeer : superPeers) {
+                DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer,
+                        registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes());
+                try {
+                    m_net.sendMessage(distributeJarMessage);
+                } catch (NetworkException e) {
+                    LOGGER.error(e);
+                }
+            }
+        } else {
+            LOGGER.info("The cluster already registered this jar.");
+        }
+    }
+
+    private void onIncomingClassDistribute(Message p_message) {
+        DistributeJarMessage distributeJarMessage = (DistributeJarMessage) p_message;
+        registerJarBytes(distributeJarMessage.getM_jarName(), distributeJarMessage.getM_jarBytes());
+    }
+
     @Override
     public void onIncomingMessage(Message p_message) {
         switch (p_message.getSubtype()) {
             case LoaderMessages.SUBTYPE_CLASS_REQUEST:
-                ClassRequestMessage requestMessage = (ClassRequestMessage) p_message;
-
-                ClassResponseMessage responseMessage;
-                try {
-                    String jarName = m_loaderTable.getJarName(requestMessage.getM_packageName());
-
-                    LOGGER.info(String.format("Found %s in %s, sending ClassResponseMessage",
-                            requestMessage.getM_packageName(), jarName));
-                    responseMessage = new ClassResponseMessage(requestMessage, jarName,
-                            m_loaderTable.getJarByte(jarName));
-
-                } catch (NotInClusterException e) {
-                    LOGGER.error("Class not found in cluster");
-                    responseMessage = new ClassResponseMessage(requestMessage,
-                            CLASS_NOT_FOUND, new byte[1]);
-                }
-
-                try {
-                    m_net.sendMessage(responseMessage);
-                } catch (NetworkException e) {
-                    LOGGER.error(e);
-                }
+                onIncomingClassRequest(p_message);
                 break;
             case LoaderMessages.SUBTYPE_CLASS_REGISTER:
-                RegisterJarMessage registerJarMessage = (RegisterJarMessage) p_message;
-
-                if (!m_loaderTable.containsJar(registerJarMessage.getM_jarName())) {
-                    registerJarBytes(registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes());
-
-                    List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
-                    //todo geOnlineSuperpeerIds should not contain own id?
-                    superPeers.remove((Short) m_boot.getNodeId());
-                    LOGGER.info(String.format("Distribute %s to other superpeers: %s",
-                            registerJarMessage.getM_jarName(), superPeers));
-                    for (Short superPeer : superPeers) {
-                        DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer,
-                                registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes());
-                        try {
-                            m_net.sendMessage(distributeJarMessage);
-                        } catch (NetworkException e) {
-                            LOGGER.error(e);
-                        }
-                    }
-                } else {
-                    LOGGER.info("The cluster already registered this jar.");
-                }
+                onIncomingClassRegister(p_message);
                 break;
             case LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE:
-                DistributeJarMessage distributeJarMessage = (DistributeJarMessage) p_message;
-                registerJarBytes(distributeJarMessage.getM_jarName(), distributeJarMessage.getM_jarBytes());
+                onIncomingClassDistribute(p_message);
                 break;
         }
     }
