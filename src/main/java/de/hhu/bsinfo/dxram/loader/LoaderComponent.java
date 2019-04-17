@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2019 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.loader;
 
 import lombok.Getter;
@@ -81,7 +97,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         try {
             byte[] jarBytes = Files.readAllBytes(p_jarPath);
 
-            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id, p_jarPath.getFileName().toString(), jarBytes);
+            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id, p_jarPath.getFileName().toString(),
+                    jarBytes);
             m_net.sendMessage(registerJarMessage);
             return true;
         } catch (IOException e) {
@@ -186,7 +203,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 DistributeJarMessage.class);
 
         if (m_role == NodeRole.PEER) {
-            if (!Files.exists(Paths.get(m_loaderDir))){
+            if (!Files.exists(Paths.get(m_loaderDir))) {
                 try {
                     Files.createDirectory(Paths.get(m_loaderDir));
                 } catch (IOException e) {
@@ -194,10 +211,10 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 }
             }
             if (ClassLoader.getSystemClassLoader() instanceof DistributedLoader) {
-                LOGGER.info("DistributedLoader is SystemClassLoader.");
+                LOGGER.info("DistributedLoader is the SystemClassLoader.");
                 m_loader = (DistributedLoader) ClassLoader.getSystemClassLoader();
-            }else {
-                LOGGER.warn("DistributedClassloader is not SystemClassLoader, it will only work with Applications" +
+            } else {
+                LOGGER.warn("DistributedClassloader is not the SystemClassLoader, it will only work with Applications" +
                         " and the LoaderService. Please use the vm argument" +
                         " '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedLoader'");
                 m_loader = new DistributedLoader();
@@ -219,7 +236,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REQUEST, this);
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REGISTER, this);
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, this);
-        }else {
+        } else {
             cleanLoaderDir();
         }
 

@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2019 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.loader;
 
 import java.io.ByteArrayInputStream;
@@ -26,6 +42,13 @@ public class LoaderTable extends AbstractChunk {
         m_jarByteArrays = new HashMap<>();
     }
 
+    /**
+     * Register package with in HashMap with name of jar, it is possible to register more than one package
+     * with the same jar, the jar is only stored one time
+     *
+     * @param p_name
+     * @param p_jarName
+     */
     private void registerClass(String p_name, String p_jarName) {
         if (!m_packageJarMap.containsKey(p_name)) {
             m_packageJarMap.put(p_name, p_jarName);
@@ -50,22 +73,35 @@ public class LoaderTable extends AbstractChunk {
         return yourBytes;
     }
 
+    /**
+     * Returns the name of the jar with the class p_name and throws a Exception if the class is not found in cluster
+     *
+     * @param p_name
+     * @return
+     * @throws NotInClusterException
+     */
     public String getJarName(String p_name) throws NotInClusterException {
         String myPackage;
-        if (p_name.lastIndexOf('.') != -1){
+        if (p_name.lastIndexOf('.') != -1) {
             myPackage = p_name.substring(0, p_name.lastIndexOf('.'));
-        }else {
+        } else {
             myPackage = p_name;
         }
 
         if (m_packageJarMap.containsKey(myPackage)) {
             return m_packageJarMap.get(myPackage);
-        }else{
+        } else {
             throw new NotInClusterException();
         }
 
     }
 
+    /**
+     * Check if jar is already registered
+     *
+     * @param name
+     * @return
+     */
     public boolean containsJar(String name) {
         return m_packageJarMap.containsKey(name);
     }
@@ -74,6 +110,12 @@ public class LoaderTable extends AbstractChunk {
         return m_jarByteArrays.get(p_jarName);
     }
 
+    /**
+     * Register byte array of jar with filename
+     *
+     * @param p_name
+     * @param p_jarBytes
+     */
     public void registerJarBytes(String p_name, byte[] p_jarBytes) {
         try {
             m_jarByteArrays.put(p_name, p_jarBytes);
@@ -104,7 +146,10 @@ public class LoaderTable extends AbstractChunk {
         LOGGER.info(String.format("LoaderTable size: %s", m_packageJarMap.size()));
     }
 
-    public int jarMapSize(){
+    /**
+     * @return number of registered packages
+     */
+    public int jarMapSize() {
         return m_packageJarMap.size();
     }
 

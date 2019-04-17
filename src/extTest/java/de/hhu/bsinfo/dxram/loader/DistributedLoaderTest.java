@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2019 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.loader;
 
 import java.nio.file.Paths;
@@ -27,7 +43,7 @@ public class DistributedLoaderTest {
     }
 
     @TestInstance(runOnNodeIdx = 2)
-    public void simpleTest(final DXRAM p_instance) throws InterruptedException{
+    public void simpleTest(final DXRAM p_instance) throws InterruptedException {
         Thread.sleep(100);
 
         LoaderService loaderService = p_instance.getService(LoaderService.class);
@@ -35,7 +51,7 @@ public class DistributedLoaderTest {
         Class test = null;
         try {
             test = loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
-        }catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             Assert.fail("Oups, classloading failed.");
         }
 
@@ -44,7 +60,7 @@ public class DistributedLoaderTest {
         try {
             loaderService.getClassLoader().loadClass("BestClass");
             Assert.fail("This class should not exist.");
-        }catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             // this is nice
         }
 

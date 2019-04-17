@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 2019 Heinrich-Heine-Universitaet Duesseldorf, Institute of Computer Science,
+ * Department Operating Systems
+ *
+ * This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any
+ * later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
 package de.hhu.bsinfo.dxram.loader;
 
 import lombok.Getter;
@@ -21,6 +37,7 @@ public class FileChunk extends AbstractChunk {
 
     /**
      * Chunk that holds a file
+     *
      * @param p_file
      */
     public FileChunk(File p_file) {
@@ -35,7 +52,9 @@ public class FileChunk extends AbstractChunk {
 
     /**
      * Saves file from chunk to desired destination
-     * @param p_destDir destination directory
+     *
+     * @param p_destDir
+     *         destination directory
      * @return
      */
     public Path getFile(Path p_destDir) {
@@ -51,16 +70,17 @@ public class FileChunk extends AbstractChunk {
 
     /**
      * Converts file to byte array to save as chunk
+     *
      * @param p_file
      * @return
      */
     private byte[] fileToByte(File p_file) {
-        byte[] fileBytes = new byte[(int)p_file.length()];
+        byte[] fileBytes = new byte[(int) p_file.length()];
         try (FileInputStream fi = new FileInputStream(p_file)) {
             fi.read(fileBytes);
-        }catch(FileNotFoundException e) {
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
-        }catch(IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -83,6 +103,6 @@ public class FileChunk extends AbstractChunk {
 
     @Override
     public int sizeofObject() {
-        return m_name.length() * Character.BYTES + Integer.BYTES + m_size * Byte.BYTES - 3 ;
+        return m_name.length() * Character.BYTES + Integer.BYTES + m_size * Byte.BYTES - 3;
     }
 }
