@@ -194,10 +194,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 }
             }
             if (ClassLoader.getSystemClassLoader() instanceof DistributedLoader) {
-                LOGGER.info("Use systemclassloader");
+                LOGGER.info("DistributedLoader is SystemClassLoader.");
                 m_loader = (DistributedLoader) ClassLoader.getSystemClassLoader();
             }else {
-                LOGGER.info("Use new classloader");
+                LOGGER.warn("DistributedClassloader is not SystemClassLoader, it will only work with Applications" +
+                        " and the LoaderService. Please use the vm argument" +
+                        " '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedLoader'");
                 m_loader = new DistributedLoader();
             }
             m_loader.registerLoaderComponent(this);
