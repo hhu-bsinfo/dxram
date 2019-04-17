@@ -26,7 +26,7 @@ public class DistributeJarTest {
     @TestInstance(runOnNodeIdx = 3)
     public void register(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.addJar(Paths.get("dxrest.jar"));
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 0)

@@ -81,7 +81,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         try {
             byte[] jarBytes = Files.readAllBytes(p_jarPath);
 
-            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id, p_jarPath.toString(), jarBytes);
+            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id, p_jarPath.getFileName().toString(), jarBytes);
             m_net.sendMessage(registerJarMessage);
             return true;
         } catch (IOException e) {

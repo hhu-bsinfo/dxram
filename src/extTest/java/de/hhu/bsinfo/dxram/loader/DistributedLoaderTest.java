@@ -23,7 +23,7 @@ public class DistributedLoaderTest {
     @TestInstance(runOnNodeIdx = 1)
     public void initSuperpeer(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.addJar(Paths.get("dxrest.jar"));
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 2)

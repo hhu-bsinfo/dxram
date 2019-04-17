@@ -2,6 +2,7 @@ package de.hhu.bsinfo.dxram.loader;
 
 import java.nio.file.Paths;
 
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 
 import de.hhu.bsinfo.dxram.DXRAM;
@@ -11,6 +12,7 @@ import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.app.ApplicationService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
+@Ignore
 @RunWith(DXRAMJunitRunner.class)
 @DXRAMTestConfiguration(
         nodes = {
@@ -23,7 +25,7 @@ public class RemoteDepsTest {
     @TestInstance(runOnNodeIdx = 1)
     public void initSuperpeer(final DXRAM p_instance) throws Exception {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.addJar(Paths.get("dxrest.jar"));
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 2)
@@ -33,6 +35,5 @@ public class RemoteDepsTest {
         ApplicationService applicationService = p_instance.getService(ApplicationService.class);
         applicationService.registerApplicationClass(ExternalDepsApp.class);
         applicationService.startApplication("de.hhu.bsinfo.dxram.loader.ExternalDepsApp");
-        //applicationService.startApplication("de.hhu.bsinfo.dxapp.HelloApplication");
     }
 }
