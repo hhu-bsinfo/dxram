@@ -67,12 +67,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private NodeRole m_role;
     private final String m_loaderDir = "loadedJars";
     private Random m_random;
-    final private String CLASS_NOT_FOUND = "NOT_FOUND";
+    private static final String CLASS_NOT_FOUND = "NOT_FOUND";
 
     /**
      * Clean folder with requested jars from loader
      */
-    public void cleanLoaderDir() {
+    private void cleanLoaderDir() {
         try {
             Files.walk(Paths.get(m_loaderDir))
                     .sorted(Comparator.reverseOrder())
@@ -91,10 +91,10 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      *
      * @param p_jarPath
      *         path to jar file
-     * @return
+     * @return true if successful
      */
     public boolean addJarToLoader(Path p_jarPath) {
-        int randomInt = getRandomNumberInRange(0, m_boot.getOnlineSuperpeerIds().size() - 1);
+        int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
         short id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
 
         try {
@@ -108,7 +108,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             LOGGER.error(e);
             return false;
         } catch (NetworkException e) {
-            LOGGER.error(e);
+            LOGGER.error("Could not send message", e);
             return false;
         }
     }
@@ -125,7 +125,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     public Path getJar(String p_name) throws ClassNotFoundException {
         LOGGER.info(String.format("Ask LoaderComponent for %s", p_name));
 
-        int randomInt = getRandomNumberInRange(0, m_boot.getOnlineSuperpeerIds().size() - 1);
+        int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
         short id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
 
         ClassRequestMessage requestMessage = new ClassRequestMessage(id, p_name);
@@ -139,28 +139,28 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
         if (CLASS_NOT_FOUND.equals(response.getM_jarName())) {
             throw new ClassNotFoundException();
-        } else {
-            try {
-                LOGGER.info(String.format("write file %s", m_loaderDir + File.separator + response.getM_jarName()));
-                Files.write(Paths.get(m_loaderDir + File.separator + response.getM_jarName()),
-                        response.getM_jarBytes());
-            } catch (IOException e) {
-                LOGGER.error(e);
-            }
+        }
+        try {
+            LOGGER.info(String.format("write file %s", m_loaderDir + File.separator + response.getM_jarName()));
+            Files.write(Paths.get(m_loaderDir + File.separator + response.getM_jarName()),
+                    response.getM_jarBytes());
+        } catch (IOException e) {
+            LOGGER.error(e);
         }
 
         LOGGER.info(String.format("Added %s to ClassLoader", p_name));
         return Paths.get(m_loaderDir + File.separator + response.getM_jarName());
     }
 
-    private int getRandomNumberInRange(int min, int max) {
-        if (max == 0) {
+    private int getRandomInt(int p_max) {
+        if (p_max == 0) {
             return 0;
-        } else if (min >= max) {
+        }
+        if (p_max <= 0) {
             throw new IllegalArgumentException("max must be greater than min");
         }
 
-        return m_random.nextInt(max - min + 1) + min;
+        return m_random.nextInt(p_max);
     }
 
     /**
@@ -250,6 +250,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      * Lookup of jar for requested package and send response with jar or CLASS_NOT_FOUND
      *
      * @param p_message
+     *         message with request
      */
     private void onIncomingClassRequest(Message p_message) {
         ClassRequestMessage requestMessage = (ClassRequestMessage) p_message;
@@ -280,6 +281,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      * Register jar byte array from peer and distribute to other superpeers
      *
      * @param p_message
+     *         message with request
      */
     private void onIncomingClassRegister(Message p_message) {
         RegisterJarMessage registerJarMessage = (RegisterJarMessage) p_message;
@@ -288,7 +290,6 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             registerJarBytes(registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes());
 
             List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
-            //todo geOnlineSuperpeerIds should not contain own id?
             superPeers.remove((Short) m_boot.getNodeId());
             LOGGER.info(String.format("Distribute %s to other superpeers: %s",
                     registerJarMessage.getM_jarName(), superPeers));
@@ -310,6 +311,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      * Register jar byte array from distribute message
      *
      * @param p_message
+     *         message with request
      */
     private void onIncomingClassDistribute(Message p_message) {
         DistributeJarMessage distributeJarMessage = (DistributeJarMessage) p_message;
@@ -328,6 +330,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             case LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE:
                 onIncomingClassDistribute(p_message);
                 break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + p_message.getSubtype());
         }
     }
 }

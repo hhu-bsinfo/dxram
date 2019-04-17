@@ -36,10 +36,6 @@ public class LoaderService extends Service<ModuleConfig> {
         return m_loader.getM_loader();
     }
 
-    public void cleanLoaderDir() {
-        m_loader.cleanLoaderDir();
-    }
-
     public void addJar(Path p_jarPath) {
         m_loader.addJarToLoader(p_jarPath);
     }
