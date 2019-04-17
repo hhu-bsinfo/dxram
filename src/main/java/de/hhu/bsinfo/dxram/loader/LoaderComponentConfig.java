@@ -22,6 +22,9 @@ import de.hhu.bsinfo.dxnet.core.CoreConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 public class LoaderComponentConfig extends ModuleConfig {
     /**
      * Get the core configuration values

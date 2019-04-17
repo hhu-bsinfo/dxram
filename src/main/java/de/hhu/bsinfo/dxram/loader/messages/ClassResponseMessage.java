@@ -23,6 +23,9 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 public class ClassResponseMessage extends Response {
     @Getter
     private byte[] m_jarBytes;

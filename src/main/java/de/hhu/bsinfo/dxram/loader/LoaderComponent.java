@@ -47,6 +47,9 @@ import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class LoaderComponent extends Component<LoaderComponentConfig> implements MessageReceiver {
     @Dependency

@@ -24,6 +24,9 @@ import java.net.URLStreamHandlerFactory;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 public class DistributedLoader extends URLClassLoader {
     private LoaderComponent m_loader;
     private static final String JAR_SUFFIX = ".jar";

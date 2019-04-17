@@ -16,6 +16,9 @@
 
 package de.hhu.bsinfo.dxram.loader.messages;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 public class LoaderMessages {
     public static final byte SUBTYPE_CLASS_REQUEST = 1;
     public static final byte SUBTYPE_CLASS_RESPONSE = 2;

@@ -24,6 +24,9 @@ import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 public class ClassRequestMessage extends Request {
     @Getter
     private String m_packageName;

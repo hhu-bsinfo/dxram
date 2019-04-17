@@ -20,6 +20,9 @@ import de.hhu.bsinfo.dxram.app.Application;
 import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
 import de.hhu.bsinfo.dxram.generated.BuildConfig;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 public class ExternalDepsApp extends Application {
     @Override
     public DXRAMVersion getBuiltAgainstVersion() {

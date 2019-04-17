@@ -32,6 +32,9 @@ import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 public class LoaderTable extends AbstractChunk {
     private HashMap<String, String> m_packageJarMap;
     private HashMap<String, byte[]> m_jarByteArrays;

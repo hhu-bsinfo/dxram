@@ -24,6 +24,9 @@ import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 import de.hhu.bsinfo.dxram.engine.Service;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 @Module.Attributes(supportsSuperpeer = true, supportsPeer = true)
 public class LoaderService extends Service<ModuleConfig> {
     @Dependency

@@ -16,6 +16,9 @@
 
 package de.hhu.bsinfo.dxram.loader;
 
+/**
+ * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
+ */
 public class NotInClusterException extends Exception {
     public NotInClusterException(String p_info) {
         super(p_info);
