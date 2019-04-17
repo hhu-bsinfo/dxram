@@ -186,6 +186,13 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 DistributeJarMessage.class);
 
         if (m_role == NodeRole.PEER) {
+            if (!Files.exists(Paths.get(m_loaderDir))){
+                try {
+                    Files.createDirectory(Paths.get(m_loaderDir));
+                } catch (IOException e) {
+                    LOGGER.error("Could not create loaderDir.", e);
+                }
+            }
             if (ClassLoader.getSystemClassLoader() instanceof DistributedLoader) {
                 LOGGER.info("Use systemclassloader");
                 m_loader = (DistributedLoader) ClassLoader.getSystemClassLoader();
