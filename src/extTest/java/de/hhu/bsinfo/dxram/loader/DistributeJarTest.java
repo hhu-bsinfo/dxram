@@ -33,20 +33,20 @@ public class DistributeJarTest {
     public void check0(final DXRAM p_instance) throws InterruptedException {
         TimeUnit.SECONDS.sleep(1);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        Assert.assertEquals(5, loaderService.numberLoadedEntries());
+        Assert.assertEquals(4, loaderService.numberLoadedEntries());
     }
 
     @TestInstance(runOnNodeIdx = 1)
     public void check1(final DXRAM p_instance) throws InterruptedException {
         TimeUnit.SECONDS.sleep(1);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        Assert.assertEquals(5, loaderService.numberLoadedEntries());
+        Assert.assertEquals(4, loaderService.numberLoadedEntries());
     }
 
     @TestInstance(runOnNodeIdx = 2)
     public void check2(final DXRAM p_instance) throws InterruptedException {
         TimeUnit.SECONDS.sleep(1);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        Assert.assertEquals(5, loaderService.numberLoadedEntries());
+        Assert.assertEquals(4, loaderService.numberLoadedEntries());
     }
 }

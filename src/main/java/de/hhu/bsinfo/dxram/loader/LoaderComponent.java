@@ -103,6 +103,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      *         class not found in cluster
      */
     public Path getJar(String p_name) throws ClassNotFoundException {
+        LOGGER.info(String.format("Ask LoaderComponent for %s", p_name));
+
         int randomInt = getRandomNumberInRange(0, m_boot.getOnlineSuperpeerIds().size() - 1);
         short id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
 
@@ -127,6 +129,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             }
         }
 
+        LOGGER.info(String.format("Added %s to ClassLoader", p_name));
         return Paths.get(m_loaderDir + File.separator + response.getM_jarName());
     }
 
@@ -183,8 +186,13 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 DistributeJarMessage.class);
 
         if (m_role == NodeRole.PEER) {
-            //todo load plugin path from config
-            m_loader = new DistributedLoader(Paths.get("dxapp"));
+            if (ClassLoader.getSystemClassLoader() instanceof DistributedLoader) {
+                LOGGER.info("Use systemclassloader");
+                m_loader = (DistributedLoader) ClassLoader.getSystemClassLoader();
+            }else {
+                LOGGER.info("Use new classloader");
+                m_loader = new DistributedLoader();
+            }
             m_loader.registerLoaderComponent(this);
         } else {
             m_loaderTable = new LoaderTable();

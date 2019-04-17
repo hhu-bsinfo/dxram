@@ -93,6 +93,7 @@ public class PluginComponent extends Component<PluginComponentConfig> {
         while (true) {
             try {
                 m_pluginManager = new PluginManager(config.getPluginsPath(), m_loader.getM_loader());
+                m_loader.getM_loader().initPlugins(Paths.get(config.getPluginsPath()));
                 break;
             } catch (final FileNotFoundException e) {
                 File file = new File(config.getPluginsPath());

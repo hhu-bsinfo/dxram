@@ -31,8 +31,8 @@ public class RemoteDepsTest {
         Thread.sleep(100);
 
         ApplicationService applicationService = p_instance.getService(ApplicationService.class);
-        //applicationService.registerApplicationClass(ExternalDepsApp.class);
-        //applicationService.startApplication("de.hhu.bsinfo.dxram.loader.ExternalDepsApp");
-        applicationService.startApplication("de.hhu.bsinfo.dxapp.HelloApplication");
+        applicationService.registerApplicationClass(ExternalDepsApp.class);
+        applicationService.startApplication("de.hhu.bsinfo.dxram.loader.ExternalDepsApp");
+        //applicationService.startApplication("de.hhu.bsinfo.dxapp.HelloApplication");
     }
 }

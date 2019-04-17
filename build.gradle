@@ -38,7 +38,8 @@ mainClassName = 'de.hhu.bsinfo.dxram.Runner'
 applicationDefaultJvmArgs = [
         '-Dlog4j.configurationFile=file:DXRAM_HOME/config/log4j2.xml',
         '-Ddxram.config=DXRAM_HOME/config/dxram.json',
-        '-Ddxram.baseDir=DXRAM_HOME'
+        '-Ddxram.baseDir=DXRAM_HOME'/*,
+        '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedLoader'*/
 ]
 
 project.startScripts.with {
@@ -120,6 +121,11 @@ artifacts {
     archives sourcesJar
     archives javadocJar
 }
+
+//todo does not work with gradle 4
+/* extTest {
+    jvmArgs '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedLoader'
+} */
 
 apply from: 'publish.gradle'
 apply from: 'bintray.gradle'

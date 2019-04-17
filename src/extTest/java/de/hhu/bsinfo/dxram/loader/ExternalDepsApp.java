@@ -19,7 +19,7 @@ public class ExternalDepsApp extends Application {
     public void main(String[] p_args) {
         System.out.println("Hello, my name is ExternalDepsApp!");
         try {
-            getClass().getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
+            ClassLoader.getSystemClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
