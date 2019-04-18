@@ -1,0 +1,26 @@
+/**
+ * This is a DXDDL script for testig purpose.
+ * Compiling this script with the DXDDL transpiler creates a Java-API code for the direct memory access
+ * based on the declared data structures.
+ * The generated source code shall be used to write some extTests.
+ *
+ * @author Ruslan Curbanov, ruslan.curbanov@uni-duesseldorf.de, 18.04.2019
+ */
+
+struct TestStruct1 {
+  bool b;
+  char[] c;
+  string s;
+  int i;
+  double[] d;
+}
+
+struct TestStruct2 {
+  string s;
+  int[] num;
+  short x1;
+  short x2;
+  char[] alpha;
+  short y1;
+  short y2;
+}
