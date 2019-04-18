@@ -1,0 +1,43 @@
+/**
+ * This is a DXDDL script for testig purpose.
+ * Compiling this script with the DXDDL transpiler creates a Java-API code for the direct memory access
+ * based on the declared data structures.
+ * The generated source code shall be used to write some extTests.
+ *
+ * @author Ruslan Curbanov, ruslan.curbanov@uni-duesseldorf.de, 18.04.2019
+ */
+
+/* THIS TEST SCRIPT USE TYPES FROM OTHER SCRIPTS, MAKE SURE YOU INDICATE ALL SCRIPTS TO THE TRANSPILER */
+
+chunk SimpleChunk {
+  long id;
+  string name;
+  int[] numbers;
+  SimpleChunk parent;
+  SimpleChunk[] children;
+}
+
+chunk ComplexChunk {
+  SimpleChunk[] misc;
+  int num;
+  ComplexChunk parent;
+  double temp;
+  SimpleChunk another;
+  short[] refs;
+  TestStruct1 test1;
+  ComplexChunk[] children;
+  string name;
+  Person person;
+  Weekday day;
+  TestStruct2 test2;
+  Country country;
+  Month month;
+  City city;
+  PrimitiveDataTypesStruct primitiveTypes;
+  PrimitiveDataTypesChunk primitiveTypes2;
+  OS myOS;
+  HotDrink favoriteDrink;
+  StringsChunk moreStrings;
+  ProgrammingLanguage favoriteLang;
+  StringsStruct moreStrings2;
+}

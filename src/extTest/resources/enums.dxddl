@@ -1,0 +1,31 @@
+/**
+ * This is a DXDDL script for testig purpose.
+ * Compiling this script with the DXDDL transpiler creates a Java-API code for the direct memory access
+ * based on the declared data structures.
+ * The generated source code shall be used to write some extTests.
+ *
+ * @author Ruslan Curbanov, ruslan.curbanov@uni-duesseldorf.de, 18.04.2019
+ */
+
+ enum Weekday {
+   Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
+ }
+
+ enum Month {
+   January, February, March, April, May, June, July, August, September, October, November, December
+ }
+
+ enum OS {
+   Windows,
+   Linux,
+   MacOS
+ }
+
+ enum ProgrammingLanguage {
+   B, Basic, Bash, C, CPP, C_Sharp, D, F_Sharp, Fortran, Go, Haskell, Java, JavaScript, Kotlin,
+   Objective_C, Pascal, Python, Ruby, Rust, Scala, Swift, TurboPascal, TypeScript, Visual_Basic, XSLT, Xtend
+ }
+
+ enum HotDrink {
+   Tea, Coffee, Milk, Hot_Chocolate
+ }

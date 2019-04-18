@@ -1,0 +1,35 @@
+/**
+ * This is a DXDDL script for testig purpose.
+ * Compiling this script with the DXDDL transpiler creates a Java-API code for the direct memory access
+ * based on the declared data structures.
+ * The generated source code shall be used to write some extTests.
+ *
+ * @author Ruslan Curbanov, ruslan.curbanov@uni-duesseldorf.de, 18.04.2019
+ */
+
+chunk Person {
+  string name;
+  short age;
+  long dateOfBirth;
+  City placeOfBirth;
+  string homeAddress;
+  string email;
+  int[] favoriteNumbers;
+  Person[] friends;
+  Person[] family;
+}
+
+chunk Country {
+  string name;
+  long population;
+  int area;
+  City capital;
+  City[] cities;
+}
+
+chunk City {
+  string name;
+  Country country;
+  int population;
+  int area;
+}

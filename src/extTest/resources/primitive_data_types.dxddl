@@ -1,0 +1,30 @@
+/**
+ * This is a DXDDL script for testig purpose.
+ * Compiling this script with the DXDDL transpiler creates a Java-API code for the direct memory access
+ * based on the declared data structures.
+ * The generated source code shall be used to write some extTests.
+ *
+ * @author Ruslan Curbanov, ruslan.curbanov@uni-duesseldorf.de, 18.04.2019
+ */
+
+struct PrimitiveDataTypesStruct {
+  bool b;
+  byte b2;
+  char c;
+  double d;
+  float f;
+  int num;
+  long bignum;
+  short s;
+}
+
+chunk PrimitiveDataTypesChunk {
+  bool b;
+  byte b2;
+  char c;
+  double d;
+  float f;
+  int num;
+  long bignum;
+  short s;
+}
