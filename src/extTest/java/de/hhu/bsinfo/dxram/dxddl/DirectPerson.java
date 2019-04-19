@@ -298,12 +298,12 @@ public final class DirectPerson implements AutoCloseable {
         if (array_cid != -1) {
             PINNING.unpinCID(array_cid);
             REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, -1);
-            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0);
-            RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
         }
 
         if (p_name == null || p_name.length() == 0) {
+            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, -1);
+            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0);
+            RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
             return;
         }
 
@@ -455,7 +455,9 @@ public final class DirectPerson implements AutoCloseable {
         }
 
         final long addr = PINNING.translate(p_cid);
+        final long addr2 = PINNING.translate(p_placeofbirth_cid);
         RAWWRITE.writeLong(addr, OFFSET_PLACEOFBIRTH_CID, p_placeofbirth_cid);
+        RAWWRITE.writeLong(addr, OFFSET_PLACEOFBIRTH_ADDR, addr2);
     }
 
     public static void setPlaceOfBirthCityCIDViaAddress(final long p_addr, final long p_placeofbirth_cid) {
@@ -463,7 +465,9 @@ public final class DirectPerson implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_placeofbirth_cid);
         RAWWRITE.writeLong(p_addr, OFFSET_PLACEOFBIRTH_CID, p_placeofbirth_cid);
+        RAWWRITE.writeLong(p_addr, OFFSET_PLACEOFBIRTH_ADDR, addr2);
     }
 
     public static String getHomeAddress(final long p_cid) {
@@ -511,12 +515,12 @@ public final class DirectPerson implements AutoCloseable {
         if (array_cid != -1) {
             PINNING.unpinCID(array_cid);
             REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(addr, OFFSET_HOMEADDRESS_CID, -1);
-            RAWWRITE.writeLong(addr, OFFSET_HOMEADDRESS_ADDR, 0);
-            RAWWRITE.writeInt(addr, OFFSET_HOMEADDRESS_LENGTH, (p_homeaddress == null ? -1 : 0));
         }
 
         if (p_homeaddress == null || p_homeaddress.length() == 0) {
+            RAWWRITE.writeLong(addr, OFFSET_HOMEADDRESS_CID, -1);
+            RAWWRITE.writeLong(addr, OFFSET_HOMEADDRESS_ADDR, 0);
+            RAWWRITE.writeInt(addr, OFFSET_HOMEADDRESS_LENGTH, (p_homeaddress == null ? -1 : 0));
             return;
         }
 
@@ -605,12 +609,12 @@ public final class DirectPerson implements AutoCloseable {
         if (array_cid != -1) {
             PINNING.unpinCID(array_cid);
             REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(addr, OFFSET_EMAIL_CID, -1);
-            RAWWRITE.writeLong(addr, OFFSET_EMAIL_ADDR, 0);
-            RAWWRITE.writeInt(addr, OFFSET_EMAIL_LENGTH, (p_email == null ? -1 : 0));
         }
 
         if (p_email == null || p_email.length() == 0) {
+            RAWWRITE.writeLong(addr, OFFSET_EMAIL_CID, -1);
+            RAWWRITE.writeLong(addr, OFFSET_EMAIL_ADDR, 0);
+            RAWWRITE.writeInt(addr, OFFSET_EMAIL_LENGTH, (p_email == null ? -1 : 0));
             return;
         }
 
@@ -1002,7 +1006,7 @@ public final class DirectPerson implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_friends);
         for (int i = 0; i < p_friends.length; i ++) {
             final long addr3 = PINNING.translate(p_friends[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_friends.length + i)), addr3);
         }
     }
 
@@ -1052,7 +1056,7 @@ public final class DirectPerson implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_friends);
         for (int i = 0; i < p_friends.length; i ++) {
             final long addr3 = PINNING.translate(p_friends[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_friends.length + i)), addr3);
         }
     }
 
@@ -1237,7 +1241,7 @@ public final class DirectPerson implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_family);
         for (int i = 0; i < p_family.length; i ++) {
             final long addr3 = PINNING.translate(p_family[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_family.length + i)), addr3);
         }
     }
 
@@ -1287,7 +1291,7 @@ public final class DirectPerson implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_family);
         for (int i = 0; i < p_family.length; i ++) {
             final long addr3 = PINNING.translate(p_family[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_family.length + i)), addr3);
         }
     }
 
@@ -1330,12 +1334,12 @@ public final class DirectPerson implements AutoCloseable {
         if (cid != -1) {
             PINNING.unpinCID(cid);
             REMOVE.remove(cid);
-            RAWWRITE.writeLong(m_addr, OFFSET_NAME_CID, -1);
-            RAWWRITE.writeLong(m_addr, OFFSET_NAME_ADDR, 0);
-            RAWWRITE.writeInt(m_addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
         }
 
         if (p_name == null || p_name.length() == 0) {
+            RAWWRITE.writeLong(m_addr, OFFSET_NAME_CID, -1);
+            RAWWRITE.writeLong(m_addr, OFFSET_NAME_ADDR, 0);
+            RAWWRITE.writeInt(m_addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
             return;
         }
 
@@ -1402,7 +1406,9 @@ public final class DirectPerson implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_placeofbirth_cid);
         RAWWRITE.writeLong(m_addr, OFFSET_PLACEOFBIRTH_CID, p_placeofbirth_cid);
+        RAWWRITE.writeLong(m_addr, OFFSET_PLACEOFBIRTH_ADDR, addr2);
     }
 
     public String getHomeAddress() {
@@ -1432,12 +1438,12 @@ public final class DirectPerson implements AutoCloseable {
         if (cid != -1) {
             PINNING.unpinCID(cid);
             REMOVE.remove(cid);
-            RAWWRITE.writeLong(m_addr, OFFSET_HOMEADDRESS_CID, -1);
-            RAWWRITE.writeLong(m_addr, OFFSET_HOMEADDRESS_ADDR, 0);
-            RAWWRITE.writeInt(m_addr, OFFSET_HOMEADDRESS_LENGTH, (p_homeaddress == null ? -1 : 0));
         }
 
         if (p_homeaddress == null || p_homeaddress.length() == 0) {
+            RAWWRITE.writeLong(m_addr, OFFSET_HOMEADDRESS_CID, -1);
+            RAWWRITE.writeLong(m_addr, OFFSET_HOMEADDRESS_ADDR, 0);
+            RAWWRITE.writeInt(m_addr, OFFSET_HOMEADDRESS_LENGTH, (p_homeaddress == null ? -1 : 0));
             return;
         }
 
@@ -1478,12 +1484,12 @@ public final class DirectPerson implements AutoCloseable {
         if (cid != -1) {
             PINNING.unpinCID(cid);
             REMOVE.remove(cid);
-            RAWWRITE.writeLong(m_addr, OFFSET_EMAIL_CID, -1);
-            RAWWRITE.writeLong(m_addr, OFFSET_EMAIL_ADDR, 0);
-            RAWWRITE.writeInt(m_addr, OFFSET_EMAIL_LENGTH, (p_email == null ? -1 : 0));
         }
 
         if (p_email == null || p_email.length() == 0) {
+            RAWWRITE.writeLong(m_addr, OFFSET_EMAIL_CID, -1);
+            RAWWRITE.writeLong(m_addr, OFFSET_EMAIL_ADDR, 0);
+            RAWWRITE.writeInt(m_addr, OFFSET_EMAIL_LENGTH, (p_email == null ? -1 : 0));
             return;
         }
 
@@ -1688,7 +1694,7 @@ public final class DirectPerson implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_friends);
         for (int i = 0; i < p_friends.length; i ++) {
             final long addr3 = PINNING.translate(p_friends[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_friends.length + i)), addr3);
         }
     }
 
@@ -1802,7 +1808,7 @@ public final class DirectPerson implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_family);
         for (int i = 0; i < p_family.length; i ++) {
             final long addr3 = PINNING.translate(p_family[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_family.length + i)), addr3);
         }
     }
 
