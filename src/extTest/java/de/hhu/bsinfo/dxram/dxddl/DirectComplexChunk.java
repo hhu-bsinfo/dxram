@@ -140,6 +140,11 @@ public final class DirectComplexChunk implements AutoCloseable {
         RAWWRITE.writeLong(addr, OFFSET_CITY_ADDR, 0);
         RAWWRITE.writeLong(addr, OFFSET_PRIMITIVETYPES2_ADDR, 0);
         RAWWRITE.writeLong(addr, OFFSET_MORESTRINGS_ADDR, 0);
+        RAWWRITE.writeInt(addr, OFFSET_DAY_ENUM, 0);
+        RAWWRITE.writeInt(addr, OFFSET_MONTH_ENUM, 0);
+        RAWWRITE.writeInt(addr, OFFSET_MYOS_ENUM, 0);
+        RAWWRITE.writeInt(addr, OFFSET_FAVORITEDRINK_ENUM, 0);
+        RAWWRITE.writeInt(addr, OFFSET_FAVORITELANG_ENUM, 0);
         DirectTestStruct1.create(addr + OFFSET_TEST1_STRUCT);
         DirectTestStruct2.create(addr + OFFSET_TEST2_STRUCT);
         DirectPrimitiveDataTypesStruct.create(addr + OFFSET_PRIMITIVETYPES_STRUCT);
@@ -183,6 +188,11 @@ public final class DirectComplexChunk implements AutoCloseable {
             RAWWRITE.writeLong(addr, OFFSET_CITY_ADDR, 0);
             RAWWRITE.writeLong(addr, OFFSET_PRIMITIVETYPES2_ADDR, 0);
             RAWWRITE.writeLong(addr, OFFSET_MORESTRINGS_ADDR, 0);
+            RAWWRITE.writeInt(addr, OFFSET_DAY_ENUM, 0);
+            RAWWRITE.writeInt(addr, OFFSET_MONTH_ENUM, 0);
+            RAWWRITE.writeInt(addr, OFFSET_MYOS_ENUM, 0);
+            RAWWRITE.writeInt(addr, OFFSET_FAVORITEDRINK_ENUM, 0);
+            RAWWRITE.writeInt(addr, OFFSET_FAVORITELANG_ENUM, 0);
             DirectTestStruct1.create(addr + OFFSET_TEST1_STRUCT);
             DirectTestStruct2.create(addr + OFFSET_TEST2_STRUCT);
             DirectPrimitiveDataTypesStruct.create(addr + OFFSET_PRIMITIVETYPES_STRUCT);
@@ -231,6 +241,11 @@ public final class DirectComplexChunk implements AutoCloseable {
             RAWWRITE.writeLong(addr, OFFSET_CITY_ADDR, 0);
             RAWWRITE.writeLong(addr, OFFSET_PRIMITIVETYPES2_ADDR, 0);
             RAWWRITE.writeLong(addr, OFFSET_MORESTRINGS_ADDR, 0);
+            RAWWRITE.writeInt(addr, OFFSET_DAY_ENUM, 0);
+            RAWWRITE.writeInt(addr, OFFSET_MONTH_ENUM, 0);
+            RAWWRITE.writeInt(addr, OFFSET_MYOS_ENUM, 0);
+            RAWWRITE.writeInt(addr, OFFSET_FAVORITEDRINK_ENUM, 0);
+            RAWWRITE.writeInt(addr, OFFSET_FAVORITELANG_ENUM, 0);
             DirectTestStruct1.create(addr + OFFSET_TEST1_STRUCT);
             DirectTestStruct2.create(addr + OFFSET_TEST2_STRUCT);
             DirectPrimitiveDataTypesStruct.create(addr + OFFSET_PRIMITIVETYPES_STRUCT);
@@ -515,7 +530,7 @@ public final class DirectComplexChunk implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_misc);
         for (int i = 0; i < p_misc.length; i ++) {
             final long addr3 = PINNING.translate(p_misc[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_misc.length + i)), addr3);
         }
     }
 
@@ -565,7 +580,7 @@ public final class DirectComplexChunk implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_misc);
         for (int i = 0; i < p_misc.length; i ++) {
             final long addr3 = PINNING.translate(p_misc[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_misc.length + i)), addr3);
         }
     }
 
@@ -643,7 +658,9 @@ public final class DirectComplexChunk implements AutoCloseable {
         }
 
         final long addr = PINNING.translate(p_cid);
+        final long addr2 = PINNING.translate(p_parent_cid);
         RAWWRITE.writeLong(addr, OFFSET_PARENT_CID, p_parent_cid);
+        RAWWRITE.writeLong(addr, OFFSET_PARENT_ADDR, addr2);
     }
 
     public static void setParentComplexChunkCIDViaAddress(final long p_addr, final long p_parent_cid) {
@@ -651,7 +668,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_parent_cid);
         RAWWRITE.writeLong(p_addr, OFFSET_PARENT_CID, p_parent_cid);
+        RAWWRITE.writeLong(p_addr, OFFSET_PARENT_ADDR, addr2);
     }
 
     public static double getTemp(final long p_cid) {
@@ -728,7 +747,9 @@ public final class DirectComplexChunk implements AutoCloseable {
         }
 
         final long addr = PINNING.translate(p_cid);
+        final long addr2 = PINNING.translate(p_another_cid);
         RAWWRITE.writeLong(addr, OFFSET_ANOTHER_CID, p_another_cid);
+        RAWWRITE.writeLong(addr, OFFSET_ANOTHER_ADDR, addr2);
     }
 
     public static void setAnotherSimpleChunkCIDViaAddress(final long p_addr, final long p_another_cid) {
@@ -736,7 +757,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_another_cid);
         RAWWRITE.writeLong(p_addr, OFFSET_ANOTHER_CID, p_another_cid);
+        RAWWRITE.writeLong(p_addr, OFFSET_ANOTHER_ADDR, addr2);
     }
 
     public static int getRefsLength(final long p_cid) {
@@ -1087,7 +1110,7 @@ public final class DirectComplexChunk implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_children);
         for (int i = 0; i < p_children.length; i ++) {
             final long addr3 = PINNING.translate(p_children[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_children.length + i)), addr3);
         }
     }
 
@@ -1137,7 +1160,7 @@ public final class DirectComplexChunk implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_children);
         for (int i = 0; i < p_children.length; i ++) {
             final long addr3 = PINNING.translate(p_children[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_children.length + i)), addr3);
         }
     }
 
@@ -1186,12 +1209,12 @@ public final class DirectComplexChunk implements AutoCloseable {
         if (array_cid != -1) {
             PINNING.unpinCID(array_cid);
             REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, -1);
-            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0);
-            RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
         }
 
         if (p_name == null || p_name.length() == 0) {
+            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, -1);
+            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0);
+            RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
             return;
         }
 
@@ -1275,7 +1298,9 @@ public final class DirectComplexChunk implements AutoCloseable {
         }
 
         final long addr = PINNING.translate(p_cid);
+        final long addr2 = PINNING.translate(p_person_cid);
         RAWWRITE.writeLong(addr, OFFSET_PERSON_CID, p_person_cid);
+        RAWWRITE.writeLong(addr, OFFSET_PERSON_ADDR, addr2);
     }
 
     public static void setPersonPersonCIDViaAddress(final long p_addr, final long p_person_cid) {
@@ -1283,7 +1308,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_person_cid);
         RAWWRITE.writeLong(p_addr, OFFSET_PERSON_CID, p_person_cid);
+        RAWWRITE.writeLong(p_addr, OFFSET_PERSON_ADDR, addr2);
     }
 
     public static Weekday getDay(final long p_cid) {
@@ -1362,7 +1389,9 @@ public final class DirectComplexChunk implements AutoCloseable {
         }
 
         final long addr = PINNING.translate(p_cid);
+        final long addr2 = PINNING.translate(p_country_cid);
         RAWWRITE.writeLong(addr, OFFSET_COUNTRY_CID, p_country_cid);
+        RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ADDR, addr2);
     }
 
     public static void setCountryCountryCIDViaAddress(final long p_addr, final long p_country_cid) {
@@ -1370,7 +1399,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_country_cid);
         RAWWRITE.writeLong(p_addr, OFFSET_COUNTRY_CID, p_country_cid);
+        RAWWRITE.writeLong(p_addr, OFFSET_COUNTRY_ADDR, addr2);
     }
 
     public static Month getMonth(final long p_cid) {
@@ -1449,7 +1480,9 @@ public final class DirectComplexChunk implements AutoCloseable {
         }
 
         final long addr = PINNING.translate(p_cid);
+        final long addr2 = PINNING.translate(p_city_cid);
         RAWWRITE.writeLong(addr, OFFSET_CITY_CID, p_city_cid);
+        RAWWRITE.writeLong(addr, OFFSET_CITY_ADDR, addr2);
     }
 
     public static void setCityCityCIDViaAddress(final long p_addr, final long p_city_cid) {
@@ -1457,7 +1490,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_city_cid);
         RAWWRITE.writeLong(p_addr, OFFSET_CITY_CID, p_city_cid);
+        RAWWRITE.writeLong(p_addr, OFFSET_CITY_ADDR, addr2);
     }
 
     public static long getPrimitiveTypes2PrimitiveDataTypesChunkCID(final long p_cid) {
@@ -1500,7 +1535,9 @@ public final class DirectComplexChunk implements AutoCloseable {
         }
 
         final long addr = PINNING.translate(p_cid);
+        final long addr2 = PINNING.translate(p_primitivetypes2_cid);
         RAWWRITE.writeLong(addr, OFFSET_PRIMITIVETYPES2_CID, p_primitivetypes2_cid);
+        RAWWRITE.writeLong(addr, OFFSET_PRIMITIVETYPES2_ADDR, addr2);
     }
 
     public static void setPrimitiveTypes2PrimitiveDataTypesChunkCIDViaAddress(final long p_addr, final long p_primitivetypes2_cid) {
@@ -1508,7 +1545,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_primitivetypes2_cid);
         RAWWRITE.writeLong(p_addr, OFFSET_PRIMITIVETYPES2_CID, p_primitivetypes2_cid);
+        RAWWRITE.writeLong(p_addr, OFFSET_PRIMITIVETYPES2_ADDR, addr2);
     }
 
     public static OS getMyOS(final long p_cid) {
@@ -1623,7 +1662,9 @@ public final class DirectComplexChunk implements AutoCloseable {
         }
 
         final long addr = PINNING.translate(p_cid);
+        final long addr2 = PINNING.translate(p_morestrings_cid);
         RAWWRITE.writeLong(addr, OFFSET_MORESTRINGS_CID, p_morestrings_cid);
+        RAWWRITE.writeLong(addr, OFFSET_MORESTRINGS_ADDR, addr2);
     }
 
     public static void setMoreStringsStringsChunkCIDViaAddress(final long p_addr, final long p_morestrings_cid) {
@@ -1631,7 +1672,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_morestrings_cid);
         RAWWRITE.writeLong(p_addr, OFFSET_MORESTRINGS_CID, p_morestrings_cid);
+        RAWWRITE.writeLong(p_addr, OFFSET_MORESTRINGS_ADDR, addr2);
     }
 
     public static ProgrammingLanguage getFavoriteLang(final long p_cid) {
@@ -1792,7 +1835,7 @@ public final class DirectComplexChunk implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_misc);
         for (int i = 0; i < p_misc.length; i ++) {
             final long addr3 = PINNING.translate(p_misc[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_misc.length + i)), addr3);
         }
     }
 
@@ -1833,7 +1876,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_parent_cid);
         RAWWRITE.writeLong(m_addr, OFFSET_PARENT_CID, p_parent_cid);
+        RAWWRITE.writeLong(m_addr, OFFSET_PARENT_ADDR, addr2);
     }
 
     public double getTemp() {
@@ -1873,7 +1918,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_another_cid);
         RAWWRITE.writeLong(m_addr, OFFSET_ANOTHER_CID, p_another_cid);
+        RAWWRITE.writeLong(m_addr, OFFSET_ANOTHER_ADDR, addr2);
     }
 
     public int getRefsLength() {
@@ -2067,7 +2114,7 @@ public final class DirectComplexChunk implements AutoCloseable {
         RAWWRITE.writeLongArray(addr2, 0, p_children);
         for (int i = 0; i < p_children.length; i ++) {
             final long addr3 = PINNING.translate(p_children[i]);
-            RAWWRITE.writeLong(addr2, (8 * (len + i)), addr3);
+            RAWWRITE.writeLong(addr2, (8 * (p_children.length + i)), addr3);
         }
     }
 
@@ -2098,12 +2145,12 @@ public final class DirectComplexChunk implements AutoCloseable {
         if (cid != -1) {
             PINNING.unpinCID(cid);
             REMOVE.remove(cid);
-            RAWWRITE.writeLong(m_addr, OFFSET_NAME_CID, -1);
-            RAWWRITE.writeLong(m_addr, OFFSET_NAME_ADDR, 0);
-            RAWWRITE.writeInt(m_addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
         }
 
         if (p_name == null || p_name.length() == 0) {
+            RAWWRITE.writeLong(m_addr, OFFSET_NAME_CID, -1);
+            RAWWRITE.writeLong(m_addr, OFFSET_NAME_ADDR, 0);
+            RAWWRITE.writeInt(m_addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
             return;
         }
 
@@ -2138,7 +2185,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_person_cid);
         RAWWRITE.writeLong(m_addr, OFFSET_PERSON_CID, p_person_cid);
+        RAWWRITE.writeLong(m_addr, OFFSET_PERSON_ADDR, addr2);
     }
 
     public Weekday getDay() {
@@ -2179,7 +2228,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_country_cid);
         RAWWRITE.writeLong(m_addr, OFFSET_COUNTRY_CID, p_country_cid);
+        RAWWRITE.writeLong(m_addr, OFFSET_COUNTRY_ADDR, addr2);
     }
 
     public Month getMonth() {
@@ -2220,7 +2271,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_city_cid);
         RAWWRITE.writeLong(m_addr, OFFSET_CITY_CID, p_city_cid);
+        RAWWRITE.writeLong(m_addr, OFFSET_CITY_ADDR, addr2);
     }
 
     public long getPrimitiveTypes2PrimitiveDataTypesChunkCID() {
@@ -2244,7 +2297,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_primitivetypes2_cid);
         RAWWRITE.writeLong(m_addr, OFFSET_PRIMITIVETYPES2_CID, p_primitivetypes2_cid);
+        RAWWRITE.writeLong(m_addr, OFFSET_PRIMITIVETYPES2_ADDR, addr2);
     }
 
     public OS getMyOS() {
@@ -2302,7 +2357,9 @@ public final class DirectComplexChunk implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
+        final long addr2 = PINNING.translate(p_morestrings_cid);
         RAWWRITE.writeLong(m_addr, OFFSET_MORESTRINGS_CID, p_morestrings_cid);
+        RAWWRITE.writeLong(m_addr, OFFSET_MORESTRINGS_ADDR, addr2);
     }
 
     public ProgrammingLanguage getFavoriteLang() {

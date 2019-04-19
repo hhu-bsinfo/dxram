@@ -210,12 +210,12 @@ public final class DirectStringsChunk implements AutoCloseable {
         if (array_cid != -1) {
             PINNING.unpinCID(array_cid);
             REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(addr, OFFSET_S1_CID, -1);
-            RAWWRITE.writeLong(addr, OFFSET_S1_ADDR, 0);
-            RAWWRITE.writeInt(addr, OFFSET_S1_LENGTH, (p_s1 == null ? -1 : 0));
         }
 
         if (p_s1 == null || p_s1.length() == 0) {
+            RAWWRITE.writeLong(addr, OFFSET_S1_CID, -1);
+            RAWWRITE.writeLong(addr, OFFSET_S1_ADDR, 0);
+            RAWWRITE.writeInt(addr, OFFSET_S1_LENGTH, (p_s1 == null ? -1 : 0));
             return;
         }
 
@@ -304,12 +304,12 @@ public final class DirectStringsChunk implements AutoCloseable {
         if (array_cid != -1) {
             PINNING.unpinCID(array_cid);
             REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(addr, OFFSET_S2_CID, -1);
-            RAWWRITE.writeLong(addr, OFFSET_S2_ADDR, 0);
-            RAWWRITE.writeInt(addr, OFFSET_S2_LENGTH, (p_s2 == null ? -1 : 0));
         }
 
         if (p_s2 == null || p_s2.length() == 0) {
+            RAWWRITE.writeLong(addr, OFFSET_S2_CID, -1);
+            RAWWRITE.writeLong(addr, OFFSET_S2_ADDR, 0);
+            RAWWRITE.writeInt(addr, OFFSET_S2_LENGTH, (p_s2 == null ? -1 : 0));
             return;
         }
 
@@ -392,12 +392,12 @@ public final class DirectStringsChunk implements AutoCloseable {
         if (cid != -1) {
             PINNING.unpinCID(cid);
             REMOVE.remove(cid);
-            RAWWRITE.writeLong(m_addr, OFFSET_S1_CID, -1);
-            RAWWRITE.writeLong(m_addr, OFFSET_S1_ADDR, 0);
-            RAWWRITE.writeInt(m_addr, OFFSET_S1_LENGTH, (p_s1 == null ? -1 : 0));
         }
 
         if (p_s1 == null || p_s1.length() == 0) {
+            RAWWRITE.writeLong(m_addr, OFFSET_S1_CID, -1);
+            RAWWRITE.writeLong(m_addr, OFFSET_S1_ADDR, 0);
+            RAWWRITE.writeInt(m_addr, OFFSET_S1_LENGTH, (p_s1 == null ? -1 : 0));
             return;
         }
 
@@ -438,12 +438,12 @@ public final class DirectStringsChunk implements AutoCloseable {
         if (cid != -1) {
             PINNING.unpinCID(cid);
             REMOVE.remove(cid);
-            RAWWRITE.writeLong(m_addr, OFFSET_S2_CID, -1);
-            RAWWRITE.writeLong(m_addr, OFFSET_S2_ADDR, 0);
-            RAWWRITE.writeInt(m_addr, OFFSET_S2_LENGTH, (p_s2 == null ? -1 : 0));
         }
 
         if (p_s2 == null || p_s2.length() == 0) {
+            RAWWRITE.writeLong(m_addr, OFFSET_S2_CID, -1);
+            RAWWRITE.writeLong(m_addr, OFFSET_S2_ADDR, 0);
+            RAWWRITE.writeInt(m_addr, OFFSET_S2_LENGTH, (p_s2 == null ? -1 : 0));
             return;
         }
 
