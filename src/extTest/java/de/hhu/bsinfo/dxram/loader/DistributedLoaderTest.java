@@ -45,7 +45,6 @@ public class DistributedLoaderTest {
     @TestInstance(runOnNodeIdx = 2)
     public void simpleTest(final DXRAM p_instance) throws InterruptedException {
         Thread.sleep(100);
-
         LoaderService loaderService = p_instance.getService(LoaderService.class);
 
         Class test = null;

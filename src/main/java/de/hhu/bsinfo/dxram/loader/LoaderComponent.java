@@ -24,8 +24,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
@@ -42,6 +44,8 @@ import de.hhu.bsinfo.dxram.loader.messages.ClassResponseMessage;
 import de.hhu.bsinfo.dxram.loader.messages.DistributeJarMessage;
 import de.hhu.bsinfo.dxram.loader.messages.LoaderMessages;
 import de.hhu.bsinfo.dxram.loader.messages.RegisterJarMessage;
+import de.hhu.bsinfo.dxram.loader.messages.SyncRequestMessage;
+import de.hhu.bsinfo.dxram.loader.messages.SyncResponseMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
@@ -204,6 +208,10 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 RegisterJarMessage.class);
         m_net.registerMessageType(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE,
                 DistributeJarMessage.class);
+        m_net.registerMessageType(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_REQUEST,
+                SyncRequestMessage.class);
+        m_net.registerMessageType(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_RESPONSE,
+                SyncResponseMessage.class);
 
         if (m_role == NodeRole.PEER) {
             if (!Files.exists(Paths.get(m_loaderDir))) {
@@ -229,6 +237,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REQUEST, this);
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REGISTER, this);
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, this);
+            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_REQUEST, this);
         }
         return true;
     }
@@ -239,6 +248,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REQUEST, this);
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REGISTER, this);
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, this);
+            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_REQUEST, this);
         } else {
             cleanLoaderDir();
         }
@@ -295,7 +305,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                     registerJarMessage.getM_jarName(), superPeers));
             for (Short superPeer : superPeers) {
                 DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer,
-                        registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes());
+                        registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes(),
+                        m_loaderTable.jarMapSize());
                 try {
                     m_net.sendMessage(distributeJarMessage);
                 } catch (NetworkException e) {
@@ -316,6 +327,46 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private void onIncomingClassDistribute(Message p_message) {
         DistributeJarMessage distributeJarMessage = (DistributeJarMessage) p_message;
         registerJarBytes(distributeJarMessage.getM_jarName(), distributeJarMessage.getM_jarBytes());
+
+        if (distributeJarMessage.getM_tableSize() > m_loaderTable.jarMapSize()) {
+            LOGGER.info(String.format("loaderTable is not synced (size is %s and should be %s), request sync",
+                    m_loaderTable.jarMapSize(), distributeJarMessage.getM_tableSize()));
+
+            SyncRequestMessage syncRequestMessage = new SyncRequestMessage(distributeJarMessage.getSource(),
+                    m_loaderTable.getLoadedJars());
+
+            try {
+                m_net.sendSync(syncRequestMessage);
+                SyncResponseMessage response = (SyncResponseMessage) syncRequestMessage.getResponse();
+                m_loaderTable.registerJarMap(response.getJarByteArrays());
+            } catch (NetworkException e) {
+                LOGGER.error(e);
+            }
+        } else {
+            LOGGER.info("loaderTable is synced");
+        }
+    }
+
+    private void onIncomingSyncRequest(Message p_message) {
+        SyncRequestMessage requestMessage = (SyncRequestMessage) p_message;
+
+        Set<String> loadedJars = m_loaderTable.getLoadedJars();
+        loadedJars.removeAll(requestMessage.getLoadedJars());
+
+        LOGGER.info(String.format("Other peers needs %s", loadedJars));
+        SyncResponseMessage response = new SyncResponseMessage(requestMessage, m_loaderTable.getM_jarByteArrays());
+
+        HashMap<String, byte[]> reponseMap = new HashMap<>();
+        for (String jarName : loadedJars) {
+            reponseMap.put(jarName, m_loaderTable.getJarByte(jarName));
+        }
+        LOGGER.info(String.format("Sending SyncResponseMessage with %s jars", reponseMap.size()));
+
+        try {
+            m_net.sendMessage(response);
+        } catch (NetworkException e) {
+            LOGGER.error(e);
+        }
     }
 
     @Override
@@ -329,6 +380,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 break;
             case LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE:
                 onIncomingClassDistribute(p_message);
+                break;
+            case LoaderMessages.SUBTYPE_SYNC_REQUEST:
+                onIncomingSyncRequest(p_message);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + p_message.getSubtype());

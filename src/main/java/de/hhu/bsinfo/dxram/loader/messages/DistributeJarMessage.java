@@ -18,6 +18,7 @@ package de.hhu.bsinfo.dxram.loader.messages;
 
 import lombok.Getter;
 
+import de.hhu.bsinfo.dxmem.operations.Size;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
@@ -32,15 +33,19 @@ public class DistributeJarMessage extends Message {
     private byte[] m_jarBytes;
     @Getter
     private String m_jarName;
+    @Getter
+    private int m_tableSize;
 
     public DistributeJarMessage() {
         super();
     }
 
-    public DistributeJarMessage(final short p_destination, final String p_jarName, final byte[] p_jarBytes) {
+    public DistributeJarMessage(final short p_destination, final String p_jarName,
+            final byte[] p_jarBytes, final int p_tableSize) {
         super(p_destination, DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE);
         m_jarName = p_jarName;
         m_jarBytes = p_jarBytes;
+        m_tableSize = p_tableSize;
     }
 
     @Override
@@ -49,6 +54,7 @@ public class DistributeJarMessage extends Message {
 
         size += ObjectSizeUtil.sizeofByteArray(m_jarBytes);
         size += ObjectSizeUtil.sizeofString(m_jarName);
+        size += Integer.BYTES;
 
         return size;
     }
@@ -57,11 +63,13 @@ public class DistributeJarMessage extends Message {
     protected void writePayload(AbstractMessageExporter p_exporter) {
         p_exporter.writeByteArray(m_jarBytes);
         p_exporter.writeString(m_jarName);
+        p_exporter.writeInt(m_tableSize);
     }
 
     @Override
     protected void readPayload(AbstractMessageImporter p_importer) {
         m_jarBytes = p_importer.readByteArray(m_jarBytes);
         m_jarName = p_importer.readString(m_jarName);
+        m_tableSize = p_importer.readInt(m_tableSize);
     }
 }

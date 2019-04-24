@@ -16,17 +16,25 @@
 
 package de.hhu.bsinfo.dxram.loader;
 
+import lombok.Getter;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 
 import de.hhu.bsinfo.dxmem.data.AbstractChunk;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
@@ -35,14 +43,22 @@ import de.hhu.bsinfo.dxutils.serialization.Importer;
 /**
  * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
  */
-public class LoaderTable extends AbstractChunk {
+public class LoaderTable {
     private HashMap<String, String> m_packageJarMap;
+    @Getter
     private HashMap<String, byte[]> m_jarByteArrays;
     private static final Logger LOGGER = LogManager.getFormatterLogger(LoaderTable.class);
 
     public LoaderTable() {
         m_packageJarMap = new HashMap<>();
         m_jarByteArrays = new HashMap<>();
+    }
+
+    public void registerJarMap(HashMap<String, byte[]> p_jarByteArrays) {
+        for (Map.Entry<String, byte[]> entry : p_jarByteArrays.entrySet()) {
+            registerJarBytes(entry.getKey(), entry.getValue());
+        }
+        LOGGER.info("loaderTable swap complete");
     }
 
     /**
@@ -59,21 +75,8 @@ public class LoaderTable extends AbstractChunk {
         }
     }
 
-    public byte[] serializeMap() {
-        Object o = m_packageJarMap;
-
-        byte[] yourBytes = null;
-
-        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
-            ObjectOutput out = new ObjectOutputStream(bos);
-            out.writeObject(o);
-            out.flush();
-            yourBytes = bos.toByteArray();
-        } catch (IOException e) {
-            LOGGER.error(e);
-        }
-
-        return yourBytes;
+    public HashSet<String> getLoadedJars() {
+        return new HashSet<>(m_jarByteArrays.keySet());
     }
 
     /**
@@ -154,22 +157,5 @@ public class LoaderTable extends AbstractChunk {
      */
     public int jarMapSize() {
         return m_packageJarMap.size();
-    }
-
-    @Override
-    public void exportObject(Exporter p_exporter) {
-        p_exporter.writeByteArray(serializeMap());
-    }
-
-    @Override
-    public void importObject(Importer p_importer) {
-
-    }
-
-    @Override
-    public int sizeofObject() {
-        int hashMapSize = 32 * m_packageJarMap.size() + 4 * 16;
-
-        return hashMapSize;
     }
 }
