@@ -372,7 +372,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     /**
      * Checks which jars are note loaded on the other superpeer and sends these to the superpeer
      *
-     * @param p_message message with request
+     * @param p_message
+     *         message with request
      */
     private void onIncomingSyncRequest(Message p_message) {
         SyncRequestMessage requestMessage = (SyncRequestMessage) p_message;
@@ -383,11 +384,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         LOGGER.info(String.format("Other peers needs %s", loadedJars));
         SyncResponseMessage response = new SyncResponseMessage(requestMessage, m_loaderTable.getM_jarByteArrays());
 
-        HashMap<String, byte[]> reponseMap = new HashMap<>();
+        HashMap<String, byte[]> responseMap = new HashMap<>();
         for (String jarName : loadedJars) {
-            reponseMap.put(jarName, m_loaderTable.getJarByte(jarName));
+            responseMap.put(jarName, m_loaderTable.getJarByte(jarName));
         }
-        LOGGER.info(String.format("Sending SyncResponseMessage with %s jars", reponseMap.size()));
+        LOGGER.info(String.format("Sending SyncResponseMessage with %s jars", responseMap.size()));
 
         try {
             m_net.sendMessage(response);
