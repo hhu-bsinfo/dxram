@@ -58,7 +58,7 @@ public class LoaderTable {
         for (Map.Entry<String, byte[]> entry : p_jarByteArrays.entrySet()) {
             registerJarBytes(entry.getKey(), entry.getValue());
         }
-        LOGGER.info("loaderTable swap complete");
+        LOGGER.info("map registered");
     }
 
     /**
@@ -149,7 +149,7 @@ public class LoaderTable {
         } catch (Exception e) {
             LOGGER.error(String.format("Oops.. Encounter an issue while parsing jar: %s", e));
         }
-        LOGGER.info(String.format("LoaderTable size: %s", m_packageJarMap.size()));
+        LOGGER.info(String.format("%s registered, new LoaderTable size: %s", p_name, m_packageJarMap.size()));
     }
 
     /**
