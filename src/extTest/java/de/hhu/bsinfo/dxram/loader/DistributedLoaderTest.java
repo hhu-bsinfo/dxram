@@ -54,7 +54,6 @@ public class DistributedLoaderTest {
         } catch (ClassNotFoundException e) {
             Assert.fail("Oups, classloading failed.");
         }
-
         Assert.assertNotNull(test);
 
         try {
@@ -63,6 +62,5 @@ public class DistributedLoaderTest {
         } catch (ClassNotFoundException e) {
             // this is nice
         }
-
     }
 }
