@@ -37,8 +37,6 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
 public class DistributeJarTest {
-    int barrierId = 0;
-
     @TestInstance(runOnNodeIdx = 3)
     public void register(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
