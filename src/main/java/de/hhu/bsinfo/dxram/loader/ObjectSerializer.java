@@ -10,8 +10,11 @@ import java.io.ObjectOutputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class ObjectSerializer {
+public final class ObjectSerializer {
     private static final Logger LOGGER = LogManager.getFormatterLogger(ObjectSerializer.class);
+
+    private ObjectSerializer() {
+    }
 
     public static byte[] serializeObject(Object p_map) {
         byte[] yourBytes = null;
@@ -28,9 +31,9 @@ public class ObjectSerializer {
         return yourBytes;
     }
 
-    public static <T extends Object> T deserializeObject(byte[] bytes, Class<T> p_type) {
+    public static <T> T deserializeObject(byte[] p_bytes, Class<T> p_type) {
         T object = null;
-        try (ByteArrayInputStream fis = new ByteArrayInputStream(bytes)) {
+        try (ByteArrayInputStream fis = new ByteArrayInputStream(p_bytes)) {
             ObjectInputStream ois = new ObjectInputStream(fis);
             object = (T) ois.readObject();
             ois.close();
