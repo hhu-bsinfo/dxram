@@ -44,6 +44,10 @@ public class LoaderService extends Service<ModuleConfig> {
         return m_loader.numberLoadedEntries();
     }
 
+    public void testSync() {
+        m_loader.testSync();
+    }
+
     @Override
     protected boolean startService(DXRAMConfig p_config) {
         return true;

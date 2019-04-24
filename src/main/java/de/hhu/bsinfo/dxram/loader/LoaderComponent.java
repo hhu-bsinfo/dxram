@@ -91,6 +91,28 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     }
 
     /**
+     * Only for testing, flushes all maps on superpeer and sends sync request.
+     */
+    public void testSync() {
+        m_loaderTable.flushMaps();
+
+        List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
+        superPeers.remove((Short) m_boot.getNodeId());
+
+        int randomInt = getRandomInt(superPeers.size());
+        short id = superPeers.get(randomInt);
+        SyncRequestMessage syncRequestMessage = new SyncRequestMessage(id, m_loaderTable.getLoadedJars());
+
+        try {
+            m_net.sendSync(syncRequestMessage);
+            SyncResponseMessage response = (SyncResponseMessage) syncRequestMessage.getResponse();
+            m_loaderTable.registerJarMap(response.getJarByteArrays());
+        } catch (NetworkException e) {
+            LOGGER.error(e);
+        }
+    }
+
+    /**
      * Add jar file from specific path to cluster, after successful operation, the package is on all superpeers
      *
      * @param p_jarPath
@@ -347,6 +369,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
     }
 
+    /**
+     * Checks which jars are note loaded on the other superpeer and sends these to the superpeer
+     *
+     * @param p_message message with request
+     */
     private void onIncomingSyncRequest(Message p_message) {
         SyncRequestMessage requestMessage = (SyncRequestMessage) p_message;
 

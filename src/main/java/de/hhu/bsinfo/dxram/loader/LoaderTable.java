@@ -153,6 +153,14 @@ public class LoaderTable {
     }
 
     /**
+     * Only for testing. Flushes all maps.
+     */
+    public void flushMaps() {
+        m_packageJarMap = new HashMap<>();
+        m_jarByteArrays = new HashMap<>();
+    }
+
+    /**
      * @return number of registered packages
      */
     public int jarMapSize() {
