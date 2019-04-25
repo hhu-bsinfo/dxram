@@ -49,6 +49,7 @@ import de.hhu.bsinfo.dxram.loader.messages.SyncResponseMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
 
 /**
@@ -83,11 +84,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                     .filter(Files::isRegularFile)
                     .map(Path::toFile)
                     .forEach(File::delete);
-        } catch (IOException e) {
-            LOGGER.error(e);
-        }
 
-        LOGGER.info("Loader dir cleanup finished.");
+            LOGGER.info("Loader dir cleanup finished.");
+        } catch (IOException e) {
+            LOGGER.error("Loader dir cleanup failed ", e);
+        }
     }
 
     /**
@@ -122,6 +123,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     public boolean addJarToLoader(Path p_jarPath) {
         int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
         short id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
+        LOGGER.info(String.format("Sending %s to %s", p_jarPath, NodeID.toHexString(id)));
 
         try {
             byte[] jarBytes = Files.readAllBytes(p_jarPath);
@@ -134,7 +136,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             LOGGER.error(e);
             return false;
         } catch (NetworkException e) {
-            LOGGER.error("Could not send message", e);
+            LOGGER.error("Could not send message ", e);
             return false;
         }
     }
@@ -203,7 +205,6 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         } else {
             LOGGER.error("Only superpeers can register jars.");
         }
-
     }
 
     /**
