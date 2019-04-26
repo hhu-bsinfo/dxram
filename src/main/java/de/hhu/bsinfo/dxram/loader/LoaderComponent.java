@@ -105,9 +105,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         SyncRequestMessage syncRequestMessage = new SyncRequestMessage(id, m_loaderTable.getLoadedJars());
 
         try {
-            m_net.sendSync(syncRequestMessage);
-            SyncResponseMessage response = (SyncResponseMessage) syncRequestMessage.getResponse();
-            m_loaderTable.registerJarMap(response.getJarByteArrays());
+            m_net.sendMessage(syncRequestMessage);
         } catch (NetworkException e) {
             LOGGER.error(e);
         }
@@ -261,6 +259,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REGISTER, this);
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, this);
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_REQUEST, this);
+            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_RESPONSE, this);
         }
         return true;
     }
@@ -271,7 +270,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REQUEST, this);
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REGISTER, this);
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, this);
-            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_REQUEST, this);
+            m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_REQUEST, this);
+            m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_RESPONSE, this);
         } else {
             cleanLoaderDir();
         }
@@ -359,9 +359,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                     m_loaderTable.getLoadedJars());
 
             try {
-                m_net.sendSync(syncRequestMessage);
-                SyncResponseMessage response = (SyncResponseMessage) syncRequestMessage.getResponse();
-                m_loaderTable.registerJarMap(response.getJarByteArrays());
+                m_net.sendMessage(syncRequestMessage);
             } catch (NetworkException e) {
                 LOGGER.error(e);
             }
@@ -383,7 +381,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         loadedJars.removeAll(requestMessage.getLoadedJars());
 
         LOGGER.info(String.format("Other peers needs %s", loadedJars));
-        SyncResponseMessage response = new SyncResponseMessage(requestMessage, m_loaderTable.getM_jarByteArrays());
+        SyncResponseMessage response = new SyncResponseMessage(requestMessage.getSource(),
+                m_loaderTable.getM_jarByteArrays());
 
         HashMap<String, byte[]> responseMap = new HashMap<>();
         for (String jarName : loadedJars) {
@@ -396,6 +395,18 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         } catch (NetworkException e) {
             LOGGER.error(e);
         }
+    }
+
+    /**
+     * Register all the missing jars
+     *
+     * @param p_message
+     *         message with response
+     */
+    private void onIncomingSyncResponse(Message p_message) {
+        SyncResponseMessage responseMessageMessage = (SyncResponseMessage) p_message;
+
+        m_loaderTable.registerJarMap(responseMessageMessage.getJarByteArrays());
     }
 
     @Override
@@ -412,6 +423,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 break;
             case LoaderMessages.SUBTYPE_SYNC_REQUEST:
                 onIncomingSyncRequest(p_message);
+                break;
+            case LoaderMessages.SUBTYPE_SYNC_RESPONSE:
+                onIncomingSyncResponse(p_message);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + p_message.getSubtype());

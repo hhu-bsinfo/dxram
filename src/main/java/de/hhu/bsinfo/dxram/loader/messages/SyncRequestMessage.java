@@ -5,12 +5,13 @@ import java.util.Set;
 
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.Request;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.loader.ObjectSerializer;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
-public class SyncRequestMessage extends Request {
+public class SyncRequestMessage extends Message {
     private byte[] m_loadedJars;
 
     public SyncRequestMessage() {

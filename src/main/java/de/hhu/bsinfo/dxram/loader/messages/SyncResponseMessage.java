@@ -4,19 +4,21 @@ import java.util.HashMap;
 
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
+import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.Response;
+import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.loader.ObjectSerializer;
 import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
-public class SyncResponseMessage extends Response {
+public class SyncResponseMessage extends Message {
     private byte[] m_jarByteArrays;
 
     public SyncResponseMessage() {
         super();
     }
 
-    public SyncResponseMessage(final SyncRequestMessage p_request, final HashMap<String, byte[]> p_jarByteArrays) {
-        super(p_request, LoaderMessages.SUBTYPE_SYNC_RESPONSE);
+    public SyncResponseMessage(final short p_destination, final HashMap<String, byte[]> p_jarByteArrays) {
+        super(p_destination, DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_RESPONSE);
         m_jarByteArrays = ObjectSerializer.serializeObject(p_jarByteArrays);
     }
 

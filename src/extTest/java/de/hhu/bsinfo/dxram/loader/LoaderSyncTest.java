@@ -40,6 +40,9 @@ public class LoaderSyncTest {
         Assert.assertEquals(4, loaderService.numberLoadedEntries());
 
         loaderService.testSync();
+        while(loaderService.numberLoadedEntries() != 4) {
+            Thread.yield();
+        }
         Assert.assertEquals(4, loaderService.numberLoadedEntries());
     }
 
