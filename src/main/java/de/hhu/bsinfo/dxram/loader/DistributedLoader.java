@@ -39,8 +39,9 @@ public class DistributedLoader extends URLClassLoader {
         super(new URL[0], p_parent, p_factory);
     }
 
-    public DistributedLoader() {
+    public DistributedLoader(LoaderComponent p_loader) {
         super(new URL[0]);
+        m_loader = p_loader;
     }
 
     @Override
@@ -53,10 +54,6 @@ public class DistributedLoader extends URLClassLoader {
             result = super.findClass(p_name);
         }
         return result;
-    }
-
-    public void registerLoaderComponent(LoaderComponent p_loader) {
-        m_loader = p_loader;
     }
 
     /**
@@ -73,11 +70,7 @@ public class DistributedLoader extends URLClassLoader {
             myPackage = p_name;
         }
 
-        try {
-            add(m_loader.getJar(myPackage));
-        } catch (NullPointerException e) {
-            // this is fine, just in case classloader is used before LoaderComponent is registerd
-        }
+        add(m_loader.getJar(myPackage));
     }
 
     /**

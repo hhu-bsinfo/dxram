@@ -39,7 +39,7 @@ applicationDefaultJvmArgs = [
         '-Dlog4j.configurationFile=file:DXRAM_HOME/config/log4j2.xml',
         '-Ddxram.config=DXRAM_HOME/config/dxram.json',
         '-Ddxram.baseDir=DXRAM_HOME'/*,
-        '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedLoader'*/
+        '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedSystemLoader'*/
 ]
 
 project.startScripts.with {
@@ -124,7 +124,7 @@ artifacts {
 
 //todo does not work with gradle 4
 /* extTest {
-    jvmArgs '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedLoader'
+    jvmArgs '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedSystemLoader'
 } */
 
 apply from: 'publish.gradle'

@@ -242,16 +242,18 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                     LOGGER.error("Could not create loaderDir.", e);
                 }
             }
-            if (ClassLoader.getSystemClassLoader() instanceof DistributedLoader) {
-                LOGGER.info("DistributedLoader is the SystemClassLoader.");
-                m_loader = (DistributedLoader) ClassLoader.getSystemClassLoader();
+
+            m_loader = new DistributedLoader(this);
+
+            if (ClassLoader.getSystemClassLoader() instanceof DistributedSystemLoader) {
+                LOGGER.info("DistributedLoader registered in SystemClassLoader");
+                ((DistributedSystemLoader) ClassLoader.getSystemClassLoader()).setDistributedLoader(m_loader);
             } else {
-                LOGGER.warn("DistributedClassloader is not the SystemClassLoader, it will only work with Applications" +
+                LOGGER.warn("DistributedSystemLoader is not the SystemClassLoader, it will only work with Applications" +
                         " and the LoaderService. Please use the vm argument" +
-                        " '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedLoader'");
-                m_loader = new DistributedLoader();
+                        " '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedSystemLoader'");
+
             }
-            m_loader.registerLoaderComponent(this);
         } else {
             m_loaderTable = new LoaderTable();
 
