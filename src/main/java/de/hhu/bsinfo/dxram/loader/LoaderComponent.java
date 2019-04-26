@@ -34,7 +34,6 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
@@ -260,8 +259,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 LOGGER.info("DistributedLoader registered in SystemClassLoader");
                 ((DistributedSystemLoader) ClassLoader.getSystemClassLoader()).setDistributedLoader(m_loader);
             } else {
-                LOGGER.warn("DistributedSystemLoader is not the SystemClassLoader, it will only work with Applications" +
-                        " and the LoaderService. Please use the vm argument" +
+                LOGGER.warn("DistributedSystemLoader is not the SystemClassLoader," +
+                        " it will only work with Applications and the LoaderService. Please use the vm argument" +
                         " '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedSystemLoader'");
 
             }

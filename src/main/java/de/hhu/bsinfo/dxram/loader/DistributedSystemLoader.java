@@ -11,7 +11,7 @@ public class DistributedSystemLoader extends ClassLoader {
     protected Class<?> findClass(String p_name) throws ClassNotFoundException {
         if (m_distributedLoader != null) {
             return m_distributedLoader.findClass(p_name);
-        }else {
+        } else {
             return super.findClass(p_name);
         }
     }

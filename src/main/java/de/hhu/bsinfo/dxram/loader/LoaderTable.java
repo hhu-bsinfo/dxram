@@ -19,26 +19,14 @@ package de.hhu.bsinfo.dxram.loader;
 import lombok.Getter;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
-
-import de.hhu.bsinfo.dxmem.data.AbstractChunk;
-import de.hhu.bsinfo.dxutils.serialization.Exporter;
-import de.hhu.bsinfo.dxutils.serialization.Importer;
 
 /**
  * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
@@ -66,7 +54,9 @@ public class LoaderTable {
      * with the same jar, the jar is only stored one time
      *
      * @param p_name
+     *         package name
      * @param p_jarName
+     *         jar name
      */
     private void registerClass(String p_name, String p_jarName) {
         if (!m_packageJarMap.containsKey(p_name)) {
@@ -83,8 +73,10 @@ public class LoaderTable {
      * Returns the name of the jar with the class p_name and throws a Exception if the class is not found in cluster
      *
      * @param p_name
-     * @return
+     *         class name
+     * @return jar name
      * @throws NotInClusterException
+     *         class is not found in cluster
      */
     public String getJarName(String p_name) throws NotInClusterException {
         String myPackage;
@@ -105,11 +97,12 @@ public class LoaderTable {
     /**
      * Check if jar is already registered
      *
-     * @param name
-     * @return
+     * @param p_name
+     *         jar name
+     * @return true if jar is in table
      */
-    public boolean containsJar(String name) {
-        return m_jarByteArrays.containsKey(name);
+    public boolean containsJar(String p_name) {
+        return m_jarByteArrays.containsKey(p_name);
     }
 
     public byte[] getJarByte(String p_jarName) {
@@ -120,7 +113,9 @@ public class LoaderTable {
      * Register byte array of jar with filename
      *
      * @param p_name
+     *         jar name
      * @param p_jarBytes
+     *         jar byte array
      */
     public void registerJarBytes(String p_name, byte[] p_jarBytes) {
         try {

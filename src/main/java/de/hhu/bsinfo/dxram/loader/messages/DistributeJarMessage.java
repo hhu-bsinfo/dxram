@@ -18,7 +18,6 @@ package de.hhu.bsinfo.dxram.loader.messages;
 
 import lombok.Getter;
 
-import de.hhu.bsinfo.dxmem.operations.Size;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;

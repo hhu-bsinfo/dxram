@@ -15,7 +15,6 @@ public class SyncResponseMessage extends Message {
     private String m_stringBuffer;
     private byte[] m_byteBuffer;
 
-
     public SyncResponseMessage() {
         super();
         m_jarByteArrays = new HashMap<>();
