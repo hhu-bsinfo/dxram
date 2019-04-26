@@ -12,9 +12,11 @@ import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 public class SyncRequestMessage extends Message {
     private Set<String> m_loadedJars;
     private int m_setSize;
+    private String m_stringBuffer;
 
     public SyncRequestMessage() {
         super();
+        m_loadedJars = new HashSet<>();
     }
 
     public SyncRequestMessage(final short p_destination, Set<String> p_loadedJars) {
@@ -50,13 +52,10 @@ public class SyncRequestMessage extends Message {
     @Override
     protected void readPayload(AbstractMessageImporter p_importer) {
         m_setSize = p_importer.readInt(m_setSize);
-        Set<String> jars = new HashSet<>();
 
         for (int i = 0; i < m_setSize; i++) {
-            String s = "";
-            jars.add(p_importer.readString(s));
+            m_stringBuffer = p_importer.readString(m_stringBuffer);
+            m_loadedJars.add(m_stringBuffer);
         }
-
-        m_loadedJars = jars;
     }
 }
