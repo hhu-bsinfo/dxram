@@ -109,7 +109,7 @@ public class LoaderTable {
      * @return
      */
     public boolean containsJar(String name) {
-        return m_packageJarMap.containsKey(name);
+        return m_jarByteArrays.containsKey(name);
     }
 
     public byte[] getJarByte(String p_jarName) {
@@ -149,7 +149,8 @@ public class LoaderTable {
         } catch (Exception e) {
             LOGGER.error(String.format("Oops.. Encounter an issue while parsing jar: %s", e));
         }
-        LOGGER.info(String.format("%s registered, new LoaderTable size: %s", p_name, m_packageJarMap.size()));
+        LOGGER.info(String.format("%s registered, new LoaderTable size: %s, loaded jars: %s",
+                p_name, m_packageJarMap.size(), m_jarByteArrays.size()));
     }
 
     /**

@@ -408,14 +408,15 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         loadedJars.removeAll(requestMessage.getLoadedJars());
 
         LOGGER.info(String.format("Other peers needs %s", loadedJars));
-        SyncResponseMessage response = new SyncResponseMessage(requestMessage.getSource(),
-                m_loaderTable.getM_jarByteArrays());
 
         HashMap<String, byte[]> responseMap = new HashMap<>();
         for (String jarName : loadedJars) {
-            responseMap.put(jarName, m_loaderTable.getJarByte(jarName));
+            if (m_loaderTable.containsJar(jarName)) {
+                responseMap.put(jarName, m_loaderTable.getJarByte(jarName));
+            }
         }
         LOGGER.info(String.format("Sending SyncResponseMessage with %s jars", responseMap.size()));
+        SyncResponseMessage response = new SyncResponseMessage(requestMessage.getSource(), responseMap);
 
         try {
             m_net.sendMessage(response);
