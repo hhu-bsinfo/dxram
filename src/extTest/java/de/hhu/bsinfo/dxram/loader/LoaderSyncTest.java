@@ -39,7 +39,8 @@ public class LoaderSyncTest {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         Assert.assertEquals(4, loaderService.numberLoadedEntries());
 
-        loaderService.testSync();
+        loaderService.flushTable();
+        loaderService.sync();
         while(loaderService.numberLoadedEntries() != 4) {
             Thread.yield();
         }

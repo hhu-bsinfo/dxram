@@ -44,8 +44,12 @@ public class LoaderService extends Service<ModuleConfig> {
         return m_loader.numberLoadedEntries();
     }
 
-    public void testSync() {
-        m_loader.testSync();
+    public void sync() {
+        m_loader.sync();
+    }
+
+    public void flushTable() {
+        m_loader.flushTable();
     }
 
     @Override

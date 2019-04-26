@@ -34,6 +34,7 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
@@ -44,6 +45,7 @@ import de.hhu.bsinfo.dxram.loader.messages.ClassResponseMessage;
 import de.hhu.bsinfo.dxram.loader.messages.DistributeJarMessage;
 import de.hhu.bsinfo.dxram.loader.messages.LoaderMessages;
 import de.hhu.bsinfo.dxram.loader.messages.RegisterJarMessage;
+import de.hhu.bsinfo.dxram.loader.messages.SyncInvitationMessage;
 import de.hhu.bsinfo.dxram.loader.messages.SyncRequestMessage;
 import de.hhu.bsinfo.dxram.loader.messages.SyncResponseMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
@@ -92,16 +94,15 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     }
 
     /**
-     * Only for testing, flushes all maps on superpeer and sends sync request.
+     * Request loaderTable sync with random superpeer.
      */
-    public void testSync() {
-        m_loaderTable.flushMaps();
-
+    public void sync() {
         List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
         superPeers.remove((Short) m_boot.getNodeId());
 
         int randomInt = getRandomInt(superPeers.size());
         short id = superPeers.get(randomInt);
+        LOGGER.info(String.format("request loaderTable sync with %s", NodeID.toHexString(id)));
         SyncRequestMessage syncRequestMessage = new SyncRequestMessage(id, m_loaderTable.getLoadedJars());
 
         try {
@@ -109,6 +110,14 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         } catch (NetworkException e) {
             LOGGER.error(e);
         }
+    }
+
+    /**
+     * Only for testing, flushes all maps on superpeer.
+     */
+    public void flushTable() {
+        LOGGER.info(String.format("loaderTable on %s flushed.", NodeID.toHexString(m_boot.getNodeId())));
+        m_loaderTable.flushMaps();
     }
 
     /**
@@ -233,6 +242,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 SyncRequestMessage.class);
         m_net.registerMessageType(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_RESPONSE,
                 SyncResponseMessage.class);
+        m_net.registerMessageType(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_INVITATION,
+                SyncInvitationMessage.class);
 
         if (m_role == NodeRole.PEER) {
             if (!Files.exists(Paths.get(m_loaderDir))) {
@@ -262,6 +273,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, this);
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_REQUEST, this);
             m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_RESPONSE, this);
+            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_INVITATION, this);
         }
         return true;
     }
@@ -274,6 +286,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE, this);
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_REQUEST, this);
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_RESPONSE, this);
+            m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_INVITATION, this);
         } else {
             cleanLoaderDir();
         }
@@ -365,6 +378,18 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             } catch (NetworkException e) {
                 LOGGER.error(e);
             }
+        } else if (distributeJarMessage.getM_tableSize() < m_loaderTable.jarMapSize()) {
+            LOGGER.info(String.format("other peers loaderTable is not synced (size is %s and should be %s)," +
+                            " invite for sync",
+                    m_loaderTable.jarMapSize(), distributeJarMessage.getM_tableSize()));
+
+            SyncInvitationMessage syncInvitationMessage = new SyncInvitationMessage(distributeJarMessage.getSource());
+
+            try {
+                m_net.sendMessage(syncInvitationMessage);
+            } catch (NetworkException e) {
+                LOGGER.error(e);
+            }
         } else {
             LOGGER.info("loaderTable is synced");
         }
@@ -411,6 +436,17 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         m_loaderTable.registerJarMap(responseMessageMessage.getJarByteArrays());
     }
 
+    private void onIncomingSyncInvitation(Message p_message) {
+        SyncRequestMessage syncRequestMessage = new SyncRequestMessage(p_message.getSource(),
+                m_loaderTable.getLoadedJars());
+
+        try {
+            m_net.sendMessage(syncRequestMessage);
+        } catch (NetworkException e) {
+            LOGGER.error(e);
+        }
+    }
+
     @Override
     public void onIncomingMessage(Message p_message) {
         switch (p_message.getSubtype()) {
@@ -428,6 +464,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 break;
             case LoaderMessages.SUBTYPE_SYNC_RESPONSE:
                 onIncomingSyncResponse(p_message);
+                break;
+            case LoaderMessages.SUBTYPE_SYNC_INVITATION:
+                onIncomingSyncInvitation(p_message);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + p_message.getSubtype());
