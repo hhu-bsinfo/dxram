@@ -13,8 +13,12 @@ import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.function.util.ParameterList;
+import de.hhu.bsinfo.dxram.util.NetworkHelper;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
+import de.hhu.bsinfo.dxutils.data.DistributableHashMap;
+import de.hhu.bsinfo.dxutils.data.holder.DistributableInteger;
+import de.hhu.bsinfo.dxutils.data.holder.DistributableString;
 import de.hhu.bsinfo.dxutils.serialization.ClassUtil;
 
 import static org.junit.Assert.assertEquals;
@@ -28,33 +32,32 @@ import static org.junit.Assert.assertEquals;
         })
 public class FunctionServiceTest {
 
+    private static final String INPUT_TEXT = "a, A, a, B B b B. C c c c, C C C C? D, d D d D d, C C a b B A!";
+
     @TestInstance(runOnNodeIdx = 2)
-    public void testRemoteExecution(final DXRAM p_instance) {
+    public void testWordCount(final DXRAM p_instance) {
 
         FunctionService functionService = p_instance.getService(FunctionService.class);
         BootService bootService = p_instance.getService(BootService.class);
 
-        short peer = bootService.getOnlinePeerNodeIDs()
-                .stream()
-                .filter(p_id -> p_id != bootService.getNodeID())
-                .findFirst().orElse(NodeID.INVALID_ID);
+        short peer = NetworkHelper.findPeer(bootService);
 
         Assert.assertNotEquals(NodeID.INVALID_ID, peer);
 
-        DistributableFunction function = new IntAdderFunction();
-        FunctionService.Status status = functionService.register(peer, IntAdderFunction.NAME, function);
+        DistributableFunction function = new WordCountFunction();
+        FunctionService.Status status = functionService.register(peer, WordCountFunction.NAME, function);
         assertEquals(FunctionService.Status.REGISTERED, status);
 
-        IntAdderFunction.Input input;
-        IntAdderFunction.Output output;
+        DistributableString input = new DistributableString(INPUT_TEXT);
+        DistributableHashMap<String, Long> output = functionService.executeSync(peer, WordCountFunction.NAME, input);
 
-        input = new IntAdderFunction.Input(17, 25);
-        output = functionService.executeSync(peer, IntAdderFunction.NAME, input);
-
-        assertEquals(42, output.get());
-
-        input = new IntAdderFunction.Input(1, 2, 3, 4, 5, 6, 7, 8);
-        output = functionService.executeSync(peer, IntAdderFunction.NAME, input);
-        assertEquals(36, output.get());
+        assertEquals(3L, (long) output.get("a"));
+        assertEquals(2L, (long) output.get("A"));
+        assertEquals(2L, (long) output.get("b"));
+        assertEquals(4L, (long) output.get("B"));
+        assertEquals(3L, (long) output.get("c"));
+        assertEquals(7L, (long) output.get("C"));
+        assertEquals(3L, (long) output.get("d"));
+        assertEquals(3L, (long) output.get("D"));
     }
 }

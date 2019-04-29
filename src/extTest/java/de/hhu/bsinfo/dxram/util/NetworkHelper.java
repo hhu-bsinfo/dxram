@@ -19,4 +19,18 @@ public class NetworkHelper {
 
         return targetOptional.get();
     }
+
+    public static short findPeer(BootService p_bootService) {
+        Optional<Short> targetOptional = p_bootService.getOnlinePeerNodeIDs().stream()
+                .filter(id -> id != p_bootService.getNodeID())
+                .findFirst();
+
+        while (!targetOptional.isPresent()) {
+            targetOptional = p_bootService.getOnlinePeerNodeIDs().stream()
+                    .filter(id -> id != p_bootService.getNodeID())
+                    .findFirst();
+        }
+
+        return targetOptional.get();
+    }
 }
