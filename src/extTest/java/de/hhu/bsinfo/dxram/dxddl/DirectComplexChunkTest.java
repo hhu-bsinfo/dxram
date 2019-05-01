@@ -22,8 +22,10 @@ public class DirectComplexChunkTest {
     public void initTests(final DXRAM p_instance) {
         ChunkLocalService chunkLocalService = p_instance.getService(ChunkLocalService.class);
         ChunkService chunkService = p_instance.getService(ChunkService.class);
+        BootService bootService = p_instance.getService(BootService.class);
 
-        DirectComplexChunk.init(
+        DirectAccessSecurityManager.init(
+                bootService,
                 chunkLocalService.createLocal(),
                 chunkLocalService.createReservedLocal(),
                 chunkLocalService.reserveLocal(),
@@ -46,22 +48,22 @@ public class DirectComplexChunkTest {
 
         // TestStruct1
         DirectComplexChunk.test1.setB(chunk, b);
-        DirectComplexChunk.test1.setCViaAddress(address, c);
+        DirectComplexChunk.test1.setC(address, c);
         DirectComplexChunk.test1.setS(chunk, s);
         try (DirectComplexChunk complexChunk = DirectComplexChunk.use(chunk)) {
             complexChunk.test1().setI(i);
             complexChunk.test1().setD(d);
         }
         Assert.assertEquals(b, DirectComplexChunk.test1.getB(chunk));
-        Assert.assertEquals(b, DirectComplexChunk.test1.getBViaAddress(address));
+        Assert.assertEquals(b, DirectComplexChunk.test1.getB(address));
         Assert.assertArrayEquals(c, DirectComplexChunk.test1.getC(chunk));
-        Assert.assertArrayEquals(c, DirectComplexChunk.test1.getCViaAddress(address));
+        Assert.assertArrayEquals(c, DirectComplexChunk.test1.getC(address));
         Assert.assertEquals(s, DirectComplexChunk.test1.getS(chunk));
-        Assert.assertEquals(s, DirectComplexChunk.test1.getSViaAddress(address));
+        Assert.assertEquals(s, DirectComplexChunk.test1.getS(address));
         Assert.assertEquals(i, DirectComplexChunk.test1.getI(chunk));
-        Assert.assertEquals(i, DirectComplexChunk.test1.getIViaAddress(address));
+        Assert.assertEquals(i, DirectComplexChunk.test1.getI(address));
         Assert.assertArrayEquals(d, DirectComplexChunk.test1.getD(chunk), Double.MIN_VALUE);
-        Assert.assertArrayEquals(d, DirectComplexChunk.test1.getDViaAddress(address), Double.MIN_VALUE);
+        Assert.assertArrayEquals(d, DirectComplexChunk.test1.getD(address), Double.MIN_VALUE);
         try (DirectComplexChunk complexChunk = DirectComplexChunk.use(chunk)) {
             Assert.assertEquals(b, complexChunk.test1().getB());
             Assert.assertArrayEquals(c, complexChunk.test1().getC());
@@ -81,11 +83,11 @@ public class DirectComplexChunkTest {
         Assert.assertEquals(OS.Windows, DirectComplexChunk.getMyOS(chunk));
         Assert.assertEquals(ProgrammingLanguage.B, DirectComplexChunk.getFavoriteLang(chunk));
         Assert.assertEquals(HotDrink.Tea, DirectComplexChunk.getFavoriteDrink(chunk));
-        Assert.assertEquals(Weekday.Monday, DirectComplexChunk.getDayViaAddress(address));
-        Assert.assertEquals(Month.January, DirectComplexChunk.getMonthViaAddress(address));
-        Assert.assertEquals(OS.Windows, DirectComplexChunk.getMyOSViaAddress(address));
-        Assert.assertEquals(ProgrammingLanguage.B, DirectComplexChunk.getFavoriteLangViaAddress(address));
-        Assert.assertEquals(HotDrink.Tea, DirectComplexChunk.getFavoriteDrinkViaAddress(address));
+        Assert.assertEquals(Weekday.Monday, DirectComplexChunk.getDay(address));
+        Assert.assertEquals(Month.January, DirectComplexChunk.getMonth(address));
+        Assert.assertEquals(OS.Windows, DirectComplexChunk.getMyOS(address));
+        Assert.assertEquals(ProgrammingLanguage.B, DirectComplexChunk.getFavoriteLang(address));
+        Assert.assertEquals(HotDrink.Tea, DirectComplexChunk.getFavoriteDrink(address));
         try (DirectComplexChunk complexChunk = DirectComplexChunk.use(chunk)) {
             Assert.assertEquals(Weekday.Monday, complexChunk.getDay());
             Assert.assertEquals(Month.January, complexChunk.getMonth());

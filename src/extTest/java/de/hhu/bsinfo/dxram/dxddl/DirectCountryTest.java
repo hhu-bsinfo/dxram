@@ -1,6 +1,5 @@
 package de.hhu.bsinfo.dxram.dxddl;
 
-import de.hhu.bsinfo.dxmem.core.Address;
 import de.hhu.bsinfo.dxmem.data.ChunkID;
 import de.hhu.bsinfo.dxram.*;
 import de.hhu.bsinfo.dxram.boot.BootService;
@@ -22,17 +21,10 @@ public class DirectCountryTest {
     public void initTests(final DXRAM p_instance) {
         ChunkLocalService chunkLocalService = p_instance.getService(ChunkLocalService.class);
         ChunkService chunkService = p_instance.getService(ChunkService.class);
+        BootService bootService = p_instance.getService(BootService.class);
 
-        DirectCountry.init(
-                chunkLocalService.createLocal(),
-                chunkLocalService.createReservedLocal(),
-                chunkLocalService.reserveLocal(),
-                chunkService.remove(),
-                chunkLocalService.pinningLocal(),
-                chunkLocalService.rawReadLocal(),
-                chunkLocalService.rawWriteLocal());
-
-        DirectCity.init(
+        DirectAccessSecurityManager.init(
+                bootService,
                 chunkLocalService.createLocal(),
                 chunkLocalService.createReservedLocal(),
                 chunkLocalService.reserveLocal(),
@@ -49,7 +41,7 @@ public class DirectCountryTest {
         final String test = "test";
 
         Assert.assertNull(DirectCountry.getName(chunk));
-        Assert.assertNull(DirectCountry.getNameViaAddress(address));
+        Assert.assertNull(DirectCountry.getName(address));
         try (DirectCountry country = DirectCountry.use(chunk)) {
             Assert.assertNull(country.getName());
         }
@@ -57,7 +49,7 @@ public class DirectCountryTest {
         // set empty string (static)
         DirectCountry.setName(chunk, "");
         Assert.assertEquals("", DirectCountry.getName(chunk));
-        Assert.assertEquals("", DirectCountry.getNameViaAddress(address));
+        Assert.assertEquals("", DirectCountry.getName(address));
         try (DirectCountry country = DirectCountry.use(chunk)) {
             Assert.assertEquals("", country.getName());
         }
@@ -65,7 +57,7 @@ public class DirectCountryTest {
         // set another string (static)
         DirectCountry.setName(chunk, test);
         Assert.assertEquals(test, DirectCountry.getName(chunk));
-        Assert.assertEquals(test, DirectCountry.getNameViaAddress(address));
+        Assert.assertEquals(test, DirectCountry.getName(address));
         try (DirectCountry country = DirectCountry.use(chunk)) {
             Assert.assertEquals(test, country.getName());
         }
@@ -76,7 +68,7 @@ public class DirectCountryTest {
             Assert.assertEquals("", country.getName());
         }
         Assert.assertEquals("", DirectCountry.getName(chunk));
-        Assert.assertEquals("", DirectCountry.getNameViaAddress(address));
+        Assert.assertEquals("", DirectCountry.getName(address));
 
         // set another string (obj)
         try (DirectCountry country = DirectCountry.use(chunk)) {
@@ -84,7 +76,7 @@ public class DirectCountryTest {
             Assert.assertEquals(test, country.getName());
         }
         Assert.assertEquals(test, DirectCountry.getName(chunk));
-        Assert.assertEquals(test, DirectCountry.getNameViaAddress(address));
+        Assert.assertEquals(test, DirectCountry.getName(address));
     }
 
     @TestInstance(runOnNodeIdx = 1)
@@ -99,7 +91,7 @@ public class DirectCountryTest {
         DirectCountry.setArea(chunk, area);
         DirectCountry.setPopulation(chunk, population);
         Assert.assertEquals(area, DirectCountry.getArea(chunk));
-        Assert.assertEquals(area, DirectCountry.getAreaViaAddress(address));
+        Assert.assertEquals(area, DirectCountry.getArea(address));
         try (DirectCountry country = DirectCountry.use(chunk)) {
             Assert.assertEquals(area, country.getArea());
             Assert.assertEquals(population, country.getPopulation());
@@ -115,15 +107,15 @@ public class DirectCountryTest {
             Assert.assertEquals(population, country.getPopulation());
         }
         Assert.assertEquals(area, DirectCountry.getArea(chunk));
-        Assert.assertEquals(area, DirectCountry.getAreaViaAddress(address));
+        Assert.assertEquals(area, DirectCountry.getArea(address));
 
         // set static (via address)
         area++;
         population++;
-        DirectCountry.setAreaViaAddress(address, area);
-        DirectCountry.setPopulationViaAddress(address, population);
+        DirectCountry.setArea(address, area);
+        DirectCountry.setPopulation(address, population);
         Assert.assertEquals(area, DirectCountry.getArea(chunk));
-        Assert.assertEquals(area, DirectCountry.getAreaViaAddress(address));
+        Assert.assertEquals(area, DirectCountry.getArea(address));
         try (DirectCountry country = DirectCountry.use(chunk)) {
             Assert.assertEquals(area, country.getArea());
             Assert.assertEquals(population, country.getPopulation());
@@ -139,101 +131,71 @@ public class DirectCountryTest {
         final long[] cities = DirectCity.create(10);
 
         // test default values
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectCountry.getCapitalCityCID(chunk));
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectCountry.getCapitalCityCIDViaAddress(address));
-        Assert.assertEquals(Address.INVALID, DirectCountry.getCapitalCityAddress(chunk));
-        Assert.assertEquals(Address.INVALID, DirectCountry.getCapitalCityAddressViaAddress(address));
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectCountry.getCapitalCityID(chunk));
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectCountry.getCapitalCityID(address));
         Assert.assertEquals(0, DirectCountry.getCitiesCityLength(chunk));
-        Assert.assertEquals(0, DirectCountry.getCitiesCityLengthViaAddress(address));
-        Assert.assertNull(DirectCountry.getCitiesCityCIDs(chunk));
-        Assert.assertNull(DirectCountry.getCitiesCityCIDsViaAddress(address));
-        Assert.assertNull(DirectCountry.getCitiesCityAddresses(chunk));
-        Assert.assertNull(DirectCountry.getCitiesCityAddressesViaAddress(address));
+        Assert.assertEquals(0, DirectCountry.getCitiesCityLength(address));
+        Assert.assertNull(DirectCountry.getCitiesCityIDs(chunk));
+        Assert.assertNull(DirectCountry.getCitiesCityIDs(address));
         try (DirectCountry country = DirectCountry.use(chunk)) {
-            Assert.assertEquals(ChunkID.INVALID_ID, country.getCapitalCityCID());
-            Assert.assertEquals(Address.INVALID, country.getCapitalCityAddress());
+            Assert.assertEquals(ChunkID.INVALID_ID, country.getCapitalCityID());
             Assert.assertEquals(0, country.getCitiesCityLength());
-            Assert.assertNull(country.getCitiesCityCIDs());
-            Assert.assertNull(country.getCitiesCityAddresses());
+            Assert.assertNull(country.getCitiesCityIDs());
         }
 
         // set via CID (static)
-        DirectCountry.setCapitalCityCID(chunk, capital);
-        DirectCountry.setCitiesCityCIDs(chunk, cities);
-        Assert.assertEquals(capital, DirectCountry.getCapitalCityCID(chunk));
-        Assert.assertEquals(capital, DirectCountry.getCapitalCityCIDViaAddress(address));
-        Assert.assertEquals(DirectCity.getAddress(capital), DirectCountry.getCapitalCityAddress(chunk));
-        Assert.assertEquals(DirectCity.getAddress(capital), DirectCountry.getCapitalCityAddressViaAddress(address));
-        Assert.assertEquals(capital, DirectCountry.getCapitalCityCIDViaAddress(address));
+        DirectCountry.setCapitalCityID(chunk, capital);
+        DirectCountry.setCitiesCityIDs(chunk, cities);
+        Assert.assertEquals(capital, DirectCountry.getCapitalCityID(chunk));
+        Assert.assertEquals(capital, DirectCountry.getCapitalCityID(address));
+        Assert.assertEquals(capital, DirectCountry.getCapitalCityID(address));
         Assert.assertEquals(cities.length, DirectCountry.getCitiesCityLength(chunk));
-        Assert.assertEquals(cities.length, DirectCountry.getCitiesCityLengthViaAddress(address));
+        Assert.assertEquals(cities.length, DirectCountry.getCitiesCityLength(address));
         for (int i = 0; i < cities.length; i++) {
-            Assert.assertEquals(cities[i], DirectCountry.getCitiesCityCID(chunk, i));
-            Assert.assertEquals(cities[i], DirectCountry.getCitiesCityCIDViaAddress(address, i));
-            Assert.assertEquals(DirectCity.getAddress(cities[i]), DirectCountry.getCitiesCityAddress(chunk, i));
-            Assert.assertEquals(
-                    DirectCity.getAddress(cities[i]),
-                    DirectCountry.getCitiesCityAddressViaAddress(address, i));
+            Assert.assertEquals(cities[i], DirectCountry.getCitiesCityID(chunk, i));
+            Assert.assertEquals(cities[i], DirectCountry.getCitiesCityID(address, i));
         }
         try (DirectCountry country = DirectCountry.use(chunk)) {
-            Assert.assertEquals(capital, country.getCapitalCityCID());
-            Assert.assertEquals(DirectCity.getAddress(capital), country.getCapitalCityAddress());
+            Assert.assertEquals(capital, country.getCapitalCityID());
             Assert.assertEquals(cities.length, country.getCitiesCityLength());
-            Assert.assertArrayEquals(cities, country.getCitiesCityCIDs());
-            Assert.assertArrayEquals(DirectCity.getAddresses(cities), country.getCitiesCityAddresses());
+            Assert.assertArrayEquals(cities, country.getCitiesCityIDs());
             for (int i = 0; i < cities.length; i++) {
-                Assert.assertEquals(cities[i], country.getCitiesCityCID(i));
-                Assert.assertEquals(DirectCity.getAddress(cities[i]), country.getCitiesCityAddress(i));
+                Assert.assertEquals(cities[i], country.getCitiesCityID(i));
             }
         }
 
         // reset via obj.
-        DirectCountry.setCapitalCityCID(chunk, ChunkID.INVALID_ID);
-        DirectCountry.setCitiesCityCIDs(chunk, null);
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectCountry.getCapitalCityCID(chunk));
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectCountry.getCapitalCityCIDViaAddress(address));
-        Assert.assertEquals(Address.INVALID, DirectCountry.getCapitalCityAddress(chunk));
-        Assert.assertEquals(Address.INVALID, DirectCountry.getCapitalCityAddressViaAddress(address));
+        DirectCountry.setCapitalCityID(chunk, ChunkID.INVALID_ID);
+        DirectCountry.setCitiesCityIDs(chunk, null);
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectCountry.getCapitalCityID(chunk));
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectCountry.getCapitalCityID(address));
         Assert.assertEquals(0, DirectCountry.getCitiesCityLength(chunk));
-        Assert.assertEquals(0, DirectCountry.getCitiesCityLengthViaAddress(address));
-        Assert.assertNull(DirectCountry.getCitiesCityCIDs(chunk));
-        Assert.assertNull(DirectCountry.getCitiesCityCIDsViaAddress(address));
-        Assert.assertNull(DirectCountry.getCitiesCityAddresses(chunk));
-        Assert.assertNull(DirectCountry.getCitiesCityAddressesViaAddress(address));
+        Assert.assertEquals(0, DirectCountry.getCitiesCityLength(address));
+        Assert.assertNull(DirectCountry.getCitiesCityIDs(chunk));
+        Assert.assertNull(DirectCountry.getCitiesCityIDs(address));
         try (DirectCountry country = DirectCountry.use(chunk)) {
-            Assert.assertEquals(ChunkID.INVALID_ID, country.getCapitalCityCID());
-            Assert.assertEquals(Address.INVALID, country.getCapitalCityAddress());
+            Assert.assertEquals(ChunkID.INVALID_ID, country.getCapitalCityID());
             Assert.assertEquals(0, country.getCitiesCityLength());
-            Assert.assertNull(country.getCitiesCityCIDs());
-            Assert.assertNull(country.getCitiesCityAddresses());
-            country.setCapitalCityCID(capital);
-            country.setCitiesCityCIDs(cities);
+            Assert.assertNull(country.getCitiesCityIDs());
+            country.setCapitalCityID(capital);
+            country.setCitiesCityIDs(cities);
         }
 
-        Assert.assertEquals(capital, DirectCountry.getCapitalCityCID(chunk));
-        Assert.assertEquals(capital, DirectCountry.getCapitalCityCIDViaAddress(address));
-        Assert.assertEquals(DirectCity.getAddress(capital), DirectCountry.getCapitalCityAddress(chunk));
-        Assert.assertEquals(DirectCity.getAddress(capital), DirectCountry.getCapitalCityAddressViaAddress(address));
-        Assert.assertEquals(capital, DirectCountry.getCapitalCityCIDViaAddress(address));
+        Assert.assertEquals(capital, DirectCountry.getCapitalCityID(chunk));
+        Assert.assertEquals(capital, DirectCountry.getCapitalCityID(address));
+        Assert.assertEquals(capital, DirectCountry.getCapitalCityID(address));
         Assert.assertEquals(cities.length, DirectCountry.getCitiesCityLength(chunk));
-        Assert.assertEquals(cities.length, DirectCountry.getCitiesCityLengthViaAddress(address));
+        Assert.assertEquals(cities.length, DirectCountry.getCitiesCityLength(address));
         for (int i = 0; i < cities.length; i++) {
-            Assert.assertEquals(cities[i], DirectCountry.getCitiesCityCID(chunk, i));
-            Assert.assertEquals(cities[i], DirectCountry.getCitiesCityCIDViaAddress(address, i));
-            Assert.assertEquals(DirectCity.getAddress(cities[i]), DirectCountry.getCitiesCityAddress(chunk, i));
-            Assert.assertEquals(
-                    DirectCity.getAddress(cities[i]),
-                    DirectCountry.getCitiesCityAddressViaAddress(address, i));
+            Assert.assertEquals(cities[i], DirectCountry.getCitiesCityID(chunk, i));
+            Assert.assertEquals(cities[i], DirectCountry.getCitiesCityID(address, i));
         }
         try (DirectCountry country = DirectCountry.use(chunk)) {
-            Assert.assertEquals(capital, country.getCapitalCityCID());
-            Assert.assertEquals(DirectCity.getAddress(capital), country.getCapitalCityAddress());
+            Assert.assertEquals(capital, country.getCapitalCityID());
             Assert.assertEquals(cities.length, country.getCitiesCityLength());
-            Assert.assertArrayEquals(cities, country.getCitiesCityCIDs());
-            Assert.assertArrayEquals(DirectCity.getAddresses(cities), country.getCitiesCityAddresses());
+            Assert.assertArrayEquals(cities, country.getCitiesCityIDs());
             for (int i = 0; i < cities.length; i++) {
-                Assert.assertEquals(cities[i], country.getCitiesCityCID(i));
-                Assert.assertEquals(DirectCity.getAddress(cities[i]), country.getCitiesCityAddress(i));
+                Assert.assertEquals(cities[i], country.getCitiesCityID(i));
             }
         }
     }

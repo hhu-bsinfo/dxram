@@ -20,8 +20,10 @@ public class DirectStringsChunkTest {
     public void initTests(final DXRAM p_instance) {
         ChunkLocalService chunkLocalService = p_instance.getService(ChunkLocalService.class);
         ChunkService chunkService = p_instance.getService(ChunkService.class);
+        BootService bootService = p_instance.getService(BootService.class);
 
-        DirectStringsChunk.init(
+        DirectAccessSecurityManager.init(
+                bootService,
                 chunkLocalService.createLocal(),
                 chunkLocalService.createReservedLocal(),
                 chunkLocalService.reserveLocal(),
@@ -39,9 +41,9 @@ public class DirectStringsChunkTest {
         final String test2 = "test2";
 
         Assert.assertNull(DirectStringsChunk.getS1(chunk));
-        Assert.assertNull(DirectStringsChunk.getS1ViaAddress(address));
+        Assert.assertNull(DirectStringsChunk.getS1(address));
         Assert.assertNull(DirectStringsChunk.getS2(chunk));
-        Assert.assertNull(DirectStringsChunk.getS2ViaAddress(address));
+        Assert.assertNull(DirectStringsChunk.getS2(address));
         try (DirectStringsChunk stringsChunk = DirectStringsChunk.use(chunk)){
             Assert.assertNull(stringsChunk.getS1());
             Assert.assertNull(stringsChunk.getS2());
@@ -50,9 +52,9 @@ public class DirectStringsChunkTest {
         DirectStringsChunk.setS1(chunk, test1);
         DirectStringsChunk.setS2(chunk, test2);
         Assert.assertEquals(test1, DirectStringsChunk.getS1(chunk));
-        Assert.assertEquals(test1, DirectStringsChunk.getS1ViaAddress(address));
+        Assert.assertEquals(test1, DirectStringsChunk.getS1(address));
         Assert.assertEquals(test2, DirectStringsChunk.getS2(chunk));
-        Assert.assertEquals(test2, DirectStringsChunk.getS2ViaAddress(address));
+        Assert.assertEquals(test2, DirectStringsChunk.getS2(address));
         try (DirectStringsChunk stringsChunk = DirectStringsChunk.use(chunk)){
             Assert.assertEquals(test1, stringsChunk.getS1());
             Assert.assertEquals(test2, stringsChunk.getS2());
@@ -61,9 +63,9 @@ public class DirectStringsChunkTest {
         DirectStringsChunk.setS1(chunk, test2);
         DirectStringsChunk.setS2(chunk, test1);
         Assert.assertEquals(test2, DirectStringsChunk.getS1(chunk));
-        Assert.assertEquals(test2, DirectStringsChunk.getS1ViaAddress(address));
+        Assert.assertEquals(test2, DirectStringsChunk.getS1(address));
         Assert.assertEquals(test1, DirectStringsChunk.getS2(chunk));
-        Assert.assertEquals(test1, DirectStringsChunk.getS2ViaAddress(address));
+        Assert.assertEquals(test1, DirectStringsChunk.getS2(address));
         try (DirectStringsChunk stringsChunk = DirectStringsChunk.use(chunk)){
             Assert.assertEquals(test2, stringsChunk.getS1());
             Assert.assertEquals(test1, stringsChunk.getS2());
@@ -74,9 +76,9 @@ public class DirectStringsChunkTest {
             stringsChunk.setS2(test2);
         }
         Assert.assertEquals(test1, DirectStringsChunk.getS1(chunk));
-        Assert.assertEquals(test1, DirectStringsChunk.getS1ViaAddress(address));
+        Assert.assertEquals(test1, DirectStringsChunk.getS1(address));
         Assert.assertEquals(test2, DirectStringsChunk.getS2(chunk));
-        Assert.assertEquals(test2, DirectStringsChunk.getS2ViaAddress(address));
+        Assert.assertEquals(test2, DirectStringsChunk.getS2(address));
         try (DirectStringsChunk stringsChunk = DirectStringsChunk.use(chunk)){
             Assert.assertEquals(test1, stringsChunk.getS1());
             Assert.assertEquals(test2, stringsChunk.getS2());
@@ -85,9 +87,9 @@ public class DirectStringsChunkTest {
         DirectStringsChunk.setS1(chunk, "");
         DirectStringsChunk.setS2(chunk, test1);
         Assert.assertEquals("", DirectStringsChunk.getS1(chunk));
-        Assert.assertEquals("", DirectStringsChunk.getS1ViaAddress(address));
+        Assert.assertEquals("", DirectStringsChunk.getS1(address));
         Assert.assertEquals(test1, DirectStringsChunk.getS2(chunk));
-        Assert.assertEquals(test1, DirectStringsChunk.getS2ViaAddress(address));
+        Assert.assertEquals(test1, DirectStringsChunk.getS2(address));
         try (DirectStringsChunk stringsChunk = DirectStringsChunk.use(chunk)){
             Assert.assertEquals("", stringsChunk.getS1());
             Assert.assertEquals(test1, stringsChunk.getS2());
@@ -96,9 +98,9 @@ public class DirectStringsChunkTest {
         DirectStringsChunk.setS1(chunk, "");
         DirectStringsChunk.setS2(chunk, null);
         Assert.assertEquals("", DirectStringsChunk.getS1(chunk));
-        Assert.assertEquals("", DirectStringsChunk.getS1ViaAddress(address));
+        Assert.assertEquals("", DirectStringsChunk.getS1(address));
         Assert.assertNull(DirectStringsChunk.getS2(chunk));
-        Assert.assertNull(DirectStringsChunk.getS2ViaAddress(address));
+        Assert.assertNull(DirectStringsChunk.getS2(address));
         try (DirectStringsChunk stringsChunk = DirectStringsChunk.use(chunk)){
             Assert.assertEquals("", stringsChunk.getS1());
             Assert.assertNull(stringsChunk.getS2());
@@ -109,9 +111,9 @@ public class DirectStringsChunkTest {
             stringsChunk.setS2("");
         }
         Assert.assertNull(DirectStringsChunk.getS1(chunk));
-        Assert.assertNull(DirectStringsChunk.getS1ViaAddress(address));
+        Assert.assertNull(DirectStringsChunk.getS1(address));
         Assert.assertEquals("", DirectStringsChunk.getS2(chunk));
-        Assert.assertEquals("", DirectStringsChunk.getS2ViaAddress(address));
+        Assert.assertEquals("", DirectStringsChunk.getS2(address));
         try (DirectStringsChunk stringsChunk = DirectStringsChunk.use(chunk)){
             Assert.assertNull(stringsChunk.getS1());
             Assert.assertEquals("", stringsChunk.getS2());
@@ -122,9 +124,9 @@ public class DirectStringsChunkTest {
             stringsChunk.setS2(test2);
         }
         Assert.assertEquals(test1, DirectStringsChunk.getS1(chunk));
-        Assert.assertEquals(test1, DirectStringsChunk.getS1ViaAddress(address));
+        Assert.assertEquals(test1, DirectStringsChunk.getS1(address));
         Assert.assertEquals(test2, DirectStringsChunk.getS2(chunk));
-        Assert.assertEquals(test2, DirectStringsChunk.getS2ViaAddress(address));
+        Assert.assertEquals(test2, DirectStringsChunk.getS2(address));
         try (DirectStringsChunk stringsChunk = DirectStringsChunk.use(chunk)){
             Assert.assertEquals(test1, stringsChunk.getS1());
             Assert.assertEquals(test2, stringsChunk.getS2());
@@ -133,9 +135,9 @@ public class DirectStringsChunkTest {
         DirectStringsChunk.setS1(chunk, test2);
         DirectStringsChunk.setS2(chunk, test1);
         Assert.assertEquals(test2, DirectStringsChunk.getS1(chunk));
-        Assert.assertEquals(test2, DirectStringsChunk.getS1ViaAddress(address));
+        Assert.assertEquals(test2, DirectStringsChunk.getS1(address));
         Assert.assertEquals(test1, DirectStringsChunk.getS2(chunk));
-        Assert.assertEquals(test1, DirectStringsChunk.getS2ViaAddress(address));
+        Assert.assertEquals(test1, DirectStringsChunk.getS2(address));
         try (DirectStringsChunk stringsChunk = DirectStringsChunk.use(chunk)){
             Assert.assertEquals(test2, stringsChunk.getS1());
             Assert.assertEquals(test1, stringsChunk.getS2());

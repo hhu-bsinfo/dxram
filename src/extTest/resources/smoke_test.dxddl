@@ -10,7 +10,7 @@
 /* THIS TEST SCRIPT USE TYPES FROM OTHER SCRIPTS, MAKE SURE YOU INDICATE ALL SCRIPTS TO THE TRANSPILER */
 
 chunk SimpleChunk {
-  long id;
+  long vid;
   string name;
   int[] numbers;
   SimpleChunk parent;

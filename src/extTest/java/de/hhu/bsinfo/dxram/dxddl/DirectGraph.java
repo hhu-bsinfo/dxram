@@ -8,22 +8,18 @@ import de.hhu.bsinfo.dxram.chunk.operation.PinningLocal;
 import de.hhu.bsinfo.dxram.chunk.operation.RawReadLocal;
 import de.hhu.bsinfo.dxram.chunk.operation.RawWriteLocal;
 
-public final class DirectSimpleChunk implements AutoCloseable {
+public final class DirectGraph implements AutoCloseable {
 
     private static final int HEADER_LID = 0;
     private static final int HEADER_TYPE = 6;
-    private static final int OFFSET_VID = 8;
-    private static final int OFFSET_NAME_LENGTH = 16;
-    private static final int OFFSET_NAME_CID = 20;
-    private static final int OFFSET_NAME_ADDR = 28;
-    private static final int OFFSET_NUMBERS_LENGTH = 36;
-    private static final int OFFSET_NUMBERS_CID = 40;
-    private static final int OFFSET_NUMBERS_ADDR = 48;
-    private static final int OFFSET_PARENT_ID = 56;
-    private static final int OFFSET_CHILDREN_LENGTH = 64;
-    private static final int OFFSET_CHILDREN_CID = 68;
-    private static final int OFFSET_CHILDREN_ADDR = 76;
-    private static final int SIZE = 84;
+    private static final int OFFSET_NAME_LENGTH = 8;
+    private static final int OFFSET_NAME_CID = 12;
+    private static final int OFFSET_NAME_ADDR = 20;
+    private static final int OFFSET_VERSION = 28;
+    private static final int OFFSET_EDGELIST_LENGTH = 36;
+    private static final int OFFSET_EDGELIST_CID = 40;
+    private static final int OFFSET_EDGELIST_ADDR = 48;
+    private static final int SIZE = 56;
     private static short TYPE = 0;
     private static boolean INITIALIZED = false;
     private static CreateLocal CREATE;
@@ -157,15 +153,11 @@ public final class DirectSimpleChunk implements AutoCloseable {
         final long addr = PINNING.pin(cids[0]).getAddress();
         RAWWRITE.writeLong(addr, HEADER_LID, ((long) TYPE << 48) | (cids[0] & 0xFFFFFFFFFFFFL));
         RAWWRITE.writeLong(addr, OFFSET_NAME_CID, 0xFFFFFFFFFFFFFFFFL);
-        RAWWRITE.writeLong(addr, OFFSET_NUMBERS_CID, 0xFFFFFFFFFFFFFFFFL);
-        RAWWRITE.writeLong(addr, OFFSET_CHILDREN_CID, 0xFFFFFFFFFFFFFFFFL);
+        RAWWRITE.writeLong(addr, OFFSET_EDGELIST_CID, 0xFFFFFFFFFFFFFFFFL);
         RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, -1);
-        RAWWRITE.writeInt(addr, OFFSET_NUMBERS_LENGTH, 0);
-        RAWWRITE.writeInt(addr, OFFSET_CHILDREN_LENGTH, 0);
+        RAWWRITE.writeInt(addr, OFFSET_EDGELIST_LENGTH, 0);
         RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0x0L);
-        RAWWRITE.writeLong(addr, OFFSET_NUMBERS_ADDR, 0x0L);
-        RAWWRITE.writeLong(addr, OFFSET_CHILDREN_ADDR, 0x0L);
-        RAWWRITE.writeLong(addr, OFFSET_PARENT_ID, 0xFFFFFFFFFFFFFFFFL);
+        RAWWRITE.writeLong(addr, OFFSET_EDGELIST_ADDR, 0x0L);
         return addr | 0xFFFF000000000000L;
     }
 
@@ -181,15 +173,11 @@ public final class DirectSimpleChunk implements AutoCloseable {
             final long addr = PINNING.pin(cids[i]).getAddress();
             RAWWRITE.writeLong(addr, HEADER_LID, ((long) TYPE << 48) | (cids[i] & 0xFFFFFFFFFFFFL));
             RAWWRITE.writeLong(addr, OFFSET_NAME_CID, 0xFFFFFFFFFFFFFFFFL);
-            RAWWRITE.writeLong(addr, OFFSET_NUMBERS_CID, 0xFFFFFFFFFFFFFFFFL);
-            RAWWRITE.writeLong(addr, OFFSET_CHILDREN_CID, 0xFFFFFFFFFFFFFFFFL);
+            RAWWRITE.writeLong(addr, OFFSET_EDGELIST_CID, 0xFFFFFFFFFFFFFFFFL);
             RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, -1);
-            RAWWRITE.writeInt(addr, OFFSET_NUMBERS_LENGTH, 0);
-            RAWWRITE.writeInt(addr, OFFSET_CHILDREN_LENGTH, 0);
+            RAWWRITE.writeInt(addr, OFFSET_EDGELIST_LENGTH, 0);
             RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0x0L);
-            RAWWRITE.writeLong(addr, OFFSET_NUMBERS_ADDR, 0x0L);
-            RAWWRITE.writeLong(addr, OFFSET_CHILDREN_ADDR, 0x0L);
-            RAWWRITE.writeLong(addr, OFFSET_PARENT_ID, 0xFFFFFFFFFFFFFFFFL);
+            RAWWRITE.writeLong(addr, OFFSET_EDGELIST_ADDR, 0x0L);
             cids[i] = addr | 0xFFFF000000000000L;
         }
 
@@ -211,15 +199,11 @@ public final class DirectSimpleChunk implements AutoCloseable {
             final long addr = PINNING.pin(p_reserved_cids[i]).getAddress();
             RAWWRITE.writeLong(addr, HEADER_TYPE, ((long) TYPE << 48) | (p_reserved_cids[i] & 0xFFFFFFFFFFFFL));
             RAWWRITE.writeLong(addr, OFFSET_NAME_CID, 0xFFFFFFFFFFFFFFFFL);
-            RAWWRITE.writeLong(addr, OFFSET_NUMBERS_CID, 0xFFFFFFFFFFFFFFFFL);
-            RAWWRITE.writeLong(addr, OFFSET_CHILDREN_CID, 0xFFFFFFFFFFFFFFFFL);
+            RAWWRITE.writeLong(addr, OFFSET_EDGELIST_CID, 0xFFFFFFFFFFFFFFFFL);
             RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, -1);
-            RAWWRITE.writeInt(addr, OFFSET_NUMBERS_LENGTH, 0);
-            RAWWRITE.writeInt(addr, OFFSET_CHILDREN_LENGTH, 0);
+            RAWWRITE.writeInt(addr, OFFSET_EDGELIST_LENGTH, 0);
             RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0x0L);
-            RAWWRITE.writeLong(addr, OFFSET_NUMBERS_ADDR, 0x0L);
-            RAWWRITE.writeLong(addr, OFFSET_CHILDREN_ADDR, 0x0L);
-            RAWWRITE.writeLong(addr, OFFSET_PARENT_ID, 0xFFFFFFFFFFFFFFFFL);
+            RAWWRITE.writeLong(addr, OFFSET_EDGELIST_ADDR, 0x0L);
         }
     }
 
@@ -244,12 +228,9 @@ public final class DirectSimpleChunk implements AutoCloseable {
         final long cid_OFFSET_NAME_CID = RAWREAD.readLong(addr, OFFSET_NAME_CID);
         PINNING.unpinCID(cid_OFFSET_NAME_CID);
         REMOVE.remove(cid_OFFSET_NAME_CID);
-        final long cid_OFFSET_NUMBERS_CID = RAWREAD.readLong(addr, OFFSET_NUMBERS_CID);
-        PINNING.unpinCID(cid_OFFSET_NUMBERS_CID);
-        REMOVE.remove(cid_OFFSET_NUMBERS_CID);
-        final long cid_OFFSET_CHILDREN_CID = RAWREAD.readLong(addr, OFFSET_CHILDREN_CID);
-        PINNING.unpinCID(cid_OFFSET_CHILDREN_CID);
-        REMOVE.remove(cid_OFFSET_CHILDREN_CID);
+        final long cid_OFFSET_EDGELIST_CID = RAWREAD.readLong(addr, OFFSET_EDGELIST_CID);
+        PINNING.unpinCID(cid_OFFSET_EDGELIST_CID);
+        REMOVE.remove(cid_OFFSET_EDGELIST_CID);
         PINNING.unpinCID(cid);
         REMOVE.remove(cid);
     }
@@ -280,51 +261,12 @@ public final class DirectSimpleChunk implements AutoCloseable {
             final long cid_OFFSET_NAME_CID = RAWREAD.readLong(addr, OFFSET_NAME_CID);
             PINNING.unpinCID(cid_OFFSET_NAME_CID);
             REMOVE.remove(cid_OFFSET_NAME_CID);
-            final long cid_OFFSET_NUMBERS_CID = RAWREAD.readLong(addr, OFFSET_NUMBERS_CID);
-            PINNING.unpinCID(cid_OFFSET_NUMBERS_CID);
-            REMOVE.remove(cid_OFFSET_NUMBERS_CID);
-            final long cid_OFFSET_CHILDREN_CID = RAWREAD.readLong(addr, OFFSET_CHILDREN_CID);
-            PINNING.unpinCID(cid_OFFSET_CHILDREN_CID);
-            REMOVE.remove(cid_OFFSET_CHILDREN_CID);
+            final long cid_OFFSET_EDGELIST_CID = RAWREAD.readLong(addr, OFFSET_EDGELIST_CID);
+            PINNING.unpinCID(cid_OFFSET_EDGELIST_CID);
+            REMOVE.remove(cid_OFFSET_EDGELIST_CID);
             PINNING.unpinCID(cid);
             REMOVE.remove(cid);
         }
-    }
-
-    public static long getVid(final long p_id) {
-        long addr;
-
-        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                throw new RuntimeException("The given CID is not valid or not a local CID!");
-            }
-
-            addr = PINNING.translate(p_id);
-        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
-            addr = p_id & 0xFFFFFFFFFFFFL;
-        } else {
-            throw new RuntimeException("The given CID is not valid or not a local CID!");
-        }
-
-        return RAWREAD.readLong(addr, OFFSET_VID);
-    }
-
-    public static void setVid(final long p_id, final long p_vid) {
-        long addr;
-
-        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                throw new RuntimeException("The given CID is not valid or not a local CID!");
-            }
-
-            addr = PINNING.translate(p_id);
-        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
-            addr = p_id & 0xFFFFFFFFFFFFL;
-        } else {
-            throw new RuntimeException("The given CID is not valid or not a local CID!");
-        }
-
-        RAWWRITE.writeLong(addr, OFFSET_VID, p_vid);
     }
 
     public static String getName(final long p_id) {
@@ -393,7 +335,7 @@ public final class DirectSimpleChunk implements AutoCloseable {
         RAWWRITE.writeByteArray(addr2, 0, str);
     }
 
-    public static int getNumbersLength(final long p_id) {
+    public static long getVersion(final long p_id) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -408,10 +350,10 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        return RAWREAD.readInt(addr, OFFSET_NUMBERS_LENGTH);
+        return RAWREAD.readLong(addr, OFFSET_VERSION);
     }
 
-    public static int getNumbers(final long p_id, final int index) {
+    public static void setVersion(final long p_id, final long p_version) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -426,17 +368,10 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(addr, OFFSET_NUMBERS_LENGTH);
-
-        if (index < 0 || index >= len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-
-        final long addr2 = RAWREAD.readLong(addr, OFFSET_NUMBERS_ADDR);
-        return RAWREAD.readInt(addr2, (4 * index));
+        RAWWRITE.writeLong(addr, OFFSET_VERSION, p_version);
     }
 
-    public static int[] getNumbers(final long p_id) {
+    public static int getEdgeListEdgeLength(final long p_id) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -451,16 +386,10 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(addr, OFFSET_NUMBERS_LENGTH);
-
-        if (len <= 0) {
-            return null;
-        }
-
-        return RAWREAD.readIntArray(RAWREAD.readLong(addr, OFFSET_NUMBERS_ADDR), 0, len);
+        return RAWREAD.readInt(addr, OFFSET_EDGELIST_LENGTH);
     }
 
-    public static void setNumbers(final long p_id, final int index, final int value) {
+    public static long getEdgeListEdgeID(final long p_id, final int p_index) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -475,161 +404,16 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(addr, OFFSET_NUMBERS_LENGTH);
-
-        if (index < 0 || index >= len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-
-        final long addr2 = RAWREAD.readLong(addr, OFFSET_NUMBERS_ADDR);
-        RAWWRITE.writeInt(addr2, (4 * index), value);
-    }
-
-    public static void setNumbers(final long p_id, final int[] p_numbers) {
-        long addr;
-
-        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                throw new RuntimeException("The given CID is not valid or not a local CID!");
-            }
-
-            addr = PINNING.translate(p_id);
-        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
-            addr = p_id & 0xFFFFFFFFFFFFL;
-        } else {
-            throw new RuntimeException("The given CID is not valid or not a local CID!");
-        }
-
-        final int len = RAWREAD.readInt(addr, OFFSET_NUMBERS_LENGTH);
-        final long array_cid = RAWREAD.readLong(addr, OFFSET_NUMBERS_CID);
-
-        if (array_cid != 0xFFFFFFFFFFFFFFFFL) {
-            PINNING.unpinCID(array_cid);
-            REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(addr, OFFSET_NUMBERS_CID, 0xFFFFFFFFFFFFFFFFL);
-            RAWWRITE.writeLong(addr, OFFSET_NUMBERS_ADDR, 0x0L);
-            RAWWRITE.writeInt(addr, OFFSET_NUMBERS_LENGTH, 0);
-        }
-
-        if (p_numbers == null || p_numbers.length == 0) {
-            return;
-        }
-
-        final long[] new_cid = new long[1];
-        CREATE.create(new_cid, 1, (4 * p_numbers.length));
-        final long addr2 = PINNING.pin(new_cid[0]).getAddress();
-        RAWWRITE.writeLong(addr, OFFSET_NUMBERS_CID, new_cid[0]);
-        RAWWRITE.writeLong(addr, OFFSET_NUMBERS_ADDR, addr2);
-        RAWWRITE.writeInt(addr, OFFSET_NUMBERS_LENGTH, p_numbers.length);
-        RAWWRITE.writeIntArray(addr2, 0, p_numbers);
-    }
-
-    public static long getParentSimpleChunkID(final long p_id) {
-        long addr;
-
-        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                throw new RuntimeException("The given CID is not valid or not a local CID!");
-            }
-
-            addr = PINNING.translate(p_id);
-        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
-            addr = p_id & 0xFFFFFFFFFFFFL;
-        } else {
-            throw new RuntimeException("The given CID is not valid or not a local CID!");
-        }
-
-        return RAWREAD.readLong(addr, OFFSET_PARENT_ID);
-    }
-
-    public static boolean isParentSimpleChunkLocalID(final long p_id) {
-        long addr;
-
-        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                throw new RuntimeException("The given CID is not valid or not a local CID!");
-            }
-
-            addr = PINNING.translate(p_id);
-        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
-            addr = p_id & 0xFFFFFFFFFFFFL;
-        } else {
-            throw new RuntimeException("The given CID is not valid or not a local CID!");
-        }
-
-        final long id2 = RAWREAD.readLong(addr, OFFSET_PARENT_ID);
-        return (id2 & 0xFFFF000000000000L) == 0xFFFF000000000000L;
-    }
-
-    public static void setParentSimpleChunkID(final long p_id, final long p_parent_id) {
-        long addr;
-
-        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                throw new RuntimeException("The given CID is not valid or not a local CID!");
-            }
-
-            addr = PINNING.translate(p_id);
-        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
-            addr = p_id & 0xFFFFFFFFFFFFL;
-        } else {
-            throw new RuntimeException("The given CID is not valid or not a local CID!");
-        }
-
-        if ((p_parent_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_parent_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                RAWWRITE.writeLong(addr, OFFSET_PARENT_ID, p_parent_id);
-            } else {
-                RAWWRITE.writeLong(addr, OFFSET_PARENT_ID, PINNING.translate(p_parent_id) | 0xFFFF000000000000L);
-            }
-        } else {
-            RAWWRITE.writeLong(addr, OFFSET_PARENT_ID, p_parent_id);
-        }
-    }
-
-    public static int getChildrenSimpleChunkLength(final long p_id) {
-        long addr;
-
-        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                throw new RuntimeException("The given CID is not valid or not a local CID!");
-            }
-
-            addr = PINNING.translate(p_id);
-        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
-            addr = p_id & 0xFFFFFFFFFFFFL;
-        } else {
-            throw new RuntimeException("The given CID is not valid or not a local CID!");
-        }
-
-        return RAWREAD.readInt(addr, OFFSET_CHILDREN_LENGTH);
-    }
-
-    public static long getChildrenSimpleChunkID(final long p_id, final int p_index) {
-        long addr;
-
-        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                throw new RuntimeException("The given CID is not valid or not a local CID!");
-            }
-
-            addr = PINNING.translate(p_id);
-        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
-            addr = p_id & 0xFFFFFFFFFFFFL;
-        } else {
-            throw new RuntimeException("The given CID is not valid or not a local CID!");
-        }
-
-        final int len = RAWREAD.readInt(addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(addr, OFFSET_EDGELIST_LENGTH);
 
         if (p_index < 0 || p_index >= len) {
             throw new ArrayIndexOutOfBoundsException();
         }
 
-        return RAWREAD.readLong(RAWREAD.readLong(addr, OFFSET_CHILDREN_ADDR), (8 * p_index));
+        return RAWREAD.readLong(RAWREAD.readLong(addr, OFFSET_EDGELIST_ADDR), (8 * p_index));
     }
 
-    public static long[] getChildrenSimpleChunkIDs(final long p_id) {
+    public static long[] getEdgeListEdgeIDs(final long p_id) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -644,16 +428,16 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(addr, OFFSET_EDGELIST_LENGTH);
 
         if (len <= 0) {
             return null;
         }
 
-        return RAWREAD.readLongArray(RAWREAD.readLong(addr, OFFSET_CHILDREN_ADDR), 0, len);
+        return RAWREAD.readLongArray(RAWREAD.readLong(addr, OFFSET_EDGELIST_ADDR), 0, len);
     }
 
-    public static long[] getChildrenSimpleChunkLocalIDs(final long p_id) {
+    public static long[] getEdgeListEdgeLocalIDs(final long p_id) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -668,13 +452,13 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(addr, OFFSET_EDGELIST_LENGTH);
 
         if (len <= 0) {
             return null;
         }
 
-        final long[] ids = RAWREAD.readLongArray(RAWREAD.readLong(addr, OFFSET_CHILDREN_ADDR), 0, len);
+        final long[] ids = RAWREAD.readLongArray(RAWREAD.readLong(addr, OFFSET_EDGELIST_ADDR), 0, len);
         final long[] tmp = new long[ids.length];
         int j = 0;
         for (int i = 0; i < ids.length; i ++) {
@@ -687,7 +471,7 @@ public final class DirectSimpleChunk implements AutoCloseable {
         return result;
     }
 
-    public static long[] getChildrenSimpleChunkRemoteIDs(final long p_id) {
+    public static long[] getEdgeListEdgeRemoteIDs(final long p_id) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -702,13 +486,13 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(addr, OFFSET_EDGELIST_LENGTH);
 
         if (len <= 0) {
             return null;
         }
 
-        final long[] ids = RAWREAD.readLongArray(RAWREAD.readLong(addr, OFFSET_CHILDREN_ADDR), 0, len);
+        final long[] ids = RAWREAD.readLongArray(RAWREAD.readLong(addr, OFFSET_EDGELIST_ADDR), 0, len);
         final long[] tmp = new long[ids.length];
         int j = 0;
         for (int i = 0; i < ids.length; i ++) {
@@ -721,7 +505,7 @@ public final class DirectSimpleChunk implements AutoCloseable {
         return result;
     }
 
-    public static void setChildrenSimpleChunkID(final long p_id, final int p_index, final long p_value) {
+    public static void setEdgeListEdgeID(final long p_id, final int p_index, final long p_value) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -736,13 +520,13 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(addr, OFFSET_EDGELIST_LENGTH);
 
         if (p_index < 0 || p_index >= len) {
             throw new ArrayIndexOutOfBoundsException();
         }
 
-        final long addr2 = RAWREAD.readLong(addr, OFFSET_CHILDREN_ADDR);
+        final long addr2 = RAWREAD.readLong(addr, OFFSET_EDGELIST_ADDR);
         if ((p_value & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
             if ((p_value & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
                 RAWWRITE.writeLong(addr2, (8 * p_index), p_value);
@@ -754,7 +538,7 @@ public final class DirectSimpleChunk implements AutoCloseable {
         }
     }
 
-    public static void setChildrenSimpleChunkIDs(final long p_id, final long[] p_children) {
+    public static void setEdgeListEdgeIDs(final long p_id, final long[] p_edgelist) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -769,43 +553,43 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(addr, OFFSET_CHILDREN_LENGTH);
-        final long array_cid = RAWREAD.readLong(addr, OFFSET_CHILDREN_CID);
+        final int len = RAWREAD.readInt(addr, OFFSET_EDGELIST_LENGTH);
+        final long array_cid = RAWREAD.readLong(addr, OFFSET_EDGELIST_CID);
 
         if (array_cid != 0xFFFFFFFFFFFFFFFFL) {
             PINNING.unpinCID(array_cid);
             REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(addr, OFFSET_CHILDREN_CID, 0xFFFFFFFFFFFFFFFFL);
-            RAWWRITE.writeLong(addr, OFFSET_CHILDREN_ADDR, 0x0L);
-            RAWWRITE.writeInt(addr, OFFSET_CHILDREN_LENGTH, 0);
+            RAWWRITE.writeLong(addr, OFFSET_EDGELIST_CID, 0xFFFFFFFFFFFFFFFFL);
+            RAWWRITE.writeLong(addr, OFFSET_EDGELIST_ADDR, 0x0L);
+            RAWWRITE.writeInt(addr, OFFSET_EDGELIST_LENGTH, 0);
         }
 
-        if (p_children == null || p_children.length == 0) {
+        if (p_edgelist == null || p_edgelist.length == 0) {
             return;
         }
 
         final long[] new_cid = new long[1];
-        CREATE.create(new_cid, 1, (8 * p_children.length));
+        CREATE.create(new_cid, 1, (8 * p_edgelist.length));
         final long addr2 = PINNING.pin(new_cid[0]).getAddress();
-        RAWWRITE.writeLong(addr, OFFSET_CHILDREN_CID, new_cid[0]);
-        RAWWRITE.writeLong(addr, OFFSET_CHILDREN_ADDR, addr2);
-        RAWWRITE.writeInt(addr, OFFSET_CHILDREN_LENGTH, p_children.length);
-        for (int i = 0; i < p_children.length; i ++) {
-            if ((p_children[i] & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-                if ((p_children[i] & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                    RAWWRITE.writeLong(addr2, (8 * i), p_children[i]);
+        RAWWRITE.writeLong(addr, OFFSET_EDGELIST_CID, new_cid[0]);
+        RAWWRITE.writeLong(addr, OFFSET_EDGELIST_ADDR, addr2);
+        RAWWRITE.writeInt(addr, OFFSET_EDGELIST_LENGTH, p_edgelist.length);
+        for (int i = 0; i < p_edgelist.length; i ++) {
+            if ((p_edgelist[i] & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+                if ((p_edgelist[i] & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                    RAWWRITE.writeLong(addr2, (8 * i), p_edgelist[i]);
                 } else {
-                    RAWWRITE.writeLong(addr2, (8 * i), PINNING.translate(p_children[i]) | 0xFFFF000000000000L);
+                    RAWWRITE.writeLong(addr2, (8 * i), PINNING.translate(p_edgelist[i]) | 0xFFFF000000000000L);
                 }
             } else {
-                RAWWRITE.writeLong(addr2, (8 * i), p_children[i]);
+                RAWWRITE.writeLong(addr2, (8 * i), p_edgelist[i]);
             }
         }
     }
 
-    private DirectSimpleChunk() {}
+    private DirectGraph() {}
 
-    public static DirectSimpleChunk use(final long p_id) {
+    public static DirectGraph use(final long p_id) {
         long addr;
 
         if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
@@ -820,25 +604,9 @@ public final class DirectSimpleChunk implements AutoCloseable {
             throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        DirectSimpleChunk tmp = new DirectSimpleChunk();
+        DirectGraph tmp = new DirectGraph();
         tmp.m_addr = addr;
         return tmp;
-    }
-
-    public long getVid() {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        return RAWREAD.readLong(m_addr, OFFSET_VID);
-    }
-
-    public void setVid(final long p_vid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        RAWWRITE.writeLong(m_addr, OFFSET_VID, p_vid);
     }
 
     public String getName() {
@@ -887,159 +655,70 @@ public final class DirectSimpleChunk implements AutoCloseable {
         RAWWRITE.writeByteArray(addr, 0, str);
     }
 
-    public int getNumbersLength() {
+    public long getVersion() {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        return RAWREAD.readInt(m_addr, OFFSET_NUMBERS_LENGTH);
+        return RAWREAD.readLong(m_addr, OFFSET_VERSION);
     }
 
-    public int getNumbers(final int index) {
+    public void setVersion(final long p_version) {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        final int len = RAWREAD.readInt(m_addr, OFFSET_NUMBERS_LENGTH);
-
-        if (index < 0 || index >= len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-
-        final long addr = RAWREAD.readLong(m_addr, OFFSET_NUMBERS_ADDR);
-        return RAWREAD.readInt(addr, (4 * index));
+        RAWWRITE.writeLong(m_addr, OFFSET_VERSION, p_version);
     }
 
-    public int[] getNumbers() {
+    public int getEdgeListEdgeLength() {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        final int len = RAWREAD.readInt(m_addr, OFFSET_NUMBERS_LENGTH);
-
-        if (len <= 0) {
-            return null;
-        }
-
-        return RAWREAD.readIntArray(RAWREAD.readLong(m_addr, OFFSET_NUMBERS_ADDR), 0, len);
+        return RAWREAD.readInt(m_addr, OFFSET_EDGELIST_LENGTH);
     }
 
-    public void setNumbers(final int index, final int value) {
+    public long getEdgeListEdgeID(final int p_index) {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        final int len = RAWREAD.readInt(m_addr, OFFSET_NUMBERS_LENGTH);
-
-        if (index < 0 || index >= len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-
-        final long addr = RAWREAD.readLong(m_addr, OFFSET_NUMBERS_ADDR);
-        RAWWRITE.writeInt(addr, (4 * index), value);
-    }
-
-    public void setNumbers(final int[] p_numbers) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        final int len = RAWREAD.readInt(m_addr, OFFSET_NUMBERS_LENGTH);
-        final long cid = RAWREAD.readLong(m_addr, OFFSET_NUMBERS_CID);
-
-        if (cid != 0xFFFFFFFFFFFFFFFFL) {
-            PINNING.unpinCID(cid);
-            REMOVE.remove(cid);
-            RAWWRITE.writeLong(m_addr, OFFSET_NUMBERS_CID, 0xFFFFFFFFFFFFFFFFL);
-            RAWWRITE.writeLong(m_addr, OFFSET_NUMBERS_ADDR, 0x0L);
-            RAWWRITE.writeInt(m_addr, OFFSET_NUMBERS_LENGTH, 0);
-        }
-
-        if (p_numbers == null || p_numbers.length == 0) {
-            return;
-        }
-
-        final long[] new_cid = new long[1];
-        CREATE.create(new_cid, 1, (4 * p_numbers.length));
-        final long addr = PINNING.pin(new_cid[0]).getAddress();
-        RAWWRITE.writeLong(m_addr, OFFSET_NUMBERS_CID, new_cid[0]);
-        RAWWRITE.writeLong(m_addr, OFFSET_NUMBERS_ADDR, addr);
-        RAWWRITE.writeInt(m_addr, OFFSET_NUMBERS_LENGTH, p_numbers.length);
-        RAWWRITE.writeIntArray(addr, 0, p_numbers);
-    }
-
-    public long getParentSimpleChunkID() {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        return RAWREAD.readLong(m_addr, OFFSET_PARENT_ID);
-    }
-
-    public void setParentSimpleChunkID(final long p_parent_id) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        if ((p_parent_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-            if ((p_parent_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                RAWWRITE.writeLong(m_addr, OFFSET_PARENT_ID, p_parent_id);
-            } else {
-                RAWWRITE.writeLong(m_addr, OFFSET_PARENT_ID, PINNING.translate(p_parent_id) | 0xFFFF000000000000L);
-            }
-        } else {
-            RAWWRITE.writeLong(m_addr, OFFSET_PARENT_ID, p_parent_id);
-        }
-    }
-
-    public int getChildrenSimpleChunkLength() {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        return RAWREAD.readInt(m_addr, OFFSET_CHILDREN_LENGTH);
-    }
-
-    public long getChildrenSimpleChunkID(final int p_index) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        final int len = RAWREAD.readInt(m_addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(m_addr, OFFSET_EDGELIST_LENGTH);
 
         if (p_index < 0 || p_index >= len) {
             throw new ArrayIndexOutOfBoundsException();
         }
 
-        return RAWREAD.readLong(RAWREAD.readLong(m_addr, OFFSET_CHILDREN_ADDR), (8 * p_index));
+        return RAWREAD.readLong(RAWREAD.readLong(m_addr, OFFSET_EDGELIST_ADDR), (8 * p_index));
     }
 
-    public long[] getChildrenSimpleChunkIDs() {
+    public long[] getEdgeListEdgeIDs() {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        final int len = RAWREAD.readInt(m_addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(m_addr, OFFSET_EDGELIST_LENGTH);
 
         if (len <= 0) {
             return null;
         }
 
-        return RAWREAD.readLongArray(RAWREAD.readLong(m_addr, OFFSET_CHILDREN_ADDR), 0, len);
+        return RAWREAD.readLongArray(RAWREAD.readLong(m_addr, OFFSET_EDGELIST_ADDR), 0, len);
     }
 
-    public long[] getChildrenSimpleChunkLocalIDs() {
+    public long[] getEdgeListEdgeLocalIDs() {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        final int len = RAWREAD.readInt(m_addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(m_addr, OFFSET_EDGELIST_LENGTH);
 
         if (len <= 0) {
             return null;
         }
 
-        final long[] ids = RAWREAD.readLongArray(RAWREAD.readLong(m_addr, OFFSET_CHILDREN_ADDR), 0, len);
+        final long[] ids = RAWREAD.readLongArray(RAWREAD.readLong(m_addr, OFFSET_EDGELIST_ADDR), 0, len);
         final long[] tmp = new long[ids.length];
         int j = 0;
         for (int i = 0; i < ids.length; i ++) {
@@ -1052,18 +731,18 @@ public final class DirectSimpleChunk implements AutoCloseable {
         return result;
     }
 
-    public long[] getChildrenSimpleChunkRemoteIDs() {
+    public long[] getEdgeListEdgeRemoteIDs() {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        final int len = RAWREAD.readInt(m_addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(m_addr, OFFSET_EDGELIST_LENGTH);
 
         if (len <= 0) {
             return null;
         }
 
-        final long[] ids = RAWREAD.readLongArray(RAWREAD.readLong(m_addr, OFFSET_CHILDREN_ADDR), 0, len);
+        final long[] ids = RAWREAD.readLongArray(RAWREAD.readLong(m_addr, OFFSET_EDGELIST_ADDR), 0, len);
         final long[] tmp = new long[ids.length];
         int j = 0;
         for (int i = 0; i < ids.length; i ++) {
@@ -1076,18 +755,18 @@ public final class DirectSimpleChunk implements AutoCloseable {
         return result;
     }
 
-    public void setChildrenSimpleChunkID(final int p_index, final long p_value) {
+    public void setEdgeListEdgeID(final int p_index, final long p_value) {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        final int len = RAWREAD.readInt(m_addr, OFFSET_CHILDREN_LENGTH);
+        final int len = RAWREAD.readInt(m_addr, OFFSET_EDGELIST_LENGTH);
 
         if (p_index < 0 || p_index >= len) {
             throw new ArrayIndexOutOfBoundsException();
         }
 
-        final long addr2 = RAWREAD.readLong(m_addr, OFFSET_CHILDREN_ADDR);
+        final long addr2 = RAWREAD.readLong(m_addr, OFFSET_EDGELIST_ADDR);
         if ((p_value & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
             if ((p_value & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
                 RAWWRITE.writeLong(addr2, (8 * p_index), p_value);
@@ -1099,41 +778,41 @@ public final class DirectSimpleChunk implements AutoCloseable {
         }
     }
 
-    public void setChildrenSimpleChunkIDs(final long[] p_children) {
+    public void setEdgeListEdgeIDs(final long[] p_edgelist) {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        final int len = RAWREAD.readInt(m_addr, OFFSET_CHILDREN_LENGTH);
-        final long array_cid = RAWREAD.readLong(m_addr, OFFSET_CHILDREN_CID);
+        final int len = RAWREAD.readInt(m_addr, OFFSET_EDGELIST_LENGTH);
+        final long array_cid = RAWREAD.readLong(m_addr, OFFSET_EDGELIST_CID);
 
         if (array_cid != 0xFFFFFFFFFFFFFFFFL) {
             PINNING.unpinCID(array_cid);
             REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(m_addr, OFFSET_CHILDREN_CID, 0xFFFFFFFFFFFFFFFFL);
-            RAWWRITE.writeLong(m_addr, OFFSET_CHILDREN_ADDR, 0x0L);
-            RAWWRITE.writeInt(m_addr, OFFSET_CHILDREN_LENGTH, 0);
+            RAWWRITE.writeLong(m_addr, OFFSET_EDGELIST_CID, 0xFFFFFFFFFFFFFFFFL);
+            RAWWRITE.writeLong(m_addr, OFFSET_EDGELIST_ADDR, 0x0L);
+            RAWWRITE.writeInt(m_addr, OFFSET_EDGELIST_LENGTH, 0);
         }
 
-        if (p_children == null || p_children.length == 0) {
+        if (p_edgelist == null || p_edgelist.length == 0) {
             return;
         }
 
         final long[] new_cid = new long[1];
-        CREATE.create(new_cid, 1, (16 * p_children.length));
+        CREATE.create(new_cid, 1, (16 * p_edgelist.length));
         final long addr2 = PINNING.pin(new_cid[0]).getAddress();
-        RAWWRITE.writeLong(m_addr, OFFSET_CHILDREN_CID, new_cid[0]);
-        RAWWRITE.writeLong(m_addr, OFFSET_CHILDREN_ADDR, addr2);
-        RAWWRITE.writeInt(m_addr, OFFSET_CHILDREN_LENGTH, p_children.length);
-        for (int i = 0; i < p_children.length; i ++) {
-            if ((p_children[i] & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
-                if ((p_children[i] & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
-                    RAWWRITE.writeLong(addr2, (8 * i), p_children[i]);
+        RAWWRITE.writeLong(m_addr, OFFSET_EDGELIST_CID, new_cid[0]);
+        RAWWRITE.writeLong(m_addr, OFFSET_EDGELIST_ADDR, addr2);
+        RAWWRITE.writeInt(m_addr, OFFSET_EDGELIST_LENGTH, p_edgelist.length);
+        for (int i = 0; i < p_edgelist.length; i ++) {
+            if ((p_edgelist[i] & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+                if ((p_edgelist[i] & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                    RAWWRITE.writeLong(addr2, (8 * i), p_edgelist[i]);
                 } else {
-                    RAWWRITE.writeLong(addr2, (8 * i), PINNING.translate(p_children[i]) | 0xFFFF000000000000L);
+                    RAWWRITE.writeLong(addr2, (8 * i), PINNING.translate(p_edgelist[i]) | 0xFFFF000000000000L);
                 }
             } else {
-                RAWWRITE.writeLong(addr2, (8 * i), p_children[i]);
+                RAWWRITE.writeLong(addr2, (8 * i), p_edgelist[i]);
             }
         }
     }
