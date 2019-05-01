@@ -10,14 +10,16 @@ import de.hhu.bsinfo.dxram.chunk.operation.RawWriteLocal;
 
 public final class DirectCity implements AutoCloseable {
 
-    private static final int OFFSET_NAME_LENGTH = 0;
-    private static final int OFFSET_NAME_CID = 4;
-    private static final int OFFSET_NAME_ADDR = 12;
-    private static final int OFFSET_COUNTRY_CID = 20;
-    private static final int OFFSET_COUNTRY_ADDR = 28;
+    private static final int HEADER_LID = 0;
+    private static final int HEADER_TYPE = 6;
+    private static final int OFFSET_NAME_LENGTH = 8;
+    private static final int OFFSET_NAME_CID = 12;
+    private static final int OFFSET_NAME_ADDR = 20;
+    private static final int OFFSET_COUNTRY_ID = 28;
     private static final int OFFSET_POPULATION = 36;
     private static final int OFFSET_AREA = 40;
     private static final int SIZE = 44;
+    private static short TYPE = 0;
     private static boolean INITIALIZED = false;
     private static CreateLocal CREATE;
     private static CreateReservedLocal CREATE_RESERVED;
@@ -26,13 +28,35 @@ public final class DirectCity implements AutoCloseable {
     private static PinningLocal PINNING;
     private static RawReadLocal RAWREAD;
     private static RawWriteLocal RAWWRITE;
-    private long m_addr = 0;
+    private long m_addr = 0x0L;
 
     public static int size() {
         return SIZE;
     }
 
-    public static void init(
+    public static boolean isValidType(final long p_id) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
+        }
+
+        return (addr != 0x0L) && (RAWREAD.readShort(addr, HEADER_TYPE) == TYPE);
+    }
+
+    static void setTYPE(final short p_type) {
+        TYPE = p_type;
+    }
+
+    static void init(
             final CreateLocal create, 
             final CreateReservedLocal create_reserved, 
             final ReserveLocal reserve, 
@@ -52,24 +76,70 @@ public final class DirectCity implements AutoCloseable {
         }
     }
 
-    public static long getAddress(final long p_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static long getAddress(final long p_id) {
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            return 0xFFFF000000000000L | PINNING.translate(p_id);
         }
 
-        return PINNING.translate(p_cid);
+        return p_id;
     }
 
-    public static long[] getAddresses(final long[] p_cids) {
+    public static long[] getAddresses(final long[] p_ids) {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        final long[] addresses = new long[p_cids.length];
-        for (int i = 0; i < p_cids.length; i ++) {
-            addresses[i] = PINNING.translate(p_cids[i]);
+        final long[] addresses = new long[p_ids.length];
+        for (int i = 0; i < p_ids.length; i ++) {
+            if ((p_ids[i] & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+                addresses[i] = 0xFFFF000000000000L | PINNING.translate(p_ids[i]);
+            } else {
+                addresses[i] = p_ids[i];
+            }
         }
+
         return addresses;
+    }
+
+    public static long getCID(final long p_id) {
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L || p_id == 0xFFFFFFFFFFFFFFFFL) {
+            return p_id;
+        } else {
+            return (RAWREAD.readLong(p_id & 0xFFFFFFFFFFFFL, HEADER_LID) & 0xFFFFFFFFFFFFL) | DirectAccessSecurityManager.NID;
+        }
+    }
+
+    public static long[] getCIDs(final long[] p_ids) {
+        if (!INITIALIZED) {
+            throw new RuntimeException("Not initialized!");
+        }
+
+        final long[] cids = new long[p_ids.length];
+        for (int i = 0; i < p_ids.length; i ++) {
+            if ((p_ids[i] & 0xFFFF000000000000L) != 0xFFFF000000000000L || p_ids[i] == 0xFFFFFFFFFFFFFFFFL) {
+                cids[i] = p_ids[i];
+            } else {
+                cids[i] = (RAWREAD.readLong(p_ids[i] & 0xFFFFFFFFFFFFL, HEADER_LID) & 0xFFFFFFFFFFFFL) | DirectAccessSecurityManager.NID;
+            }
+        }
+
+        return cids;
+    }
+
+    public static long[] reserve(final int p_count) {
+        if (!INITIALIZED) {
+            throw new RuntimeException("Not initialized!");
+        }
+
+        // TODO: REMOVE THIS WHEN DXRAM BUG IS FIXED (NID set for reserved CIDs)
+        final long[] cids = new long[p_count];
+        RESERVE.reserve(p_count);
+
+        for (int i = 0; i < p_count; i ++) {
+            cids[i] |= DirectAccessSecurityManager.NID;
+        }
+
+        return cids;
     }
 
     public static long create() {
@@ -80,12 +150,12 @@ public final class DirectCity implements AutoCloseable {
         final long[] cids = new long[1];
         CREATE.create(cids, 1, SIZE);
         final long addr = PINNING.pin(cids[0]).getAddress();
-        RAWWRITE.writeLong(addr, OFFSET_NAME_CID, -1);
-        RAWWRITE.writeLong(addr, OFFSET_COUNTRY_CID, -1);
+        RAWWRITE.writeLong(addr, HEADER_LID, ((long) TYPE << 48) | (cids[0] & 0xFFFFFFFFFFFFL));
+        RAWWRITE.writeLong(addr, OFFSET_NAME_CID, 0xFFFFFFFFFFFFFFFFL);
         RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, -1);
-        RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0);
-        RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ADDR, 0);
-        return cids[0];
+        RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0x0L);
+        RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ID, 0xFFFFFFFFFFFFFFFFL);
+        return addr | 0xFFFF000000000000L;
     }
 
     public static long[] create(final int p_count) {
@@ -98,11 +168,12 @@ public final class DirectCity implements AutoCloseable {
 
         for (int i = 0; i < p_count; i ++) {
             final long addr = PINNING.pin(cids[i]).getAddress();
-            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, -1);
-            RAWWRITE.writeLong(addr, OFFSET_COUNTRY_CID, -1);
+            RAWWRITE.writeLong(addr, HEADER_LID, ((long) TYPE << 48) | (cids[i] & 0xFFFFFFFFFFFFL));
+            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, 0xFFFFFFFFFFFFFFFFL);
             RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, -1);
-            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0);
-            RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ADDR, 0);
+            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0x0L);
+            RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ID, 0xFFFFFFFFFFFFFFFFL);
+            cids[i] = addr | 0xFFFF000000000000L;
         }
 
         return cids;
@@ -121,54 +192,85 @@ public final class DirectCity implements AutoCloseable {
 
         for (int i = 0; i < p_reserved_cids.length; i ++) {
             final long addr = PINNING.pin(p_reserved_cids[i]).getAddress();
-            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, -1);
-            RAWWRITE.writeLong(addr, OFFSET_COUNTRY_CID, -1);
+            RAWWRITE.writeLong(addr, HEADER_TYPE, ((long) TYPE << 48) | (p_reserved_cids[i] & 0xFFFFFFFFFFFFL));
+            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, 0xFFFFFFFFFFFFFFFFL);
             RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, -1);
-            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0);
-            RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ADDR, 0);
+            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0x0L);
+            RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ID, 0xFFFFFFFFFFFFFFFFL);
         }
     }
 
-    public static void remove(final long p_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static void remove(final long p_id) {
+        long addr;
+        long cid;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            cid = p_id;
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+            cid = (RAWREAD.readLong(addr, HEADER_LID) & 0xFFFFFFFFFFFFL) | DirectAccessSecurityManager.NID;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final long addr = PINNING.translate(p_cid);
         final long cid_OFFSET_NAME_CID = RAWREAD.readLong(addr, OFFSET_NAME_CID);
         PINNING.unpinCID(cid_OFFSET_NAME_CID);
         REMOVE.remove(cid_OFFSET_NAME_CID);
-        final long cid_OFFSET_COUNTRY_CID = RAWREAD.readLong(addr, OFFSET_COUNTRY_CID);
-        PINNING.unpinCID(cid_OFFSET_COUNTRY_CID);
-        REMOVE.remove(cid_OFFSET_COUNTRY_CID);
-        PINNING.unpinCID(p_cid);
-        REMOVE.remove(p_cid);
+        PINNING.unpinCID(cid);
+        REMOVE.remove(cid);
     }
 
-    public static void remove(final long[] p_cids) {
+    public static void remove(final long[] p_ids) {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        for (int i = 0; i < p_cids.length; i ++) {
-            final long addr = PINNING.translate(p_cids[i]);
+        for (int i = 0; i < p_ids.length; i ++) {
+            long addr;
+            long cid;
+
+            if ((p_ids[i] & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+                if ((p_ids[i] & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                    throw new RuntimeException("The given CID is not valid or not a local CID!");
+                }
+
+                cid = p_ids[i];
+                addr = PINNING.translate(p_ids[i]);
+            } else if (p_ids[i] != 0xFFFFFFFFFFFFFFFFL) {
+                addr = p_ids[i] & 0xFFFFFFFFFFFFL;
+                cid = (RAWREAD.readLong(addr, HEADER_LID) & 0xFFFFFFFFFFFFL) | DirectAccessSecurityManager.NID;
+            } else {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
             final long cid_OFFSET_NAME_CID = RAWREAD.readLong(addr, OFFSET_NAME_CID);
             PINNING.unpinCID(cid_OFFSET_NAME_CID);
             REMOVE.remove(cid_OFFSET_NAME_CID);
-            final long cid_OFFSET_COUNTRY_CID = RAWREAD.readLong(addr, OFFSET_COUNTRY_CID);
-            PINNING.unpinCID(cid_OFFSET_COUNTRY_CID);
-            REMOVE.remove(cid_OFFSET_COUNTRY_CID);
-            PINNING.unpinCID(p_cids[i]);
-            REMOVE.remove(p_cids[i]);
+            PINNING.unpinCID(cid);
+            REMOVE.remove(cid);
         }
     }
 
-    public static String getName(final long p_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static String getName(final long p_id) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final long addr = PINNING.translate(p_cid);
         final int len = RAWREAD.readInt(addr, OFFSET_NAME_LENGTH);
 
         if (len < 0) {
@@ -180,39 +282,32 @@ public final class DirectCity implements AutoCloseable {
         return new String(RAWREAD.readByteArray(RAWREAD.readLong(addr, OFFSET_NAME_ADDR), 0, len));
     }
 
-    public static String getNameViaAddress(final long p_addr) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static void setName(final long p_id, final String p_name) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(p_addr, OFFSET_NAME_LENGTH);
-
-        if (len < 0) {
-            return null;
-        } else if (len == 0) {
-            return "";
-        }
-
-        return new String(RAWREAD.readByteArray(RAWREAD.readLong(p_addr, OFFSET_NAME_ADDR), 0, len));
-    }
-
-    public static void setName(final long p_cid, final String p_name) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        final long addr = PINNING.translate(p_cid);
         final int len = RAWREAD.readInt(addr, OFFSET_NAME_LENGTH);
         final long array_cid = RAWREAD.readLong(addr, OFFSET_NAME_CID);
 
-        if (array_cid != -1) {
+        if (array_cid != 0xFFFFFFFFFFFFFFFFL) {
             PINNING.unpinCID(array_cid);
             REMOVE.remove(array_cid);
         }
 
         if (p_name == null || p_name.length() == 0) {
-            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, -1);
-            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0);
+            RAWWRITE.writeLong(addr, OFFSET_NAME_CID, 0xFFFFFFFFFFFFFFFFL);
+            RAWWRITE.writeLong(addr, OFFSET_NAME_ADDR, 0x0L);
             RAWWRITE.writeInt(addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
             return;
         }
@@ -227,168 +322,160 @@ public final class DirectCity implements AutoCloseable {
         RAWWRITE.writeByteArray(addr2, 0, str);
     }
 
-    public static void setNameViaAddress(final long p_addr, final String p_name) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static long getCountryCountryID(final long p_id) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final int len = RAWREAD.readInt(p_addr, OFFSET_NAME_LENGTH);
-        final long array_cid = RAWREAD.readLong(p_addr, OFFSET_NAME_CID);
-
-        if (array_cid != -1) {
-            PINNING.unpinCID(array_cid);
-            REMOVE.remove(array_cid);
-            RAWWRITE.writeLong(p_addr, OFFSET_NAME_CID, -1);
-            RAWWRITE.writeLong(p_addr, OFFSET_NAME_ADDR, 0);
-            RAWWRITE.writeInt(p_addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
-        }
-
-        if (p_name == null || p_name.length() == 0) {
-            return;
-        }
-
-        final byte[] str = p_name.getBytes();
-        final long[] new_cid = new long[1];
-        CREATE.create(new_cid, 1, str.length);
-        final long addr2 = PINNING.pin(new_cid[0]).getAddress();
-        RAWWRITE.writeLong(p_addr, OFFSET_NAME_CID, new_cid[0]);
-        RAWWRITE.writeLong(p_addr, OFFSET_NAME_ADDR, addr2);
-        RAWWRITE.writeInt(p_addr, OFFSET_NAME_LENGTH, str.length);
-        RAWWRITE.writeByteArray(addr2, 0, str);
+        return RAWREAD.readLong(addr, OFFSET_COUNTRY_ID);
     }
 
-    public static long getCountryCountryCID(final long p_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static boolean isCountryCountryLocalID(final long p_id) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final long addr = PINNING.translate(p_cid);
-        return RAWREAD.readLong(addr, OFFSET_COUNTRY_CID);
+        final long id2 = RAWREAD.readLong(addr, OFFSET_COUNTRY_ID);
+        return (id2 & 0xFFFF000000000000L) == 0xFFFF000000000000L;
     }
 
-    public static long getCountryCountryAddress(final long p_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static void setCountryCountryID(final long p_id, final long p_country_id) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        final long addr = PINNING.translate(p_cid);
-        return RAWREAD.readLong(addr, OFFSET_COUNTRY_ADDR);
+        if ((p_country_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_country_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ID, p_country_id);
+            } else {
+                RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ID, PINNING.translate(p_country_id) | 0xFFFF000000000000L);
+            }
+        } else {
+            RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ID, p_country_id);
+        }
     }
 
-    public static long getCountryCountryCIDViaAddress(final long p_addr) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static int getPopulation(final long p_id) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        return RAWREAD.readLong(p_addr, OFFSET_COUNTRY_CID);
-    }
-
-    public static long getCountryCountryAddressViaAddress(final long p_addr) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        return RAWREAD.readLong(p_addr, OFFSET_COUNTRY_ADDR);
-    }
-
-    public static void setCountryCountryCID(final long p_cid, final long p_country_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        final long addr = PINNING.translate(p_cid);
-        final long addr2 = PINNING.translate(p_country_cid);
-        RAWWRITE.writeLong(addr, OFFSET_COUNTRY_CID, p_country_cid);
-        RAWWRITE.writeLong(addr, OFFSET_COUNTRY_ADDR, addr2);
-    }
-
-    public static void setCountryCountryCIDViaAddress(final long p_addr, final long p_country_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        final long addr2 = PINNING.translate(p_country_cid);
-        RAWWRITE.writeLong(p_addr, OFFSET_COUNTRY_CID, p_country_cid);
-        RAWWRITE.writeLong(p_addr, OFFSET_COUNTRY_ADDR, addr2);
-    }
-
-    public static int getPopulation(final long p_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        final long addr = PINNING.translate(p_cid);
         return RAWREAD.readInt(addr, OFFSET_POPULATION);
     }
 
-    public static int getPopulationViaAddress(final long p_addr) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static void setPopulation(final long p_id, final int p_population) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        return RAWREAD.readInt(p_addr, OFFSET_POPULATION);
-    }
-
-    public static void setPopulation(final long p_cid, final int p_population) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        final long addr = PINNING.translate(p_cid);
         RAWWRITE.writeInt(addr, OFFSET_POPULATION, p_population);
     }
 
-    public static void setPopulationViaAddress(final long p_addr, final int p_population) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static int getArea(final long p_id) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        RAWWRITE.writeInt(p_addr, OFFSET_POPULATION, p_population);
-    }
-
-    public static int getArea(final long p_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        final long addr = PINNING.translate(p_cid);
         return RAWREAD.readInt(addr, OFFSET_AREA);
     }
 
-    public static int getAreaViaAddress(final long p_addr) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static void setArea(final long p_id, final int p_area) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
-        return RAWREAD.readInt(p_addr, OFFSET_AREA);
-    }
-
-    public static void setArea(final long p_cid, final int p_area) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        final long addr = PINNING.translate(p_cid);
         RAWWRITE.writeInt(addr, OFFSET_AREA, p_area);
-    }
-
-    public static void setAreaViaAddress(final long p_addr, final int p_area) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
-        }
-
-        RAWWRITE.writeInt(p_addr, OFFSET_AREA, p_area);
     }
 
     private DirectCity() {}
 
-    public static DirectCity use(final long p_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+    public static DirectCity use(final long p_id) {
+        long addr;
+
+        if ((p_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                throw new RuntimeException("The given CID is not valid or not a local CID!");
+            }
+
+            addr = PINNING.translate(p_id);
+        } else if (p_id != 0xFFFFFFFFFFFFFFFFL) {
+            addr = p_id & 0xFFFFFFFFFFFFL;
+        } else {
+            throw new RuntimeException("The given CID is not valid or not a local CID!");
         }
 
         DirectCity tmp = new DirectCity();
-        tmp.m_addr = PINNING.translate(p_cid);
+        tmp.m_addr = addr;
         return tmp;
     }
 
@@ -416,14 +503,14 @@ public final class DirectCity implements AutoCloseable {
         final int len = RAWREAD.readInt(m_addr, OFFSET_NAME_LENGTH);
         final long cid = RAWREAD.readLong(m_addr, OFFSET_NAME_CID);
 
-        if (cid != -1) {
+        if (cid != 0xFFFFFFFFFFFFFFFFL) {
             PINNING.unpinCID(cid);
             REMOVE.remove(cid);
         }
 
         if (p_name == null || p_name.length() == 0) {
-            RAWWRITE.writeLong(m_addr, OFFSET_NAME_CID, -1);
-            RAWWRITE.writeLong(m_addr, OFFSET_NAME_ADDR, 0);
+            RAWWRITE.writeLong(m_addr, OFFSET_NAME_CID, 0xFFFFFFFFFFFFFFFFL);
+            RAWWRITE.writeLong(m_addr, OFFSET_NAME_ADDR, 0x0L);
             RAWWRITE.writeInt(m_addr, OFFSET_NAME_LENGTH, (p_name == null ? -1 : 0));
             return;
         }
@@ -438,30 +525,28 @@ public final class DirectCity implements AutoCloseable {
         RAWWRITE.writeByteArray(addr, 0, str);
     }
 
-    public long getCountryCountryCID() {
+    public long getCountryCountryID() {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        return RAWREAD.readLong(m_addr, OFFSET_COUNTRY_CID);
+        return RAWREAD.readLong(m_addr, OFFSET_COUNTRY_ID);
     }
 
-    public long getCountryCountryAddress() {
+    public void setCountryCountryID(final long p_country_id) {
         if (!INITIALIZED) {
             throw new RuntimeException("Not initialized!");
         }
 
-        return RAWREAD.readLong(m_addr, OFFSET_COUNTRY_ADDR);
-    }
-
-    public void setCountryCountryCID(final long p_country_cid) {
-        if (!INITIALIZED) {
-            throw new RuntimeException("Not initialized!");
+        if ((p_country_id & 0xFFFF000000000000L) != 0xFFFF000000000000L) {
+            if ((p_country_id & 0xFFFF000000000000L) != DirectAccessSecurityManager.NID) {
+                RAWWRITE.writeLong(m_addr, OFFSET_COUNTRY_ID, p_country_id);
+            } else {
+                RAWWRITE.writeLong(m_addr, OFFSET_COUNTRY_ID, PINNING.translate(p_country_id) | 0xFFFF000000000000L);
+            }
+        } else {
+            RAWWRITE.writeLong(m_addr, OFFSET_COUNTRY_ID, p_country_id);
         }
-
-        final long addr2 = PINNING.translate(p_country_cid);
-        RAWWRITE.writeLong(m_addr, OFFSET_COUNTRY_CID, p_country_cid);
-        RAWWRITE.writeLong(m_addr, OFFSET_COUNTRY_ADDR, addr2);
     }
 
     public int getPopulation() {
@@ -502,6 +587,6 @@ public final class DirectCity implements AutoCloseable {
             throw new RuntimeException("Not initialized!");
         }
 
-        m_addr = 0;
+        m_addr = 0x0L;
     }
 }

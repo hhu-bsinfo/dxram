@@ -20,8 +20,10 @@ public class DirectPrimitiveDataTypesChunkTest {
     public void initTests(final DXRAM p_instance) {
         ChunkLocalService chunkLocalService = p_instance.getService(ChunkLocalService.class);
         ChunkService chunkService = p_instance.getService(ChunkService.class);
+        BootService bootService = p_instance.getService(BootService.class);
 
-        DirectPrimitiveDataTypesChunk.init(
+        DirectAccessSecurityManager.init(
+                bootService,
                 chunkLocalService.createLocal(),
                 chunkLocalService.createReservedLocal(),
                 chunkLocalService.reserveLocal(),
@@ -32,7 +34,7 @@ public class DirectPrimitiveDataTypesChunkTest {
     }
 
     @TestInstance(runOnNodeIdx = 1)
-    public void testStatic(final DXRAM p_instance) {
+    public void testStatic1(final DXRAM p_instance) {
         final long chunk = DirectPrimitiveDataTypesChunk.create();
         final long address = DirectPrimitiveDataTypesChunk.getAddress(chunk);
 
@@ -58,7 +60,7 @@ public class DirectPrimitiveDataTypesChunkTest {
     }
 
     @TestInstance(runOnNodeIdx = 1)
-    public void testStaticViaAddress(final DXRAM p_instance) {
+    public void testStatic2(final DXRAM p_instance) {
         final long chunk = DirectPrimitiveDataTypesChunk.create();
         final long address = DirectPrimitiveDataTypesChunk.getAddress(chunk);
 
@@ -71,14 +73,14 @@ public class DirectPrimitiveDataTypesChunkTest {
         long bignum = 9923555743223L;
         short s = 323;
 
-        DirectPrimitiveDataTypesChunk.setBViaAddress(address, b);
-        DirectPrimitiveDataTypesChunk.setB2ViaAddress(address, b2);
-        DirectPrimitiveDataTypesChunk.setCViaAddress(address, c);
-        DirectPrimitiveDataTypesChunk.setDViaAddress(address, d);
-        DirectPrimitiveDataTypesChunk.setFViaAddress(address, f);
-        DirectPrimitiveDataTypesChunk.setNumViaAddress(address, num);
-        DirectPrimitiveDataTypesChunk.setBignumViaAddress(address, bignum);
-        DirectPrimitiveDataTypesChunk.setSViaAddress(address, s);
+        DirectPrimitiveDataTypesChunk.setB(address, b);
+        DirectPrimitiveDataTypesChunk.setB2(address, b2);
+        DirectPrimitiveDataTypesChunk.setC(address, c);
+        DirectPrimitiveDataTypesChunk.setD(address, d);
+        DirectPrimitiveDataTypesChunk.setF(address, f);
+        DirectPrimitiveDataTypesChunk.setNum(address, num);
+        DirectPrimitiveDataTypesChunk.setBignum(address, bignum);
+        DirectPrimitiveDataTypesChunk.setS(address, s);
 
         check(chunk, address, b, b2, c, d, f, num, bignum, s);
     }
@@ -123,42 +125,42 @@ public class DirectPrimitiveDataTypesChunkTest {
             long bignum,
             short s) {
         Assert.assertEquals(b, DirectPrimitiveDataTypesChunk.getB(chunk));
-        Assert.assertEquals(b, DirectPrimitiveDataTypesChunk.getBViaAddress(address));
+        Assert.assertEquals(b, DirectPrimitiveDataTypesChunk.getB(address));
         try (DirectPrimitiveDataTypesChunk primitiveDataTypesChunk = DirectPrimitiveDataTypesChunk.use(chunk)){
             Assert.assertEquals(b, primitiveDataTypesChunk.getB());
         }
         Assert.assertEquals(b2, DirectPrimitiveDataTypesChunk.getB2(chunk));
-        Assert.assertEquals(b2, DirectPrimitiveDataTypesChunk.getB2ViaAddress(address));
+        Assert.assertEquals(b2, DirectPrimitiveDataTypesChunk.getB2(address));
         try (DirectPrimitiveDataTypesChunk primitiveDataTypesChunk = DirectPrimitiveDataTypesChunk.use(chunk)){
             Assert.assertEquals(b2, primitiveDataTypesChunk.getB2());
         }
         Assert.assertEquals(c, DirectPrimitiveDataTypesChunk.getC(chunk));
-        Assert.assertEquals(c, DirectPrimitiveDataTypesChunk.getCViaAddress(address));
+        Assert.assertEquals(c, DirectPrimitiveDataTypesChunk.getC(address));
         try (DirectPrimitiveDataTypesChunk primitiveDataTypesChunk = DirectPrimitiveDataTypesChunk.use(chunk)){
             Assert.assertEquals(c, primitiveDataTypesChunk.getC());
         }
         Assert.assertEquals(d, DirectPrimitiveDataTypesChunk.getD(chunk), Double.MIN_VALUE);
-        Assert.assertEquals(d, DirectPrimitiveDataTypesChunk.getDViaAddress(address), Double.MIN_VALUE);
+        Assert.assertEquals(d, DirectPrimitiveDataTypesChunk.getD(address), Double.MIN_VALUE);
         try (DirectPrimitiveDataTypesChunk primitiveDataTypesChunk = DirectPrimitiveDataTypesChunk.use(chunk)){
             Assert.assertEquals(d, primitiveDataTypesChunk.getD(), Double.MIN_VALUE);
         }
         Assert.assertEquals(f, DirectPrimitiveDataTypesChunk.getF(chunk), Float.MIN_VALUE);
-        Assert.assertEquals(f, DirectPrimitiveDataTypesChunk.getFViaAddress(address), Float.MIN_VALUE);
+        Assert.assertEquals(f, DirectPrimitiveDataTypesChunk.getF(address), Float.MIN_VALUE);
         try (DirectPrimitiveDataTypesChunk primitiveDataTypesChunk = DirectPrimitiveDataTypesChunk.use(chunk)){
             Assert.assertEquals(f, primitiveDataTypesChunk.getF(), Float.MIN_VALUE);
         }
         Assert.assertEquals(num, DirectPrimitiveDataTypesChunk.getNum(chunk));
-        Assert.assertEquals(num, DirectPrimitiveDataTypesChunk.getNumViaAddress(address));
+        Assert.assertEquals(num, DirectPrimitiveDataTypesChunk.getNum(address));
         try (DirectPrimitiveDataTypesChunk primitiveDataTypesChunk = DirectPrimitiveDataTypesChunk.use(chunk)){
             Assert.assertEquals(num, primitiveDataTypesChunk.getNum());
         }
         Assert.assertEquals(bignum, DirectPrimitiveDataTypesChunk.getBignum(chunk));
-        Assert.assertEquals(bignum, DirectPrimitiveDataTypesChunk.getBignumViaAddress(address));
+        Assert.assertEquals(bignum, DirectPrimitiveDataTypesChunk.getBignum(address));
         try (DirectPrimitiveDataTypesChunk primitiveDataTypesChunk = DirectPrimitiveDataTypesChunk.use(chunk)){
             Assert.assertEquals(bignum, primitiveDataTypesChunk.getBignum());
         }
         Assert.assertEquals(s, DirectPrimitiveDataTypesChunk.getS(chunk));
-        Assert.assertEquals(s, DirectPrimitiveDataTypesChunk.getSViaAddress(address));
+        Assert.assertEquals(s, DirectPrimitiveDataTypesChunk.getS(address));
         try (DirectPrimitiveDataTypesChunk primitiveDataTypesChunk = DirectPrimitiveDataTypesChunk.use(chunk)){
             Assert.assertEquals(s, primitiveDataTypesChunk.getS());
         }

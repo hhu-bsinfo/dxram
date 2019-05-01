@@ -23,8 +23,10 @@ public class DirectSimpleChunkTest {
     public void initTests(final DXRAM p_instance) {
         ChunkLocalService chunkLocalService = p_instance.getService(ChunkLocalService.class);
         ChunkService chunkService = p_instance.getService(ChunkService.class);
+        BootService bootService = p_instance.getService(BootService.class);
 
-        DirectSimpleChunk.init(
+        DirectAccessSecurityManager.init(
+                bootService,
                 chunkLocalService.createLocal(),
                 chunkLocalService.createReservedLocal(),
                 chunkLocalService.reserveLocal(),
@@ -40,29 +42,29 @@ public class DirectSimpleChunkTest {
         final long address = DirectSimpleChunk.getAddress(chunk);
         int id = 10;
 
-        DirectSimpleChunk.setId(chunk, id);
-        Assert.assertEquals(id, DirectSimpleChunk.getId(chunk));
-        Assert.assertEquals(id, DirectSimpleChunk.getIdViaAddress(address));
+        DirectSimpleChunk.setVid(chunk, id);
+        Assert.assertEquals(id, DirectSimpleChunk.getVid(chunk));
+        Assert.assertEquals(id, DirectSimpleChunk.getVid(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(id, simpleChunk.getId());
+            Assert.assertEquals(id, simpleChunk.getVid());
         }
 
         id++;
-        DirectSimpleChunk.setIdViaAddress(address, id);
-        Assert.assertEquals(id, DirectSimpleChunk.getId(chunk));
-        Assert.assertEquals(id, DirectSimpleChunk.getIdViaAddress(address));
+        DirectSimpleChunk.setVid(address, id);
+        Assert.assertEquals(id, DirectSimpleChunk.getVid(chunk));
+        Assert.assertEquals(id, DirectSimpleChunk.getVid(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(id, simpleChunk.getId());
+            Assert.assertEquals(id, simpleChunk.getVid());
         }
 
         id++;
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            simpleChunk.setId(id);
+            simpleChunk.setVid(id);
         }
-        Assert.assertEquals(id, DirectSimpleChunk.getId(chunk));
-        Assert.assertEquals(id, DirectSimpleChunk.getIdViaAddress(address));
+        Assert.assertEquals(id, DirectSimpleChunk.getVid(chunk));
+        Assert.assertEquals(id, DirectSimpleChunk.getVid(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(id, simpleChunk.getId());
+            Assert.assertEquals(id, simpleChunk.getVid());
         }
     }
 
@@ -73,35 +75,35 @@ public class DirectSimpleChunkTest {
         final String name = "testName";
 
         Assert.assertNull(DirectSimpleChunk.getName(chunk));
-        Assert.assertNull(DirectSimpleChunk.getNameViaAddress(address));
+        Assert.assertNull(DirectSimpleChunk.getName(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
             Assert.assertNull(simpleChunk.getName());
         }
 
         DirectSimpleChunk.setName(chunk, name);
         Assert.assertEquals(name, DirectSimpleChunk.getName(chunk));
-        Assert.assertEquals(name, DirectSimpleChunk.getNameViaAddress(address));
+        Assert.assertEquals(name, DirectSimpleChunk.getName(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)) {
             Assert.assertEquals(name, simpleChunk.getName());
         }
 
         DirectSimpleChunk.setName(chunk, null);
         Assert.assertNull(DirectSimpleChunk.getName(chunk));
-        Assert.assertNull(DirectSimpleChunk.getNameViaAddress(address));
+        Assert.assertNull(DirectSimpleChunk.getName(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
             Assert.assertNull(simpleChunk.getName());
         }
 
-        DirectSimpleChunk.setNameViaAddress(address, name);
+        DirectSimpleChunk.setName(address, name);
         Assert.assertEquals(name, DirectSimpleChunk.getName(chunk));
-        Assert.assertEquals(name, DirectSimpleChunk.getNameViaAddress(address));
+        Assert.assertEquals(name, DirectSimpleChunk.getName(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)) {
             Assert.assertEquals(name, simpleChunk.getName());
         }
 
-        DirectSimpleChunk.setNameViaAddress(address, "");
+        DirectSimpleChunk.setName(address, "");
         Assert.assertEquals("", DirectSimpleChunk.getName(chunk));
-        Assert.assertEquals("", DirectSimpleChunk.getNameViaAddress(address));
+        Assert.assertEquals("", DirectSimpleChunk.getName(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)) {
             Assert.assertEquals("", simpleChunk.getName());
         }
@@ -110,7 +112,7 @@ public class DirectSimpleChunkTest {
             simpleChunk.setName(name);
         }
         Assert.assertEquals(name, DirectSimpleChunk.getName(chunk));
-        Assert.assertEquals(name, DirectSimpleChunk.getNameViaAddress(address));
+        Assert.assertEquals(name, DirectSimpleChunk.getName(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)) {
             Assert.assertEquals(name, simpleChunk.getName());
         }
@@ -119,7 +121,7 @@ public class DirectSimpleChunkTest {
             simpleChunk.setName(null);
         }
         Assert.assertNull(DirectSimpleChunk.getName(chunk));
-        Assert.assertNull(DirectSimpleChunk.getNameViaAddress(address));
+        Assert.assertNull(DirectSimpleChunk.getName(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
             Assert.assertNull(simpleChunk.getName());
         }
@@ -133,9 +135,9 @@ public class DirectSimpleChunkTest {
         final int[] numbers = new int[] { 1, 2, 3 };
 
         Assert.assertEquals(0, DirectSimpleChunk.getNumbersLength(chunk));
-        Assert.assertEquals(0, DirectSimpleChunk.getNumbersLengthViaAddress(address));
+        Assert.assertEquals(0, DirectSimpleChunk.getNumbersLength(address));
         Assert.assertNull(DirectSimpleChunk.getNumbers(chunk));
-        Assert.assertNull(DirectSimpleChunk.getNumbersViaAddress(address));
+        Assert.assertNull(DirectSimpleChunk.getNumbers(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
             Assert.assertEquals(0, simpleChunk.getNumbersLength());
             Assert.assertNull(simpleChunk.getNumbers());
@@ -143,37 +145,37 @@ public class DirectSimpleChunkTest {
 
         DirectSimpleChunk.setNumbers(chunk, init);
         Assert.assertEquals(init.length, DirectSimpleChunk.getNumbersLength(chunk));
-        Assert.assertEquals(init.length, DirectSimpleChunk.getNumbersLengthViaAddress(address));
+        Assert.assertEquals(init.length, DirectSimpleChunk.getNumbersLength(address));
         Assert.assertArrayEquals(init, DirectSimpleChunk.getNumbers(chunk));
-        Assert.assertArrayEquals(init, DirectSimpleChunk.getNumbersViaAddress(address));
+        Assert.assertArrayEquals(init, DirectSimpleChunk.getNumbers(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
             Assert.assertEquals(init.length, simpleChunk.getNumbersLength());
             Assert.assertArrayEquals(init, simpleChunk.getNumbers());
         }
         for (int i = 0; i < init.length; i++) {
             Assert.assertEquals(init[i], DirectSimpleChunk.getNumbers(chunk, i));
-            Assert.assertEquals(init[i], DirectSimpleChunk.getNumbersViaAddress(address, i));
+            Assert.assertEquals(init[i], DirectSimpleChunk.getNumbers(address, i));
             try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
                 Assert.assertEquals(init[i], simpleChunk.getNumbers(i));
             }
         }
 
         DirectSimpleChunk.setNumbers(chunk, 0, numbers[0]);
-        DirectSimpleChunk.setNumbersViaAddress(address, 1, numbers[1]);
+        DirectSimpleChunk.setNumbers(address, 1, numbers[1]);
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
             simpleChunk.setNumbers(2, numbers[2]);
         }
         Assert.assertEquals(numbers.length, DirectSimpleChunk.getNumbersLength(chunk));
-        Assert.assertEquals(numbers.length, DirectSimpleChunk.getNumbersLengthViaAddress(address));
+        Assert.assertEquals(numbers.length, DirectSimpleChunk.getNumbersLength(address));
         Assert.assertArrayEquals(numbers, DirectSimpleChunk.getNumbers(chunk));
-        Assert.assertArrayEquals(numbers, DirectSimpleChunk.getNumbersViaAddress(address));
+        Assert.assertArrayEquals(numbers, DirectSimpleChunk.getNumbers(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
             Assert.assertEquals(numbers.length, simpleChunk.getNumbersLength());
             Assert.assertArrayEquals(numbers, simpleChunk.getNumbers());
         }
         for (int i = 0; i < numbers.length; i++) {
             Assert.assertEquals(numbers[i], DirectSimpleChunk.getNumbers(chunk, i));
-            Assert.assertEquals(numbers[i], DirectSimpleChunk.getNumbersViaAddress(address, i));
+            Assert.assertEquals(numbers[i], DirectSimpleChunk.getNumbers(address, i));
             try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
                 Assert.assertEquals(numbers[i], simpleChunk.getNumbers(i));
             }
@@ -187,98 +189,61 @@ public class DirectSimpleChunkTest {
         final long parent1 = DirectSimpleChunk.create();
         final long parent2 = DirectSimpleChunk.create();
 
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkCID(chunk));
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkCIDViaAddress(address));
-        Assert.assertEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddressViaAddress(address));
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkID(chunk));
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkID(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(ChunkID.INVALID_ID, simpleChunk.getParentSimpleChunkCID());
-            Assert.assertEquals(Address.INVALID, simpleChunk.getParentSimpleChunkAddress());
+            Assert.assertEquals(ChunkID.INVALID_ID, simpleChunk.getParentSimpleChunkID());
         }
 
-        DirectSimpleChunk.setParentSimpleChunkCID(chunk, parent1);
-        Assert.assertEquals(parent1, DirectSimpleChunk.getParentSimpleChunkCID(chunk));
-        Assert.assertEquals(parent1, DirectSimpleChunk.getParentSimpleChunkCIDViaAddress(address));
-        Assert.assertNotEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertNotEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkCIDViaAddress(address));
-        Assert.assertEquals(
-                DirectSimpleChunk.getAddress(parent1),
-                DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertEquals(
-                DirectSimpleChunk.getAddress(parent1),
-                DirectSimpleChunk.getParentSimpleChunkAddressViaAddress(address));
+        DirectSimpleChunk.setParentSimpleChunkID(chunk, parent1);
+        Assert.assertEquals(parent1, DirectSimpleChunk.getParentSimpleChunkID(chunk));
+        Assert.assertEquals(parent1, DirectSimpleChunk.getParentSimpleChunkID(address));
+        Assert.assertNotEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkID(address));
+
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(parent1, simpleChunk.getParentSimpleChunkCID());
-            Assert.assertNotEquals(Address.INVALID, simpleChunk.getParentSimpleChunkAddress());
-            Assert.assertEquals(DirectSimpleChunk.getAddress(parent1), simpleChunk.getParentSimpleChunkAddress());
+            Assert.assertEquals(parent1, simpleChunk.getParentSimpleChunkID());
         }
 
-        DirectSimpleChunk.setParentSimpleChunkCID(chunk, ChunkID.INVALID_ID);
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkCID(chunk));
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkCIDViaAddress(address));
-        Assert.assertEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddressViaAddress(address));
+        DirectSimpleChunk.setParentSimpleChunkID(chunk, ChunkID.INVALID_ID);
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkID(chunk));
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkID(address));
+
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(ChunkID.INVALID_ID, simpleChunk.getParentSimpleChunkCID());
-            Assert.assertEquals(Address.INVALID, simpleChunk.getParentSimpleChunkAddress());
+            Assert.assertEquals(ChunkID.INVALID_ID, simpleChunk.getParentSimpleChunkID());
         }
 
-        DirectSimpleChunk.setParentSimpleChunkCIDViaAddress(address, parent2);
-        Assert.assertEquals(parent2, DirectSimpleChunk.getParentSimpleChunkCID(chunk));
-        Assert.assertEquals(parent2, DirectSimpleChunk.getParentSimpleChunkCIDViaAddress(address));
-        Assert.assertNotEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertNotEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddressViaAddress(address));
-        Assert.assertEquals(
-                DirectSimpleChunk.getAddress(parent2),
-                DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertEquals(
-                DirectSimpleChunk.getAddress(parent2),
-                DirectSimpleChunk.getParentSimpleChunkAddressViaAddress(address));
+        DirectSimpleChunk.setParentSimpleChunkID(address, parent2);
+        Assert.assertEquals(parent2, DirectSimpleChunk.getParentSimpleChunkID(chunk));
+        Assert.assertEquals(parent2, DirectSimpleChunk.getParentSimpleChunkID(address));
+
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(parent2, simpleChunk.getParentSimpleChunkCID());
-            Assert.assertNotEquals(Address.INVALID, simpleChunk.getParentSimpleChunkAddress());
-            Assert.assertEquals(DirectSimpleChunk.getAddress(parent2), simpleChunk.getParentSimpleChunkAddress());
+            Assert.assertEquals(parent2, simpleChunk.getParentSimpleChunkID());
         }
 
-        DirectSimpleChunk.setParentSimpleChunkCIDViaAddress(address, ChunkID.INVALID_ID);
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkCID(chunk));
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkCIDViaAddress(address));
-        Assert.assertEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddressViaAddress(address));
+        DirectSimpleChunk.setParentSimpleChunkID(address, ChunkID.INVALID_ID);
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkID(chunk));
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkID(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(ChunkID.INVALID_ID, simpleChunk.getParentSimpleChunkCID());
-            Assert.assertEquals(Address.INVALID, simpleChunk.getParentSimpleChunkAddress());
+            Assert.assertEquals(ChunkID.INVALID_ID, simpleChunk.getParentSimpleChunkID());
         }
 
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)) {
-            simpleChunk.setParentSimpleChunkCID(parent1);
+            simpleChunk.setParentSimpleChunkID(parent1);
         }
-        Assert.assertEquals(parent1, DirectSimpleChunk.getParentSimpleChunkCID(chunk));
-        Assert.assertEquals(parent1, DirectSimpleChunk.getParentSimpleChunkCIDViaAddress(address));
-        Assert.assertNotEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertNotEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddressViaAddress(address));
-        Assert.assertEquals(
-                DirectSimpleChunk.getAddress(parent1),
-                DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertEquals(
-                DirectSimpleChunk.getAddress(parent1),
-                DirectSimpleChunk.getParentSimpleChunkAddressViaAddress(address));
+        Assert.assertEquals(parent1, DirectSimpleChunk.getParentSimpleChunkID(chunk));
+        Assert.assertEquals(parent1, DirectSimpleChunk.getParentSimpleChunkID(address));
+
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(parent1, simpleChunk.getParentSimpleChunkCID());
-            Assert.assertNotEquals(Address.INVALID, simpleChunk.getParentSimpleChunkAddress());
-            Assert.assertEquals(DirectSimpleChunk.getAddress(parent1), simpleChunk.getParentSimpleChunkAddress());
+            Assert.assertEquals(parent1, simpleChunk.getParentSimpleChunkID());
         }
 
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)) {
-            simpleChunk.setParentSimpleChunkCID(ChunkID.INVALID_ID);
+            simpleChunk.setParentSimpleChunkID(ChunkID.INVALID_ID);
         }
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkCID(chunk));
-        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkCIDViaAddress(address));
-        Assert.assertEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddress(chunk));
-        Assert.assertEquals(Address.INVALID, DirectSimpleChunk.getParentSimpleChunkAddressViaAddress(address));
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkID(chunk));
+        Assert.assertEquals(ChunkID.INVALID_ID, DirectSimpleChunk.getParentSimpleChunkID(address));
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-            Assert.assertEquals(ChunkID.INVALID_ID, simpleChunk.getParentSimpleChunkCID());
-            Assert.assertEquals(Address.INVALID, simpleChunk.getParentSimpleChunkAddress());
+            Assert.assertEquals(ChunkID.INVALID_ID, simpleChunk.getParentSimpleChunkID());
         }
 
         Assert.assertNotEquals(DirectSimpleChunk.getAddress(parent1), DirectSimpleChunk.getAddress(parent2));
@@ -290,36 +255,21 @@ public class DirectSimpleChunkTest {
         final long address = DirectSimpleChunk.getAddress(chunk);
         final long[] children = DirectSimpleChunk.create(100);
 
-        DirectSimpleChunk.setChildrenSimpleChunkCIDsViaAddress(address, children);
+        DirectSimpleChunk.setChildrenSimpleChunkIDs(address, children);
         Assert.assertEquals(children.length, DirectSimpleChunk.getChildrenSimpleChunkLength(chunk));
-        Assert.assertEquals(children.length, DirectSimpleChunk.getChildrenSimpleChunkLengthViaAddress(address));
-        Assert.assertArrayEquals(children, DirectSimpleChunk.getChildrenSimpleChunkCIDs(chunk));
-        Assert.assertArrayEquals(children, DirectSimpleChunk.getChildrenSimpleChunkCIDsViaAddress(address));
-        Assert.assertArrayEquals(
-                DirectSimpleChunk.getAddresses(children),
-                DirectSimpleChunk.getChildrenSimpleChunkAddresses(chunk));
-        Assert.assertArrayEquals(
-                DirectSimpleChunk.getAddresses(children),
-                DirectSimpleChunk.getChildrenSimpleChunkAddressesViaAddress(address));
+        Assert.assertEquals(children.length, DirectSimpleChunk.getChildrenSimpleChunkLength(address));
+        Assert.assertArrayEquals(children, DirectSimpleChunk.getChildrenSimpleChunkIDs(chunk));
+        Assert.assertArrayEquals(children, DirectSimpleChunk.getChildrenSimpleChunkIDs(address));
+
         try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
             Assert.assertEquals(children.length, simpleChunk.getChildrenSimpleChunkLength());
-            Assert.assertArrayEquals(children, simpleChunk.getChildrenSimpleChunkCIDs());
-            Assert.assertArrayEquals(
-                    DirectSimpleChunk.getAddresses(children),
-                    simpleChunk.getChildrenSimpleChunkAddresses());
+            Assert.assertArrayEquals(children, simpleChunk.getChildrenSimpleChunkIDs());
         }
         for (int i = 0; i < children.length; i++) {
-            Assert.assertEquals(children[i], DirectSimpleChunk.getChildrenSimpleChunkCID(chunk, i));
-            Assert.assertEquals(children[i], DirectSimpleChunk.getChildrenSimpleChunkCIDViaAddress(address, i));
-            Assert.assertEquals(
-                    DirectSimpleChunk.getAddress(children[i]),
-                    DirectSimpleChunk.getChildrenSimpleChunkAddress(chunk, i));
-            Assert.assertEquals(
-                    DirectSimpleChunk.getAddress(children[i]),
-                    DirectSimpleChunk.getChildrenSimpleChunkAddressViaAddress(address, i));
+            Assert.assertEquals(children[i], DirectSimpleChunk.getChildrenSimpleChunkID(chunk, i));
+            Assert.assertEquals(children[i], DirectSimpleChunk.getChildrenSimpleChunkID(address, i));
             try (DirectSimpleChunk simpleChunk = DirectSimpleChunk.use(chunk)){
-                Assert.assertEquals(children[i], simpleChunk.getChildrenSimpleChunkCID(i));
-                Assert.assertEquals(DirectSimpleChunk.getAddress(children[i]), simpleChunk.getChildrenSimpleChunkAddress(i));
+                Assert.assertEquals(children[i], simpleChunk.getChildrenSimpleChunkID(i));
             }
         }
     }

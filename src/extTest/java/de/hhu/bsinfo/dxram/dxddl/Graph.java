@@ -23,33 +23,21 @@ import de.hhu.bsinfo.dxutils.serialization.Exporter;
 
 import static de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil.*;
 
-public class SimpleChunk implements Importable, Exportable {
+public class Graph implements Importable, Exportable {
 
 
 
-    private long vid;
     private String name;
-    private int[] numbers;
-    private SimpleChunk parent;
-    private SimpleChunk[] children;
+    private long version;
+    private Edge[] edgeList;
 
-    public SimpleChunk() {
+    public Graph() {
         this.name = new String();
-        this.numbers = new int[0];
-        this.parent = new SimpleChunk();
-        this.children = new SimpleChunk[0];
+        this.edgeList = new Edge[0];
         for (int i0 = 0; i0 < 0; i0++) {
-            SimpleChunk obj4 = new SimpleChunk();
-            this.children[i0] = obj4;
+            Edge obj2 = new Edge();
+            this.edgeList[i0] = obj2;
         }
-    }
-
-    public long getVid() {
-        return this.vid;
-    }
-
-    public void setVid(long vid) {
-        this.vid = vid;
     }
 
     public String getName() {
@@ -62,51 +50,36 @@ public class SimpleChunk implements Importable, Exportable {
         this.name = name;
     }
 
-    public int[] getNumbers() {
-        return this.numbers;
+    public long getVersion() {
+        return this.version;
     }
 
-    public SimpleChunk getParent() {
-        return this.parent;
+    public void setVersion(long version) {
+        this.version = version;
     }
 
-    public void setParent(SimpleChunk parent) {
-        if (parent == null)
-            throw new NullPointerException("Parameter parent must not be null");
-        this.parent = parent;
-    }
-
-    public SimpleChunk[] getChildren() {
-        return this.children;
+    public Edge[] getEdgeList() {
+        return this.edgeList;
     }
 
 
 
     @Override
     public void importObject(final Importer p_importer) {
-        this.vid = p_importer.readLong(this.vid);
         this.name = p_importer.readString(this.name);
-        for (int i0 = 0; i0 < 0; i0++)
-            this.numbers[i0] = p_importer.readInt(this.numbers[i0]);
-        
-        p_importer.importObject(this.parent);
-        
+        this.version = p_importer.readLong(this.version);
         for (int i0 = 0; i0 < 0; i0++) {
-            p_importer.importObject(this.children[i0]);
+            p_importer.importObject(this.edgeList[i0]);
         }
         
     }
 
     @Override
     public void exportObject(final Exporter p_exporter) {
-        p_exporter.writeLong(this.vid);
         p_exporter.writeString(this.name);
+        p_exporter.writeLong(this.version);
         for (int i0 = 0; i0 < 0; i0++)
-            p_exporter.writeInt(this.numbers[i0]);
-        
-        p_exporter.exportObject(this.parent);
-        for (int i0 = 0; i0 < 0; i0++)
-            p_exporter.exportObject(this.children[i0]);
+            p_exporter.exportObject(this.edgeList[i0]);
         
     }
 
@@ -119,9 +92,8 @@ public class SimpleChunk implements Importable, Exportable {
 
         // size of complex types
         size += sizeofString(this.name);
-        size += this.parent.sizeofObject();
         for (int i0 = 0; i0 < 0; i0++)
-            size += this.children[i0].sizeofObject();
+            size += this.edgeList[i0].sizeofObject();
         
         return size;
     }
