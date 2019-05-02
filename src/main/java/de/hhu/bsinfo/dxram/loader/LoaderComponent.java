@@ -49,6 +49,8 @@ import de.hhu.bsinfo.dxram.loader.messages.SyncRequestMessage;
 import de.hhu.bsinfo.dxram.loader.messages.SyncResponseMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponent;
+import de.hhu.bsinfo.dxram.plugin.PluginComponentConfig;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
@@ -74,6 +76,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private final String m_loaderDir = "loadedJars";
     private Random m_random;
     private static final String CLASS_NOT_FOUND = "NOT_FOUND";
+    private Path m_pluginPath;
 
     /**
      * Clean folder with requested jars from loader
@@ -225,8 +228,31 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
     }
 
+    /**
+     * Update an app, this creates a new Loader and loads all apps in pluginPath and loaderDir
+     *
+     * @param p_name jar name
+     * @param p_jarByte jar bytes
+     */
+    private void updateApp(String p_name, byte[] p_jarByte) {
+        try {
+            Files.write(Paths.get(m_loaderDir + File.separator + p_name), p_jarByte);
+        } catch (IOException e) {
+            LOGGER.error(String.format("Updating %s failed: %s", p_name, e));
+        }
+
+        DistributedLoader newLoader = new DistributedLoader(this);
+        newLoader.initPlugins(m_pluginPath);
+        newLoader.initPlugins(Paths.get(m_loaderDir));
+
+        m_loader = newLoader;
+    }
+
     @Override
     protected boolean initComponent(DXRAMConfig p_config, DXRAMJNIManager p_jniManager) {
+        PluginComponentConfig config = p_config.getComponentConfig(PluginComponent.class);
+        m_pluginPath = Paths.get(config.getPluginsPath());
+
         m_random = new Random();
         m_role = p_config.getEngineConfig().getRole();
         m_net.registerMessageType(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REQUEST,
@@ -380,7 +406,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         } else if (distributeJarMessage.getM_tableSize() < m_loaderTable.jarMapSize()) {
             LOGGER.info(String.format("other peers loaderTable is not synced (size is %s and should be %s)," +
                             " invite for sync",
-                    m_loaderTable.jarMapSize(), distributeJarMessage.getM_tableSize()));
+                    distributeJarMessage.getM_tableSize(), m_loaderTable.jarMapSize()));
 
             SyncInvitationMessage syncInvitationMessage = new SyncInvitationMessage(distributeJarMessage.getSource());
 
@@ -395,7 +421,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     }
 
     /**
-     * Checks which jars are note loaded on the other superpeer and sends these to the superpeer
+     * Checks which jars are not loaded on the other superpeer and sends these to the superpeer
      *
      * @param p_message
      *         message with request
@@ -414,14 +440,20 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 responseMap.put(jarName, m_loaderTable.getJarByte(jarName));
             }
         }
-        LOGGER.info(String.format("Sending SyncResponseMessage with %s jars", responseMap.size()));
+
         SyncResponseMessage response = new SyncResponseMessage(requestMessage.getSource(), responseMap);
 
-        try {
-            m_net.sendMessage(response);
-        } catch (NetworkException e) {
-            LOGGER.error(e);
+        if (!responseMap.isEmpty()) {
+            LOGGER.info(String.format("Sending SyncResponseMessage with %s jars", responseMap.size()));
+            try {
+                m_net.sendMessage(response);
+            } catch (NetworkException e) {
+                LOGGER.error(e);
+            }
+        } else {
+            LOGGER.info("The peer has all jars, abort sync (timing)");
         }
+
     }
 
     /**
