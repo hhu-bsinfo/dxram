@@ -16,6 +16,13 @@
 
 package de.hhu.bsinfo.dxram.plugin;
 
+import de.hhu.bsinfo.dxram.engine.Component;
+import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
+import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
+import de.hhu.bsinfo.dxram.engine.Module;
+import de.hhu.bsinfo.dxram.loader.LoaderComponent;
+import de.hhu.bsinfo.dxutils.dependency.Dependency;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -23,12 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-
-import de.hhu.bsinfo.dxram.engine.Component;
-import de.hhu.bsinfo.dxram.engine.Module;
-import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
-import de.hhu.bsinfo.dxutils.PluginManager;
 
 /**
  * Manage loadable jar files as plugins which are used by the application, job and master slave sub-systems
@@ -38,6 +39,9 @@ import de.hhu.bsinfo.dxutils.PluginManager;
  */
 @Module.Attributes(supportsSuperpeer = false, supportsPeer = true)
 public class PluginComponent extends Component<PluginComponentConfig> {
+    @Dependency
+    private LoaderComponent m_loader;
+
     private PluginManager m_pluginManager;
 
     /**
@@ -88,7 +92,8 @@ public class PluginComponent extends Component<PluginComponentConfig> {
 
         while (true) {
             try {
-                m_pluginManager = new PluginManager(config.getPluginsPath());
+                m_pluginManager = new PluginManager(config.getPluginsPath(), m_loader.getM_loader());
+                m_loader.getM_loader().initPlugins(Paths.get(config.getPluginsPath()));
                 break;
             } catch (final FileNotFoundException e) {
                 File file = new File(config.getPluginsPath());
@@ -117,6 +122,7 @@ public class PluginComponent extends Component<PluginComponentConfig> {
             StringBuilder strBuilder = new StringBuilder();
 
             for (String plugin : plugins) {
+                m_loader.addJarToLoader(Paths.get(plugin));
                 strBuilder.append(plugin);
                 strBuilder.append(", ");
             }

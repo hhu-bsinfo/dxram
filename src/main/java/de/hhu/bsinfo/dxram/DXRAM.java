@@ -57,6 +57,9 @@ import de.hhu.bsinfo.dxram.generated.BuildConfig;
 import de.hhu.bsinfo.dxram.job.JobComponent;
 import de.hhu.bsinfo.dxram.job.JobComponentConfig;
 import de.hhu.bsinfo.dxram.job.JobService;
+import de.hhu.bsinfo.dxram.loader.LoaderComponent;
+import de.hhu.bsinfo.dxram.loader.LoaderComponentConfig;
+import de.hhu.bsinfo.dxram.loader.LoaderService;
 import de.hhu.bsinfo.dxram.log.LogComponent;
 import de.hhu.bsinfo.dxram.log.LogComponentConfig;
 import de.hhu.bsinfo.dxram.log.LogService;
@@ -233,6 +236,7 @@ public final class DXRAM {
         p_engine.registerComponent(NullComponent.class, ModuleConfig.class);
         p_engine.registerComponent(PluginComponent.class, PluginComponentConfig.class);
         p_engine.registerComponent(ZookeeperBootComponent.class, ZookeeperBootComponentConfig.class);
+        p_engine.registerComponent(LoaderComponent.class, LoaderComponentConfig.class);
     }
 
     /**
@@ -264,6 +268,7 @@ public final class DXRAM {
         p_engine.registerService(TemporaryStorageService.class, TemporaryStorageServiceConfig.class);
         p_engine.registerService(FunctionService.class, ModuleConfig.class);
         p_engine.registerService(ManagementService.class, ManagementServiceConfig.class);
+        p_engine.registerService(LoaderService.class, ModuleConfig.class);
     }
 
     /**

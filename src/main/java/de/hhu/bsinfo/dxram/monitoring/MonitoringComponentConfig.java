@@ -90,10 +90,10 @@ public class MonitoringComponentConfig extends ModuleConfig {
 
     @Override
     protected boolean verify(final DXRAMConfig p_config) {
-        if (!OSValidator.isUnix()) {
+        /*if (!OSValidator.isUnix()) {
             LOGGER.error("Monitoring is only supported for unix operating systems.");
             return false;
-        }
+        }*/
 
         try {
             if (!m_nic.isEmpty() && !DeviceLister.getNICs().contains(m_nic)) {
