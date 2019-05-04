@@ -1,5 +1,6 @@
 package de.hhu.bsinfo.dxram.app;
 
+import java.lang.reflect.Modifier;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -96,15 +97,11 @@ public class ApplicationComponent extends Component<ModuleConfig> {
         LOGGER.debug("Adding new plugin %s", pluginPath.toString());
 
         m_plugin.add(pluginPath);
+        Class<? extends Application> applicationClass = m_plugin.getApplicationClass(pluginPath);
 
-        List<Class<? extends Application>> applicationClasses = m_plugin.getAllSubClasses(
-                Application.class, p_archiveName);
-
-        if (applicationClasses.isEmpty()) {
+        if (applicationClass == null) {
             return NO_APP;
         }
-
-        Class<? extends Application> applicationClass = applicationClasses.get(0);
 
         registerApplicationClass(applicationClass);
 

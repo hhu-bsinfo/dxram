@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+import de.hhu.bsinfo.dxram.app.Application;
 import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
@@ -70,7 +71,12 @@ public class PluginComponent extends Component<PluginComponentConfig> {
         return m_pluginManager.getAllSubClasses(p_class, p_archiveName);
     }
 
-
+    public Class<? extends Application> getApplicationClass(final Path p_pluginPath) {
+        Class<?> appClass = m_pluginManager.getApplicationClass(p_pluginPath);
+        return Application.class.isAssignableFrom(appClass) ?
+                (Class<? extends Application>) appClass :
+                null;
+    }
 
     public void add(final Path p_pluginPath) {
         m_pluginManager.add(p_pluginPath);
