@@ -27,6 +27,7 @@ import java.util.jar.JarInputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.util.Loader;
 
 /**
  * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
@@ -34,7 +35,7 @@ import org.apache.logging.log4j.Logger;
 public class LoaderTable {
     private HashMap<String, String> m_packageJarMap;
     @Getter
-    private HashMap<String, byte[]> m_jarByteArrays;
+    private HashMap<String, LoaderJar> m_jarByteArrays;
     private static final Logger LOGGER = LogManager.getFormatterLogger(LoaderTable.class);
 
     public LoaderTable() {
@@ -42,8 +43,8 @@ public class LoaderTable {
         m_jarByteArrays = new HashMap<>();
     }
 
-    public void registerJarMap(HashMap<String, byte[]> p_jarByteArrays) {
-        for (Map.Entry<String, byte[]> entry : p_jarByteArrays.entrySet()) {
+    public void registerJarMap(HashMap<String, LoaderJar> p_loaderJars) {
+        for (Map.Entry<String, LoaderJar> entry : p_loaderJars.entrySet()) {
             registerJarBytes(entry.getKey(), entry.getValue());
         }
         LOGGER.info("map registered");
@@ -105,7 +106,7 @@ public class LoaderTable {
         return m_jarByteArrays.containsKey(p_name);
     }
 
-    public byte[] getJarByte(String p_jarName) {
+    public LoaderJar getLoaderJar(String p_jarName) {
         return m_jarByteArrays.get(p_jarName);
     }
 
@@ -114,27 +115,14 @@ public class LoaderTable {
      *
      * @param p_name
      *         jar name
-     * @param p_jarBytes
-     *         jar byte array
+     * @param p_loaderJar
+     *         jar file object with version
      */
-    public void registerJarBytes(String p_name, byte[] p_jarBytes) {
+    public void registerJarBytes(String p_name, LoaderJar p_loaderJar) {
         try {
-            // todo better versioning
-            String name;
-            int version;
-            if (p_name.contains("-")) {
-                int sep = p_name.indexOf("-");
-                name = p_name.substring(0, sep - 1);
-                version = Integer.parseInt(p_name.substring(sep + 1).replace(".jar", ""));
+            m_jarByteArrays.put(p_name, p_loaderJar);
 
-            } else {
-                name = p_name.replace(".jar", "");
-                version = 0;
-            }
-
-            m_jarByteArrays.put(name, p_jarBytes);
-
-            JarInputStream jarFile = new JarInputStream(new ByteArrayInputStream(p_jarBytes));
+            JarInputStream jarFile = new JarInputStream(new ByteArrayInputStream(p_loaderJar.getM_jarBytes()));
             JarEntry entry;
 
             while (true) {
@@ -147,7 +135,7 @@ public class LoaderTable {
                     String myClass = className.substring(0, className.lastIndexOf('.'));
                     String myPackage = myClass.substring(0, myClass.lastIndexOf('.'));
                     try {
-                        registerClass(myPackage, name);
+                        registerClass(myPackage, p_name);
                     } catch (Throwable e) {
                         LOGGER.warn("WARNING: failed to instantiate ");
                         e.printStackTrace();
@@ -157,8 +145,8 @@ public class LoaderTable {
         } catch (Exception e) {
             LOGGER.error(String.format("Oops.. Encounter an issue while parsing jar: %s", e));
         }
-        LOGGER.info(String.format("%s registered, new LoaderTable size: %s, loaded jars: %s",
-                p_name, m_packageJarMap.size(), m_jarByteArrays.size()));
+        LOGGER.info(String.format("%s version %s registered, new LoaderTable size: %s, loaded jars: %s",
+                p_name, p_loaderJar.getM_version(), m_packageJarMap.size(), m_jarByteArrays.size()));
     }
 
     /**

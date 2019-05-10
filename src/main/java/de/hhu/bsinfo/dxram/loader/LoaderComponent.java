@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import org.eclipse.jetty.util.Loader;
+
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
@@ -143,8 +145,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         try {
             byte[] jarBytes = Files.readAllBytes(p_jarPath);
 
-            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id, p_jarPath.getFileName().toString(),
-                    jarBytes);
+            //todo read version from filename
+            LoaderJar loaderJar = new LoaderJar(jarBytes, 1);
+
+            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id,
+                    p_jarPath.getFileName().toString().replace(".jar", ""),
+                    loaderJar);
             m_net.sendMessage(registerJarMessage);
             return true;
         } catch (IOException e) {
@@ -217,12 +223,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      *
      * @param p_jarName
      *         name of the jar file
-     * @param p_jarBytes
-     *         byte array of the jar file
+     * @param p_loaderJar
+     *         jar object with version
      */
-    private void registerJarBytes(String p_jarName, byte[] p_jarBytes) {
+    private void registerJarBytes(String p_jarName, LoaderJar p_loaderJar) {
         if (m_role == NodeRole.SUPERPEER) {
-            m_loaderTable.registerJarBytes(p_jarName, p_jarBytes);
+            m_loaderTable.registerJarBytes(p_jarName, p_loaderJar);
         } else {
             LOGGER.error("Only superpeers can register jars.");
         }
@@ -347,7 +353,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             LOGGER.info(String.format("Found %s in %s, sending ClassResponseMessage",
                     requestMessage.getM_packageName(), jarName));
             responseMessage = new ClassResponseMessage(requestMessage, jarName,
-                    m_loaderTable.getJarByte(jarName));
+                    m_loaderTable.getLoaderJar(jarName).getM_jarBytes());
 
         } catch (NotInClusterException e) {
             LOGGER.error("Class not found in cluster");
@@ -372,7 +378,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         RegisterJarMessage registerJarMessage = (RegisterJarMessage) p_message;
 
         if (!m_loaderTable.containsJar(registerJarMessage.getM_jarName())) {
-            registerJarBytes(registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes());
+            registerJarBytes(registerJarMessage.getM_jarName(), registerJarMessage.getM_loaderJar());
 
             List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
             superPeers.remove((Short) m_boot.getNodeId());
@@ -380,7 +386,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                     registerJarMessage.getM_jarName(), superPeers));
             for (Short superPeer : superPeers) {
                 DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer,
-                        registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes(),
+                        registerJarMessage.getM_jarName(), registerJarMessage.getM_loaderJar(),
                         m_loaderTable.jarMapSize());
                 try {
                     m_net.sendMessage(distributeJarMessage);
@@ -401,7 +407,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      */
     private void onIncomingClassDistribute(Message p_message) {
         DistributeJarMessage distributeJarMessage = (DistributeJarMessage) p_message;
-        registerJarBytes(distributeJarMessage.getM_jarName(), distributeJarMessage.getM_jarBytes());
+        registerJarBytes(distributeJarMessage.getM_jarName(), distributeJarMessage.getM_loaderJar());
 
         if (distributeJarMessage.getM_tableSize() > m_loaderTable.jarMapSize()) {
             LOGGER.info(String.format("loaderTable is not synced (size is %s and should be %s), request sync",
@@ -446,10 +452,10 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
         LOGGER.info(String.format("Other peers needs %s", loadedJars));
 
-        HashMap<String, byte[]> responseMap = new HashMap<>();
+        HashMap<String, LoaderJar> responseMap = new HashMap<>();
         for (String jarName : loadedJars) {
             if (m_loaderTable.containsJar(jarName)) {
-                responseMap.put(jarName, m_loaderTable.getJarByte(jarName));
+                responseMap.put(jarName, m_loaderTable.getLoaderJar(jarName));
             }
         }
 
