@@ -19,6 +19,12 @@ public class LoaderJar implements Distributable {
 
     }
 
+    public LoaderJar(String p_name) {
+        m_name = p_name;
+        m_version = -1;
+        m_jarBytes = new byte[0];
+    }
+
     public LoaderJar(byte[] p_jarBytes, int p_version, String p_name) {
         m_jarBytes = p_jarBytes;
         m_version = p_version;

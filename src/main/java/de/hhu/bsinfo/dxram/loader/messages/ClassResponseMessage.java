@@ -21,46 +21,38 @@ import lombok.Getter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Response;
-import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxram.loader.LoaderJar;
 
 /**
  * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
  */
 public class ClassResponseMessage extends Response {
     @Getter
-    private byte[] m_jarBytes;
-    @Getter
-    private String m_jarName;
+    private LoaderJar m_loaderJar;
+
 
     public ClassResponseMessage() {
         super();
+        m_loaderJar = new LoaderJar();
     }
 
-    public ClassResponseMessage(final ClassRequestMessage p_request, final String p_jarName, final byte[] p_jarBytes) {
+    public ClassResponseMessage(final ClassRequestMessage p_request, final LoaderJar p_loaderJar) {
         super(p_request, LoaderMessages.SUBTYPE_CLASS_RESPONSE);
-        m_jarName = p_jarName;
-        m_jarBytes = p_jarBytes;
+        m_loaderJar = p_loaderJar;
     }
 
     @Override
     protected final int getPayloadLength() {
-        int size = 0;
-
-        size += ObjectSizeUtil.sizeofByteArray(m_jarBytes);
-        size += ObjectSizeUtil.sizeofString(m_jarName);
-
-        return size;
+        return m_loaderJar.sizeofObject();
     }
 
     @Override
     protected void writePayload(AbstractMessageExporter p_exporter) {
-        p_exporter.writeByteArray(m_jarBytes);
-        p_exporter.writeString(m_jarName);
+        m_loaderJar.exportObject(p_exporter);
     }
 
     @Override
     protected void readPayload(AbstractMessageImporter p_importer) {
-        m_jarBytes = p_importer.readByteArray(m_jarBytes);
-        m_jarName = p_importer.readString(m_jarName);
+        m_loaderJar.importObject(p_importer);
     }
 }

@@ -195,14 +195,14 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
         ClassResponseMessage response = (ClassResponseMessage) requestMessage.getResponse();
 
-        if (CLASS_NOT_FOUND.equals(response.getM_jarName())) {
+        if (CLASS_NOT_FOUND.equals(response.getM_loaderJar().getM_name())) {
             throw new ClassNotFoundException();
         }
 
-        Path jarPath = Paths.get(m_loaderDir + File.separator + response.getM_jarName() + ".jar");
+        Path jarPath = Paths.get(m_loaderDir + File.separator + response.getM_loaderJar().getM_name() + ".jar");
         try {
             LOGGER.info(String.format("write file %s", jarPath.toString()));
-            Files.write(jarPath, response.getM_jarBytes());
+            Files.write(jarPath, response.getM_loaderJar().getM_jarBytes());
         } catch (IOException e) {
             LOGGER.error(e);
         }
@@ -360,13 +360,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
             LOGGER.info(String.format("Found %s in %s, sending ClassResponseMessage",
                     requestMessage.getM_packageName(), jarName));
-            responseMessage = new ClassResponseMessage(requestMessage, jarName,
-                    m_loaderTable.getLoaderJar(jarName).getM_jarBytes());
+            responseMessage = new ClassResponseMessage(requestMessage, m_loaderTable.getLoaderJar(jarName));
 
         } catch (NotInClusterException e) {
             LOGGER.error("Class not found in cluster");
-            responseMessage = new ClassResponseMessage(requestMessage,
-                    CLASS_NOT_FOUND, new byte[0]);
+            responseMessage = new ClassResponseMessage(requestMessage, new LoaderJar(CLASS_NOT_FOUND));
         }
 
         try {
