@@ -77,6 +77,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private Random m_random;
     private static final String CLASS_NOT_FOUND = "NOT_FOUND";
     private Path m_pluginPath;
+    private boolean m_randomRequest = false;
 
     /**
      * Clean folder with requested jars from loader
@@ -130,8 +131,13 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      * @return true if successful
      */
     public boolean addJarToLoader(Path p_jarPath) {
-        int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
-        short id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
+        short id;
+        if (m_randomRequest) {
+            int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
+            id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
+        } else {
+            id = m_lookup.getResponsibleSuperpeer(m_boot.getNodeId());
+        }
         LOGGER.info(String.format("Sending %s to %s", p_jarPath, NodeID.toHexString(id)));
 
         try {
@@ -162,8 +168,13 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     public Path getJar(String p_name) throws ClassNotFoundException {
         LOGGER.info(String.format("Ask LoaderComponent for %s", p_name));
 
-        int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
-        short id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
+        short id;
+        if (m_randomRequest) {
+            int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
+            id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
+        } else {
+            id = m_lookup.getResponsibleSuperpeer(m_boot.getNodeId());
+        }
 
         ClassRequestMessage requestMessage = new ClassRequestMessage(id, p_name);
         try {
@@ -177,16 +188,17 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         if (CLASS_NOT_FOUND.equals(response.getM_jarName())) {
             throw new ClassNotFoundException();
         }
+
+        Path jarPath = Paths.get(m_loaderDir + File.separator + response.getM_jarName() + ".jar");
         try {
-            LOGGER.info(String.format("write file %s", m_loaderDir + File.separator + response.getM_jarName()));
-            Files.write(Paths.get(m_loaderDir + File.separator + response.getM_jarName()),
-                    response.getM_jarBytes());
+            LOGGER.info(String.format("write file %s", jarPath.toString()));
+            Files.write(jarPath, response.getM_jarBytes());
         } catch (IOException e) {
             LOGGER.error(e);
         }
 
         LOGGER.info(String.format("Added %s to ClassLoader", p_name));
-        return Paths.get(m_loaderDir + File.separator + response.getM_jarName());
+        return jarPath;
     }
 
     private int getRandomInt(int p_max) {

@@ -119,7 +119,20 @@ public class LoaderTable {
      */
     public void registerJarBytes(String p_name, byte[] p_jarBytes) {
         try {
-            m_jarByteArrays.put(p_name, p_jarBytes);
+            // todo better versioning
+            String name;
+            int version;
+            if (p_name.contains("-")) {
+                int sep = p_name.indexOf("-");
+                name = p_name.substring(0, sep - 1);
+                version = Integer.parseInt(p_name.substring(sep + 1).replace(".jar", ""));
+
+            } else {
+                name = p_name.replace(".jar", "");
+                version = 0;
+            }
+
+            m_jarByteArrays.put(name, p_jarBytes);
 
             JarInputStream jarFile = new JarInputStream(new ByteArrayInputStream(p_jarBytes));
             JarEntry entry;
@@ -134,7 +147,7 @@ public class LoaderTable {
                     String myClass = className.substring(0, className.lastIndexOf('.'));
                     String myPackage = myClass.substring(0, myClass.lastIndexOf('.'));
                     try {
-                        registerClass(myPackage, p_name);
+                        registerClass(myPackage, name);
                     } catch (Throwable e) {
                         LOGGER.warn("WARNING: failed to instantiate ");
                         e.printStackTrace();
