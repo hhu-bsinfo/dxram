@@ -38,9 +38,13 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
         })
 public class DistributeJarTest {
     @TestInstance(runOnNodeIdx = 3)
-    public void register(final DXRAM p_instance) {
+    public void register(final DXRAM p_instance) throws InterruptedException {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.addJar(Paths.get("src/extTest/resources/dxrest.jar"));
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-1.jar"));
+        TimeUnit.SECONDS.sleep(1);
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-2.jar"));
+        TimeUnit.SECONDS.sleep(1);
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-2.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 0)

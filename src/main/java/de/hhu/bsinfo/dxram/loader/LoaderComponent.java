@@ -144,13 +144,18 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
         try {
             byte[] jarBytes = Files.readAllBytes(p_jarPath);
+            String name = p_jarPath.getFileName().toString().replace(".jar", "");
+            int version = 0;
 
-            //todo read version from filename
-            LoaderJar loaderJar = new LoaderJar(jarBytes, 1);
+            if (name.contains("-")) {
+                int sep = name.indexOf('-');
+                version = Integer.parseInt(name.substring(sep + 1));
+                name = name.substring(0, sep);
+            }
 
-            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id,
-                    p_jarPath.getFileName().toString().replace(".jar", ""),
-                    loaderJar);
+            LoaderJar loaderJar = new LoaderJar(jarBytes, version);
+
+            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id, name, loaderJar);
             m_net.sendMessage(registerJarMessage);
             return true;
         } catch (IOException e) {
@@ -379,23 +384,32 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
         if (!m_loaderTable.containsJar(registerJarMessage.getM_jarName())) {
             registerJarBytes(registerJarMessage.getM_jarName(), registerJarMessage.getM_loaderJar());
-
-            List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
-            superPeers.remove((Short) m_boot.getNodeId());
-            LOGGER.info(String.format("Distribute %s to other superpeers: %s",
-                    registerJarMessage.getM_jarName(), superPeers));
-            for (Short superPeer : superPeers) {
-                DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer,
-                        registerJarMessage.getM_jarName(), registerJarMessage.getM_loaderJar(),
-                        m_loaderTable.jarMapSize());
-                try {
-                    m_net.sendMessage(distributeJarMessage);
-                } catch (NetworkException e) {
-                    LOGGER.error(e);
-                }
-            }
+            distributeJar(registerJarMessage.getM_jarName(), registerJarMessage.getM_loaderJar());
         } else {
-            LOGGER.info("The cluster already registered this jar.");
+            // check if the jar is a newer version
+            if (m_loaderTable.getLoaderJar(registerJarMessage.getM_jarName()).getM_version() <
+                    registerJarMessage.getM_loaderJar().getM_version()) {
+                registerJarBytes(registerJarMessage.getM_jarName(), registerJarMessage.getM_loaderJar());
+                distributeJar(registerJarMessage.getM_jarName(), registerJarMessage.getM_loaderJar());
+            }else {
+                LOGGER.info("The cluster already registered this jar.");
+            }
+        }
+    }
+
+    private void distributeJar(String p_jarName, LoaderJar p_loaderJar) {
+        List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
+        superPeers.remove((Short) m_boot.getNodeId());
+        LOGGER.info(String.format("Distribute %s to other superpeers: %s",
+                p_jarName, superPeers));
+        for (Short superPeer : superPeers) {
+            DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer, p_jarName, p_loaderJar,
+                    m_loaderTable.jarMapSize());
+            try {
+                m_net.sendMessage(distributeJarMessage);
+            } catch (NetworkException e) {
+                LOGGER.error(e);
+            }
         }
     }
 

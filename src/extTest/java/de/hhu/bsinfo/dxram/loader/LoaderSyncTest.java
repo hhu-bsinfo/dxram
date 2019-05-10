@@ -23,7 +23,7 @@ public class LoaderSyncTest {
     @TestInstance(runOnNodeIdx = 2)
     public void register(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.addJar(Paths.get("src/extTest/resources/dxrest.jar"));
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-1.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 0)
