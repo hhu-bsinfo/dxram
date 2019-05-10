@@ -12,30 +12,41 @@ public class LoaderJar implements Distributable {
     private byte[] m_jarBytes;
     @Getter
     private int m_version;
+    @Getter
+    private String m_name;
 
     public LoaderJar() {
 
     }
 
-    public LoaderJar(byte[] p_jarBytes, int p_version) {
+    public LoaderJar(byte[] p_jarBytes, int p_version, String p_name) {
         m_jarBytes = p_jarBytes;
         m_version = p_version;
+        m_name = p_name;
     }
 
     @Override
     public void exportObject(Exporter p_exporter) {
         p_exporter.writeByteArray(m_jarBytes);
         p_exporter.writeInt(m_version);
+        p_exporter.writeString(m_name);
     }
 
     @Override
     public void importObject(Importer p_importer) {
         m_jarBytes = p_importer.readByteArray(m_jarBytes);
         m_version = p_importer.readInt(m_version);
+        m_name = p_importer.readString(m_name);
     }
 
     @Override
     public int sizeofObject() {
-        return ObjectSizeUtil.sizeofByteArray(m_jarBytes) + Integer.BYTES;
+        int size = 0;
+
+        size += ObjectSizeUtil.sizeofByteArray(m_jarBytes);
+        size += Integer.BYTES;
+        size += ObjectSizeUtil.sizeofString(m_name);
+
+        return size;
     }
 }

@@ -18,21 +18,16 @@ package de.hhu.bsinfo.dxram.loader.messages;
 
 import lombok.Getter;
 
-import org.eclipse.jetty.util.Loader;
-
 import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.loader.LoaderJar;
-import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
 
 /**
  * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
  */
 public class RegisterJarMessage extends Message {
-    @Getter
-    private String m_jarName;
     @Getter
     private LoaderJar m_loaderJar;
 
@@ -41,31 +36,23 @@ public class RegisterJarMessage extends Message {
         m_loaderJar = new LoaderJar();
     }
 
-    public RegisterJarMessage(final short p_destination, final String p_jarName, final LoaderJar p_loaderJar) {
+    public RegisterJarMessage(final short p_destination, final LoaderJar p_loaderJar) {
         super(p_destination, DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_REGISTER);
-        m_jarName = p_jarName;
         m_loaderJar = p_loaderJar;
     }
 
     @Override
     protected final int getPayloadLength() {
-        int size = 0;
-
-        size += ObjectSizeUtil.sizeofString(m_jarName);
-        size += m_loaderJar.sizeofObject();
-
-        return size;
+        return m_loaderJar.sizeofObject();
     }
 
     @Override
     protected void writePayload(AbstractMessageExporter p_exporter) {
-        p_exporter.writeString(m_jarName);
         p_exporter.exportObject(m_loaderJar);
     }
 
     @Override
     protected void readPayload(AbstractMessageImporter p_importer) {
-        m_jarName = p_importer.readString(m_jarName);
         p_importer.importObject(m_loaderJar);
     }
 }

@@ -21,13 +21,11 @@ import lombok.Getter;
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.jetty.util.Loader;
 
 /**
  * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
@@ -43,9 +41,9 @@ public class LoaderTable {
         m_jarByteArrays = new HashMap<>();
     }
 
-    public void registerJarMap(HashMap<String, LoaderJar> p_loaderJars) {
-        for (Map.Entry<String, LoaderJar> entry : p_loaderJars.entrySet()) {
-            registerJarBytes(entry.getKey(), entry.getValue());
+    public void registerJarMap(LoaderJar[] p_loaderJars) {
+        for (LoaderJar jar : p_loaderJars) {
+            registerJarBytes(jar);
         }
         LOGGER.info("map registered");
     }
@@ -113,14 +111,13 @@ public class LoaderTable {
     /**
      * Register byte array of jar with filename
      *
-     * @param p_name
-     *         jar name
      * @param p_loaderJar
      *         jar file object with version
      */
-    public void registerJarBytes(String p_name, LoaderJar p_loaderJar) {
+    public void registerJarBytes(LoaderJar p_loaderJar) {
+        String name = p_loaderJar.getM_name();
         try {
-            m_jarByteArrays.put(p_name, p_loaderJar);
+            m_jarByteArrays.put(name, p_loaderJar);
 
             JarInputStream jarFile = new JarInputStream(new ByteArrayInputStream(p_loaderJar.getM_jarBytes()));
             JarEntry entry;
@@ -135,7 +132,7 @@ public class LoaderTable {
                     String myClass = className.substring(0, className.lastIndexOf('.'));
                     String myPackage = myClass.substring(0, myClass.lastIndexOf('.'));
                     try {
-                        registerClass(myPackage, p_name);
+                        registerClass(myPackage, name);
                     } catch (Throwable e) {
                         LOGGER.warn("WARNING: failed to instantiate ");
                         e.printStackTrace();
@@ -146,7 +143,7 @@ public class LoaderTable {
             LOGGER.error(String.format("Oops.. Encounter an issue while parsing jar: %s", e));
         }
         LOGGER.info(String.format("%s version %s registered, new LoaderTable size: %s, loaded jars: %s",
-                p_name, p_loaderJar.getM_version(), m_packageJarMap.size(), m_jarByteArrays.size()));
+                name, p_loaderJar.getM_version(), m_packageJarMap.size(), m_jarByteArrays.size()));
     }
 
     /**
