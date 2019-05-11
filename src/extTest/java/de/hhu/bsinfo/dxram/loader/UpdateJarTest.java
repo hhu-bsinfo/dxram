@@ -47,7 +47,7 @@ public class UpdateJarTest {
 
     @TestInstance(runOnNodeIdx = 2)
     public void simpleTest(final DXRAM p_instance) throws InterruptedException {
-        TimeUnit.SECONDS.sleep(1);
+        TimeUnit.MILLISECONDS.sleep(500);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
 
         Class test = null;

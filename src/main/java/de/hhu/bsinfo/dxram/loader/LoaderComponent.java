@@ -256,7 +256,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      */
     private void updateApp(LoaderJar p_loaderJar) {
         try {
-            Files.write(Paths.get(m_loaderDir + File.separator + p_loaderJar.getM_name()),
+            Files.write(Paths.get(m_loaderDir + File.separator + p_loaderJar.getM_name() + ".jar"),
                     p_loaderJar.getM_jarBytes());
 
             DistributedLoader newLoader = new DistributedLoader(this);
