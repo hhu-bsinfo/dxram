@@ -30,7 +30,6 @@ public class ClassResponseMessage extends Response {
     @Getter
     private LoaderJar m_loaderJar;
 
-
     public ClassResponseMessage() {
         super();
         m_loaderJar = new LoaderJar();

@@ -41,7 +41,7 @@ public class LoaderSyncTest {
 
         loaderService.flushTable();
         loaderService.sync();
-        while(loaderService.numberLoadedEntries() != 4) {
+        while (loaderService.numberLoadedEntries() != 4) {
             Thread.yield();
         }
         Assert.assertEquals(4, loaderService.numberLoadedEntries());

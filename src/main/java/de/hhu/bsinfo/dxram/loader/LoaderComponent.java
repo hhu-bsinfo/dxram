@@ -258,15 +258,16 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         try {
             Files.write(Paths.get(m_loaderDir + File.separator + p_loaderJar.getM_name()),
                     p_loaderJar.getM_jarBytes());
+
+            DistributedLoader newLoader = new DistributedLoader(this);
+            newLoader.initPlugins(m_pluginPath);
+            newLoader.initPlugins(Paths.get(m_loaderDir));
+
+            m_loader = newLoader;
+            LOGGER.info(String.format("Updated %s to version %s", p_loaderJar.getM_name(), p_loaderJar.getM_version()));
         } catch (IOException e) {
             LOGGER.error(String.format("Updating %s failed: %s", p_loaderJar.getM_name(), e));
         }
-
-        DistributedLoader newLoader = new DistributedLoader(this);
-        newLoader.initPlugins(m_pluginPath);
-        newLoader.initPlugins(Paths.get(m_loaderDir));
-
-        m_loader = newLoader;
     }
 
     @Override
@@ -361,6 +362,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             LOGGER.info(String.format("Found %s in %s, sending ClassResponseMessage",
                     requestMessage.getM_packageName(), jarName));
             responseMessage = new ClassResponseMessage(requestMessage, m_loaderTable.getLoaderJar(jarName));
+            m_loaderTable.logClassRequest(requestMessage.getSource(), jarName);
 
         } catch (NotInClusterException e) {
             LOGGER.error("Class not found in cluster");
@@ -392,8 +394,29 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                     registerJarMessage.getM_loaderJar().getM_version()) {
                 registerJarBytes(registerJarMessage.getM_loaderJar());
                 distributeJar(registerJarMessage.getM_loaderJar());
+
+                if (m_autoUpdate) {
+                    pushNewVersion(registerJarMessage.getM_loaderJar());
+                }
             } else {
                 LOGGER.info("The cluster already registered this jar.");
+            }
+        }
+    }
+
+    private void pushNewVersion(LoaderJar p_newVersion) {
+        List<Short> peers = m_loaderTable.peersWithJar(p_newVersion.getM_name());
+        if (!peers.isEmpty()) {
+            LOGGER.info(String.format("Sending updated %s jar to: %s",
+                    p_newVersion.getM_name(), peers));
+            for (short peer : peers) {
+                UpdateMessage updateMessage = new UpdateMessage(peer, p_newVersion);
+
+                try {
+                    m_net.sendMessage(updateMessage);
+                } catch (NetworkException e) {
+                    LOGGER.error(e);
+                }
             }
         }
     }
@@ -401,14 +424,16 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private void distributeJar(LoaderJar p_loaderJar) {
         List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
         superPeers.remove((Short) m_boot.getNodeId());
-        LOGGER.info(String.format("Distribute %s to other superpeers: %s", p_loaderJar.getM_name(), superPeers));
-        for (Short superPeer : superPeers) {
-            DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer, p_loaderJar,
-                    m_loaderTable.jarMapSize());
-            try {
-                m_net.sendMessage(distributeJarMessage);
-            } catch (NetworkException e) {
-                LOGGER.error(e);
+        if (!superPeers.isEmpty()) {
+            LOGGER.info(String.format("Distribute %s to other superpeers: %s", p_loaderJar.getM_name(), superPeers));
+            for (Short superPeer : superPeers) {
+                DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer, p_loaderJar,
+                        m_loaderTable.jarMapSize());
+                try {
+                    m_net.sendMessage(distributeJarMessage);
+                } catch (NetworkException e) {
+                    LOGGER.error(e);
+                }
             }
         }
     }
@@ -421,7 +446,22 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      */
     private void onIncomingClassDistribute(Message p_message) {
         DistributeJarMessage distributeJarMessage = (DistributeJarMessage) p_message;
-        registerJarBytes(distributeJarMessage.getM_loaderJar());
+
+        if (!m_loaderTable.containsJar(distributeJarMessage.getM_loaderJar().getM_name())) {
+            registerJarBytes(distributeJarMessage.getM_loaderJar());
+        } else {
+            // check if the jar is a newer version
+            if (m_loaderTable.getLoaderJar(distributeJarMessage.getM_loaderJar().getM_name()).getM_version() <
+                    distributeJarMessage.getM_loaderJar().getM_version()) {
+                registerJarBytes(distributeJarMessage.getM_loaderJar());
+
+                if (m_autoUpdate) {
+                    pushNewVersion(distributeJarMessage.getM_loaderJar());
+                }
+            } else {
+                LOGGER.info("The cluster already registered this jar.");
+            }
+        }
 
         if (distributeJarMessage.getM_tableSize() > m_loaderTable.jarMapSize()) {
             LOGGER.info(String.format("loaderTable is not synced (size is %s and should be %s), request sync",

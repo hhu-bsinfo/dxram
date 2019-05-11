@@ -17,6 +17,7 @@
 package de.hhu.bsinfo.dxram.loader;
 
 import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Assert;
 import org.junit.runner.RunWith;
@@ -35,16 +36,18 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
 
         })
-public class DistributedLoaderTest {
+public class UpdateJarTest {
     @TestInstance(runOnNodeIdx = 1)
-    public void initSuperpeer(final DXRAM p_instance) {
+    public void initSuperpeer(final DXRAM p_instance) throws InterruptedException {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         loaderService.addJar(Paths.get("src/extTest/resources/dxrest-1.jar"));
+        TimeUnit.SECONDS.sleep(1);
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-2.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 2)
     public void simpleTest(final DXRAM p_instance) throws InterruptedException {
-        Thread.sleep(100);
+        TimeUnit.SECONDS.sleep(1);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
 
         Class test = null;
@@ -54,12 +57,6 @@ public class DistributedLoaderTest {
             Assert.fail("Oups, classloading failed.");
         }
         Assert.assertNotNull(test);
-
-        try {
-            loaderService.getClassLoader().loadClass("BestClass");
-            Assert.fail("This class should not exist.");
-        } catch (ClassNotFoundException e) {
-            // this is nice
-        }
     }
 }
+

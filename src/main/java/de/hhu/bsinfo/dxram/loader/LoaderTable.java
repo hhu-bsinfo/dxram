@@ -19,8 +19,11 @@ package de.hhu.bsinfo.dxram.loader;
 import lombok.Getter;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
@@ -34,11 +37,13 @@ public class LoaderTable {
     private HashMap<String, String> m_packageJarMap;
     @Getter
     private HashMap<String, LoaderJar> m_jarByteArrays;
+    private HashMap<Short, String> m_distributedJars;
     private static final Logger LOGGER = LogManager.getFormatterLogger(LoaderTable.class);
 
     public LoaderTable() {
         m_packageJarMap = new HashMap<>();
         m_jarByteArrays = new HashMap<>();
+        m_distributedJars = new HashMap<>();
     }
 
     public void registerJarMap(LoaderJar[] p_loaderJars) {
@@ -159,5 +164,25 @@ public class LoaderTable {
      */
     public int jarMapSize() {
         return m_packageJarMap.size();
+    }
+
+    public void logClassRequest(short p_nid, String p_jarName) {
+        if (m_distributedJars.containsKey(p_nid)) {
+            m_distributedJars.put(p_nid, m_distributedJars.get(p_nid) + ';' + p_jarName);
+        } else {
+            m_distributedJars.put(p_nid, p_jarName);
+        }
+    }
+
+    public List<Short> peersWithJar(String p_name) {
+        List<Short> peers = new ArrayList<>();
+
+        for (Map.Entry<Short, String> jars : m_distributedJars.entrySet()) {
+            if (jars.getValue().contains(p_name)) {
+                peers.add(jars.getKey());
+            }
+        }
+
+        return peers;
     }
 }
