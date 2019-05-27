@@ -174,11 +174,14 @@ public class Start implements Runnable {
         netConfig.getCoreConfig().setDevice(m_networkDevice);
 
         // Set ORB size
-        netConfig.getNioConfig().setOutgoingRingBufferSize(orbSize);
-        netConfig.getNioConfig().setFlowControlWindow(new StorageUnit(orbSize.getBytes() / 2, StorageUnit.BYTE));
-        netConfig.getIbConfig().setOutgoingRingBufferSize(orbSize);
-        netConfig.getIbConfig().setFlowControlWindow(new StorageUnit(orbSize.getBytes() / 2, StorageUnit.BYTE));
-        netConfig.getIbConfig().setIncomingBufferSize(ibIncomingSize);
+        if(m_networkDevice.equals(NetworkDeviceType.ETHERNET_STR)) {
+            netConfig.getNioConfig().setOutgoingRingBufferSize(orbSize);
+            netConfig.getNioConfig().setFlowControlWindow(new StorageUnit(orbSize.getBytes() / 2, StorageUnit.BYTE));
+        } else if(m_networkDevice.equals(NetworkDeviceType.INFINIBAND_STR)){
+            netConfig.getIbConfig().setOutgoingRingBufferSize(orbSize);
+            netConfig.getIbConfig().setFlowControlWindow(new StorageUnit(orbSize.getBytes() / 2, StorageUnit.BYTE));
+            netConfig.getIbConfig().setIncomingBufferSize(ibIncomingSize);
+        }
 
         // Set the compute role and compute group id to assign to the current instance (master, slave or none)
         MasterSlaveComputeServiceConfig msConfig = overridenConfig.getServiceConfig(MasterSlaveComputeService.class);
