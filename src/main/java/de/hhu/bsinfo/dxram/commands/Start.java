@@ -105,6 +105,13 @@ public class Start implements Runnable {
             description = "Incoming buffer size for ibdxnet.",
             paramLabel = "<IB_INCOMING_SIZE>")
     private StorageUnit ibIncomingSize = new StorageUnit(32, StorageUnit.KB);
+
+    @CommandLine.Option(
+            names = { "--flow-control", "--fc" },
+            description = "Size of the DXNet flow control window",
+            paramLabel = "<FLOW_CONTROL_SIZE>"
+    )
+    private StorageUnit flowControlSize = new StorageUnit(512, StorageUnit.KB);
     
     @Override
     public void run() {
@@ -176,10 +183,10 @@ public class Start implements Runnable {
         // Set ORB size
         if(m_networkDevice.equals(NetworkDeviceType.ETHERNET_STR)) {
             netConfig.getNioConfig().setOutgoingRingBufferSize(orbSize);
-            netConfig.getNioConfig().setFlowControlWindow(new StorageUnit(orbSize.getBytes() / 2, StorageUnit.BYTE));
+            netConfig.getNioConfig().setFlowControlWindow(flowControlSize);
         } else if(m_networkDevice.equals(NetworkDeviceType.INFINIBAND_STR)){
             netConfig.getIbConfig().setOutgoingRingBufferSize(orbSize);
-            netConfig.getIbConfig().setFlowControlWindow(new StorageUnit(orbSize.getBytes() / 2, StorageUnit.BYTE));
+            netConfig.getIbConfig().setFlowControlWindow(flowControlSize);
             netConfig.getIbConfig().setIncomingBufferSize(ibIncomingSize);
         }
 
