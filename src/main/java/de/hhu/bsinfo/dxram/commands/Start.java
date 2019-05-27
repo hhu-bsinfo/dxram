@@ -97,8 +97,14 @@ public class Start implements Runnable {
     @CommandLine.Option(
             names = { "--orb-size" },
             description = "Outgoing ring buffer size for DXNet.",
-            paramLabel = "<ORB-SIZE>")
+            paramLabel = "<ORB_SIZE>")
     private StorageUnit orbSize = new StorageUnit(2, StorageUnit.MB);
+
+    @CommandLine.Option(
+            names = { "--ib-incoming-size" },
+            description = "Incoming buffer size for ibdxnet.",
+            paramLabel = "<IB_INCOMING_SIZE>")
+    private StorageUnit ibIncomingSize = new StorageUnit(32, StorageUnit.KB);
     
     @Override
     public void run() {
@@ -172,6 +178,7 @@ public class Start implements Runnable {
         netConfig.getNioConfig().setFlowControlWindow(new StorageUnit(orbSize.getBytes() / 2, StorageUnit.BYTE));
         netConfig.getIbConfig().setOutgoingRingBufferSize(orbSize);
         netConfig.getIbConfig().setFlowControlWindow(new StorageUnit(orbSize.getBytes() / 2, StorageUnit.BYTE));
+        netConfig.getIbConfig().setIncomingBufferSize(ibIncomingSize);
 
         // Set the compute role and compute group id to assign to the current instance (master, slave or none)
         MasterSlaveComputeServiceConfig msConfig = overridenConfig.getServiceConfig(MasterSlaveComputeService.class);
