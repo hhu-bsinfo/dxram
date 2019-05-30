@@ -402,6 +402,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 LOGGER.info("The cluster already registered this jar.");
             }
         }
+
+        m_loaderTable.logClassRequest(registerJarMessage.getSource(), registerJarMessage.getM_loaderJar().getM_name());
     }
 
     private void pushNewVersion(LoaderJar p_newVersion) {
