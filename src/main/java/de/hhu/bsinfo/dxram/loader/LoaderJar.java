@@ -2,6 +2,13 @@ package de.hhu.bsinfo.dxram.loader;
 
 import lombok.Getter;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import de.hhu.bsinfo.dxutils.serialization.Distributable;
 import de.hhu.bsinfo.dxutils.serialization.Exporter;
 import de.hhu.bsinfo.dxutils.serialization.Importer;
@@ -14,6 +21,8 @@ public class LoaderJar implements Distributable {
     private int m_version;
     @Getter
     private String m_name;
+
+    private static final Logger LOGGER = LogManager.getFormatterLogger(LoaderJar.class);
 
     public LoaderJar() {
 
@@ -54,5 +63,14 @@ public class LoaderJar implements Distributable {
         size += ObjectSizeUtil.sizeofString(m_name);
 
         return size;
+    }
+
+    public void writeToPath(Path p_path) {
+        try {
+            LOGGER.info(String.format("write file %s", p_path.toString()));
+            Files.write(p_path, m_jarBytes);
+        } catch (IOException e) {
+            LOGGER.error(e);
+        }
     }
 }

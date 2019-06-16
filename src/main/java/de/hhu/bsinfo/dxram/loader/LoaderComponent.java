@@ -200,12 +200,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
 
         Path jarPath = Paths.get(m_loaderDir + File.separator + response.getM_loaderJar().getM_name() + ".jar");
-        try {
-            LOGGER.info(String.format("write file %s", jarPath.toString()));
-            Files.write(jarPath, response.getM_loaderJar().getM_jarBytes());
-        } catch (IOException e) {
-            LOGGER.error(e);
-        }
+        response.getM_loaderJar().writeToPath(jarPath);
 
         LOGGER.info(String.format("Added %s to ClassLoader", p_name));
         return jarPath;
