@@ -77,8 +77,6 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private Random m_random;
     private static final String CLASS_NOT_FOUND = "NOT_FOUND";
     private Path m_pluginPath;
-    private boolean m_randomRequest = false;
-    private boolean m_autoUpdate = true;
 
     /**
      * Clean folder with requested jars from loader
@@ -133,7 +131,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      */
     public boolean addJarToLoader(Path p_jarPath) {
         short id;
-        if (m_randomRequest) {
+        if (getConfig().isRandomRequest()) {
             int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
             id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
         } else {
@@ -179,7 +177,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         LOGGER.info(String.format("Ask LoaderComponent for %s", p_name));
 
         short id;
-        if (m_randomRequest) {
+        if (getConfig().isRandomRequest()) {
             int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
             id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
         } else {
@@ -390,7 +388,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 registerJarBytes(registerJarMessage.getM_loaderJar());
                 distributeJar(registerJarMessage.getM_loaderJar());
 
-                if (m_autoUpdate) {
+                if (getConfig().isAutoUpdate()) {
                     pushNewVersion(registerJarMessage.getM_loaderJar());
                 }
             } else {
@@ -452,7 +450,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                     distributeJarMessage.getM_loaderJar().getM_version()) {
                 registerJarBytes(distributeJarMessage.getM_loaderJar());
 
-                if (m_autoUpdate) {
+                if (getConfig().isAutoUpdate()) {
                     pushNewVersion(distributeJarMessage.getM_loaderJar());
                 }
             } else {

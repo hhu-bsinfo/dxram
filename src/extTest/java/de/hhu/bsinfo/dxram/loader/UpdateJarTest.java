@@ -45,14 +45,7 @@ public class UpdateJarTest {
 
     @TestInstance(runOnNodeIdx = 2)
     public void test2(final DXRAM p_instance) throws InterruptedException {
-        LoaderService loaderService = p_instance.getService(LoaderService.class);
-        TimeUnit.SECONDS.sleep(1);
-        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-2.jar"));
-    }
-
-    @TestInstance(runOnNodeIdx = 3)
-    public void simpleTest(final DXRAM p_instance) throws InterruptedException {
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(200);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
 
         Class test = null;
@@ -62,6 +55,13 @@ public class UpdateJarTest {
             Assert.fail("Oups, classloading failed.");
         }
         Assert.assertNotNull(test);
+    }
+
+    @TestInstance(runOnNodeIdx = 3)
+    public void simpleTest(final DXRAM p_instance) throws InterruptedException {
+        LoaderService loaderService = p_instance.getService(LoaderService.class);
+        TimeUnit.MILLISECONDS.sleep(400);
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-2.jar"));
     }
 }
 

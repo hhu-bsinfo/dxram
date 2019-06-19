@@ -172,6 +172,7 @@ public class LoaderTable {
         } else {
             m_distributedJars.put(p_nid, p_jarName);
         }
+        LOGGER.debug(String.format("ClassLog %s: %s", p_nid, m_distributedJars.get(p_nid)));
     }
 
     public List<Short> peersWithJar(String p_name) {
