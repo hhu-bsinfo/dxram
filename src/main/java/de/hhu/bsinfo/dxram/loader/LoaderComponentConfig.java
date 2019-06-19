@@ -47,6 +47,9 @@ public class LoaderComponentConfig extends ModuleConfig {
     @Expose
     private boolean m_autoUpdate = true;
 
+    @Expose
+    private final String m_loaderDir = "loadedJars";
+
     public LoaderComponentConfig() {
         super(LoaderComponent.class);
     }

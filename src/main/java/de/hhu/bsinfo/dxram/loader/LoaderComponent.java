@@ -73,7 +73,6 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private DistributedLoader m_loader;
     private LoaderTable m_loaderTable;
     private NodeRole m_role;
-    private final String m_loaderDir = "loadedJars";
     private Random m_random;
     private static final String CLASS_NOT_FOUND = "NOT_FOUND";
     private Path m_pluginPath;
@@ -83,7 +82,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      */
     private void cleanLoaderDir() {
         try {
-            Files.walk(Paths.get(m_loaderDir))
+            Files.walk(Paths.get(getConfig().getLoaderDir()))
                     .sorted(Comparator.reverseOrder())
                     .filter(Files::isRegularFile)
                     .map(Path::toFile)
@@ -197,7 +196,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             throw new ClassNotFoundException();
         }
 
-        Path jarPath = Paths.get(m_loaderDir + File.separator + response.getM_loaderJar().getM_name() + ".jar");
+        Path jarPath = Paths.get(getConfig().getLoaderDir() + File.separator + response.getM_loaderJar().getM_name() + ".jar");
         response.getM_loaderJar().writeToPath(jarPath);
 
         LOGGER.info(String.format("Added %s to ClassLoader", p_name));
@@ -249,12 +248,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      */
     private void updateApp(LoaderJar p_loaderJar) {
         try {
-            Files.write(Paths.get(m_loaderDir + File.separator + p_loaderJar.getM_name() + ".jar"),
+            Files.write(Paths.get(getConfig().getLoaderDir() + File.separator + p_loaderJar.getM_name() + ".jar"),
                     p_loaderJar.getM_jarBytes());
 
             DistributedLoader newLoader = new DistributedLoader(this);
             newLoader.initPlugins(m_pluginPath);
-            newLoader.initPlugins(Paths.get(m_loaderDir));
+            newLoader.initPlugins(Paths.get(getConfig().getLoaderDir()));
 
             m_loader = newLoader;
             LOGGER.info(String.format("Updated %s to version %s", p_loaderJar.getM_name(), p_loaderJar.getM_version()));
@@ -288,9 +287,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 UpdateMessage.class);
 
         if (m_role == NodeRole.PEER) {
-            if (!Files.exists(Paths.get(m_loaderDir))) {
+            if (!Files.exists(Paths.get(getConfig().getLoaderDir()))) {
                 try {
-                    Files.createDirectory(Paths.get(m_loaderDir));
+                    Files.createDirectory(Paths.get(getConfig().getLoaderDir()));
                 } catch (IOException e) {
                     LOGGER.error("Could not create loaderDir.", e);
                 }
