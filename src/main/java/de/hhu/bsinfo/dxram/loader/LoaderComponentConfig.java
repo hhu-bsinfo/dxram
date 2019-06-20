@@ -16,6 +16,10 @@
 
 package de.hhu.bsinfo.dxram.loader;
 
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
+
 import com.google.gson.annotations.Expose;
 
 import de.hhu.bsinfo.dxnet.core.CoreConfig;
@@ -25,12 +29,26 @@ import de.hhu.bsinfo.dxram.engine.ModuleConfig;
 /**
  * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
  */
+@Data
+@Accessors(prefix = "m_")
+@EqualsAndHashCode(callSuper = false)
 public class LoaderComponentConfig extends ModuleConfig {
+
     /**
-     * Get the core configuration values
+     * Enable or disable random request: if false, peers contact the responsible superpeer, if true, peers contact a
+     * random superpeer
      */
     @Expose
-    private CoreConfig m_coreConfig = new CoreConfig();
+    private boolean m_randomRequest = false;
+
+    /**
+     * If true, clients get the newest version of each application without request
+     */
+    @Expose
+    private boolean m_autoUpdate = true;
+
+    @Expose
+    private final String m_loaderDir = "loadedJars";
 
     public LoaderComponentConfig() {
         super(LoaderComponent.class);
@@ -38,6 +56,6 @@ public class LoaderComponentConfig extends ModuleConfig {
 
     @Override
     protected boolean verify(final DXRAMConfig p_config) {
-        return m_coreConfig.verify();
+        return true;
     }
 }

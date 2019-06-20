@@ -22,28 +22,25 @@ import de.hhu.bsinfo.dxnet.core.AbstractMessageExporter;
 import de.hhu.bsinfo.dxnet.core.AbstractMessageImporter;
 import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
-import de.hhu.bsinfo.dxutils.serialization.ObjectSizeUtil;
+import de.hhu.bsinfo.dxram.loader.LoaderJar;
 
 /**
  * @author Julien Bernhart, julien.bernhart@hhu.de, 2019-04-17
  */
 public class DistributeJarMessage extends Message {
     @Getter
-    private byte[] m_jarBytes;
-    @Getter
-    private String m_jarName;
+    private LoaderJar m_loaderJar;
     @Getter
     private int m_tableSize;
 
     public DistributeJarMessage() {
         super();
+        m_loaderJar = new LoaderJar();
     }
 
-    public DistributeJarMessage(final short p_destination, final String p_jarName,
-            final byte[] p_jarBytes, final int p_tableSize) {
+    public DistributeJarMessage(final short p_destination, final LoaderJar p_loaderJar, final int p_tableSize) {
         super(p_destination, DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_CLASS_DISTRIBUTE);
-        m_jarName = p_jarName;
-        m_jarBytes = p_jarBytes;
+        m_loaderJar = p_loaderJar;
         m_tableSize = p_tableSize;
     }
 
@@ -51,8 +48,7 @@ public class DistributeJarMessage extends Message {
     protected final int getPayloadLength() {
         int size = 0;
 
-        size += ObjectSizeUtil.sizeofByteArray(m_jarBytes);
-        size += ObjectSizeUtil.sizeofString(m_jarName);
+        size += m_loaderJar.sizeofObject();
         size += Integer.BYTES;
 
         return size;
@@ -60,15 +56,13 @@ public class DistributeJarMessage extends Message {
 
     @Override
     protected void writePayload(AbstractMessageExporter p_exporter) {
-        p_exporter.writeByteArray(m_jarBytes);
-        p_exporter.writeString(m_jarName);
+        m_loaderJar.exportObject(p_exporter);
         p_exporter.writeInt(m_tableSize);
     }
 
     @Override
     protected void readPayload(AbstractMessageImporter p_importer) {
-        m_jarBytes = p_importer.readByteArray(m_jarBytes);
-        m_jarName = p_importer.readString(m_jarName);
+        m_loaderJar.importObject(p_importer);
         m_tableSize = p_importer.readInt(m_tableSize);
     }
 }

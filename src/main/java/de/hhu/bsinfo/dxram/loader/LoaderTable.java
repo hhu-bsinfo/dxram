@@ -19,8 +19,10 @@ package de.hhu.bsinfo.dxram.loader;
 import lombok.Getter;
 
 import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -34,17 +36,19 @@ import org.apache.logging.log4j.Logger;
 public class LoaderTable {
     private HashMap<String, String> m_packageJarMap;
     @Getter
-    private HashMap<String, byte[]> m_jarByteArrays;
+    private HashMap<String, LoaderJar> m_jarByteArrays;
+    private HashMap<Short, String> m_distributedJars;
     private static final Logger LOGGER = LogManager.getFormatterLogger(LoaderTable.class);
 
     public LoaderTable() {
         m_packageJarMap = new HashMap<>();
         m_jarByteArrays = new HashMap<>();
+        m_distributedJars = new HashMap<>();
     }
 
-    public void registerJarMap(HashMap<String, byte[]> p_jarByteArrays) {
-        for (Map.Entry<String, byte[]> entry : p_jarByteArrays.entrySet()) {
-            registerJarBytes(entry.getKey(), entry.getValue());
+    public void registerJarMap(LoaderJar[] p_loaderJars) {
+        for (LoaderJar jar : p_loaderJars) {
+            registerJarBytes(jar);
         }
         LOGGER.info("map registered");
     }
@@ -105,23 +109,22 @@ public class LoaderTable {
         return m_jarByteArrays.containsKey(p_name);
     }
 
-    public byte[] getJarByte(String p_jarName) {
+    public LoaderJar getLoaderJar(String p_jarName) {
         return m_jarByteArrays.get(p_jarName);
     }
 
     /**
      * Register byte array of jar with filename
      *
-     * @param p_name
-     *         jar name
-     * @param p_jarBytes
-     *         jar byte array
+     * @param p_loaderJar
+     *         jar file object with version
      */
-    public void registerJarBytes(String p_name, byte[] p_jarBytes) {
+    public void registerJarBytes(LoaderJar p_loaderJar) {
+        String name = p_loaderJar.getM_name();
         try {
-            m_jarByteArrays.put(p_name, p_jarBytes);
+            m_jarByteArrays.put(name, p_loaderJar);
 
-            JarInputStream jarFile = new JarInputStream(new ByteArrayInputStream(p_jarBytes));
+            JarInputStream jarFile = new JarInputStream(new ByteArrayInputStream(p_loaderJar.getM_jarBytes()));
             JarEntry entry;
 
             while (true) {
@@ -134,7 +137,7 @@ public class LoaderTable {
                     String myClass = className.substring(0, className.lastIndexOf('.'));
                     String myPackage = myClass.substring(0, myClass.lastIndexOf('.'));
                     try {
-                        registerClass(myPackage, p_name);
+                        registerClass(myPackage, name);
                     } catch (Throwable e) {
                         LOGGER.warn("WARNING: failed to instantiate ");
                         e.printStackTrace();
@@ -144,8 +147,8 @@ public class LoaderTable {
         } catch (Exception e) {
             LOGGER.error(String.format("Oops.. Encounter an issue while parsing jar: %s", e));
         }
-        LOGGER.info(String.format("%s registered, new LoaderTable size: %s, loaded jars: %s",
-                p_name, m_packageJarMap.size(), m_jarByteArrays.size()));
+        LOGGER.info(String.format("%s version %s registered, new LoaderTable size: %s, loaded jars: %s",
+                name, p_loaderJar.getM_version(), m_packageJarMap.size(), m_jarByteArrays.size()));
     }
 
     /**
@@ -161,5 +164,26 @@ public class LoaderTable {
      */
     public int jarMapSize() {
         return m_packageJarMap.size();
+    }
+
+    public void logClassRequest(short p_nid, String p_jarName) {
+        if (m_distributedJars.containsKey(p_nid)) {
+            m_distributedJars.put(p_nid, m_distributedJars.get(p_nid) + ';' + p_jarName);
+        } else {
+            m_distributedJars.put(p_nid, p_jarName);
+        }
+        LOGGER.debug(String.format("ClassLog %s: %s", p_nid, m_distributedJars.get(p_nid)));
+    }
+
+    public List<Short> peersWithJar(String p_name) {
+        List<Short> peers = new ArrayList<>();
+
+        for (Map.Entry<Short, String> jars : m_distributedJars.entrySet()) {
+            if (jars.getValue().contains(p_name)) {
+                peers.add(jars.getKey());
+            }
+        }
+
+        return peers;
     }
 }

@@ -32,39 +32,36 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 @DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
-                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
-public class DistributeJarTest {
-    @TestInstance(runOnNodeIdx = 3)
-    public void register(final DXRAM p_instance) throws InterruptedException {
+public class UpdateJarTest {
+    @TestInstance(runOnNodeIdx = 1)
+    public void test1(final DXRAM p_instance) throws InterruptedException {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         loaderService.addJar(Paths.get("src/extTest/resources/dxrest-1.jar"));
-        TimeUnit.SECONDS.sleep(1);
-        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-2.jar"));
-        TimeUnit.SECONDS.sleep(1);
-        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-2.jar"));
-    }
-
-    @TestInstance(runOnNodeIdx = 0)
-    public void check0(final DXRAM p_instance) throws InterruptedException {
-        TimeUnit.SECONDS.sleep(1);
-        LoaderService loaderService = p_instance.getService(LoaderService.class);
-        Assert.assertEquals(4, loaderService.numberLoadedEntries());
-    }
-
-    @TestInstance(runOnNodeIdx = 1)
-    public void check1(final DXRAM p_instance) throws InterruptedException {
-        TimeUnit.SECONDS.sleep(1);
-        LoaderService loaderService = p_instance.getService(LoaderService.class);
-        Assert.assertEquals(4, loaderService.numberLoadedEntries());
     }
 
     @TestInstance(runOnNodeIdx = 2)
-    public void check2(final DXRAM p_instance) throws InterruptedException {
-        TimeUnit.SECONDS.sleep(1);
+    public void test2(final DXRAM p_instance) throws InterruptedException {
+        TimeUnit.MILLISECONDS.sleep(200);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        Assert.assertEquals(4, loaderService.numberLoadedEntries());
+
+        Class test = null;
+        try {
+            test = loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
+        } catch (ClassNotFoundException e) {
+            Assert.fail("Oups, classloading failed.");
+        }
+        Assert.assertNotNull(test);
+    }
+
+    @TestInstance(runOnNodeIdx = 3)
+    public void simpleTest(final DXRAM p_instance) throws InterruptedException {
+        LoaderService loaderService = p_instance.getService(LoaderService.class);
+        TimeUnit.MILLISECONDS.sleep(400);
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-2.jar"));
     }
 }
+

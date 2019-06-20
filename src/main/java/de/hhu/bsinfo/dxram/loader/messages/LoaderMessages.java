@@ -27,6 +27,7 @@ public class LoaderMessages {
     public static final byte SUBTYPE_SYNC_REQUEST = 5;
     public static final byte SUBTYPE_SYNC_RESPONSE = 6;
     public static final byte SUBTYPE_SYNC_INVITATION = 7;
+    public static final byte SUBTYPE_UPDATE = 8;
 
     /**
      * Static class

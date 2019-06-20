@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -47,6 +46,7 @@ import de.hhu.bsinfo.dxram.loader.messages.RegisterJarMessage;
 import de.hhu.bsinfo.dxram.loader.messages.SyncInvitationMessage;
 import de.hhu.bsinfo.dxram.loader.messages.SyncRequestMessage;
 import de.hhu.bsinfo.dxram.loader.messages.SyncResponseMessage;
+import de.hhu.bsinfo.dxram.loader.messages.UpdateMessage;
 import de.hhu.bsinfo.dxram.lookup.LookupComponent;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.plugin.PluginComponent;
@@ -73,7 +73,6 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private DistributedLoader m_loader;
     private LoaderTable m_loaderTable;
     private NodeRole m_role;
-    private final String m_loaderDir = "loadedJars";
     private Random m_random;
     private static final String CLASS_NOT_FOUND = "NOT_FOUND";
     private Path m_pluginPath;
@@ -83,7 +82,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      */
     private void cleanLoaderDir() {
         try {
-            Files.walk(Paths.get(m_loaderDir))
+            Files.walk(Paths.get(getConfig().getLoaderDir()))
                     .sorted(Comparator.reverseOrder())
                     .filter(Files::isRegularFile)
                     .map(Path::toFile)
@@ -130,15 +129,29 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      * @return true if successful
      */
     public boolean addJarToLoader(Path p_jarPath) {
-        int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
-        short id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
+        short id;
+        if (getConfig().isRandomRequest()) {
+            int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
+            id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
+        } else {
+            id = m_lookup.getResponsibleSuperpeer(m_boot.getNodeId());
+        }
         LOGGER.info(String.format("Sending %s to %s", p_jarPath, NodeID.toHexString(id)));
 
         try {
             byte[] jarBytes = Files.readAllBytes(p_jarPath);
+            String name = p_jarPath.getFileName().toString().replace(".jar", "");
+            int version = 0;
 
-            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id, p_jarPath.getFileName().toString(),
-                    jarBytes);
+            if (name.contains("-")) {
+                int sep = name.indexOf('-');
+                version = Integer.parseInt(name.substring(sep + 1));
+                name = name.substring(0, sep);
+            }
+
+            LoaderJar loaderJar = new LoaderJar(jarBytes, version, name);
+
+            RegisterJarMessage registerJarMessage = new RegisterJarMessage(id, loaderJar);
             m_net.sendMessage(registerJarMessage);
             return true;
         } catch (IOException e) {
@@ -162,8 +175,13 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     public Path getJar(String p_name) throws ClassNotFoundException {
         LOGGER.info(String.format("Ask LoaderComponent for %s", p_name));
 
-        int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
-        short id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
+        short id;
+        if (getConfig().isRandomRequest()) {
+            int randomInt = getRandomInt(m_boot.getOnlineSuperpeerIds().size());
+            id = (short) m_boot.getOnlineSuperpeerIds().get(randomInt);
+        } else {
+            id = m_lookup.getResponsibleSuperpeer(m_boot.getNodeId());
+        }
 
         ClassRequestMessage requestMessage = new ClassRequestMessage(id, p_name);
         try {
@@ -174,19 +192,15 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
         ClassResponseMessage response = (ClassResponseMessage) requestMessage.getResponse();
 
-        if (CLASS_NOT_FOUND.equals(response.getM_jarName())) {
+        if (CLASS_NOT_FOUND.equals(response.getM_loaderJar().getM_name())) {
             throw new ClassNotFoundException();
         }
-        try {
-            LOGGER.info(String.format("write file %s", m_loaderDir + File.separator + response.getM_jarName()));
-            Files.write(Paths.get(m_loaderDir + File.separator + response.getM_jarName()),
-                    response.getM_jarBytes());
-        } catch (IOException e) {
-            LOGGER.error(e);
-        }
+
+        Path jarPath = Paths.get(getConfig().getLoaderDir() + File.separator + response.getM_loaderJar().getM_name() + ".jar");
+        response.getM_loaderJar().writeToPath(jarPath);
 
         LOGGER.info(String.format("Added %s to ClassLoader", p_name));
-        return Paths.get(m_loaderDir + File.separator + response.getM_jarName());
+        return jarPath;
     }
 
     private int getRandomInt(int p_max) {
@@ -203,14 +217,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     /**
      * Register a jar file from a RegisterJarMessage or a DistributeJarMessage (on superpeer)
      *
-     * @param p_jarName
-     *         name of the jar file
-     * @param p_jarBytes
-     *         byte array of the jar file
+     * @param p_loaderJar
+     *         jar object with version
      */
-    private void registerJarBytes(String p_jarName, byte[] p_jarBytes) {
+    private void registerJarBytes(LoaderJar p_loaderJar) {
         if (m_role == NodeRole.SUPERPEER) {
-            m_loaderTable.registerJarBytes(p_jarName, p_jarBytes);
+            m_loaderTable.registerJarBytes(p_loaderJar);
         } else {
             LOGGER.error("Only superpeers can register jars.");
         }
@@ -231,21 +243,23 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     /**
      * Update an app, this creates a new Loader and loads all apps in pluginPath and loaderDir
      *
-     * @param p_name jar name
-     * @param p_jarByte jar bytes
+     * @param p_loaderJar
+     *         jar to update
      */
-    private void updateApp(String p_name, byte[] p_jarByte) {
+    private void updateApp(LoaderJar p_loaderJar) {
         try {
-            Files.write(Paths.get(m_loaderDir + File.separator + p_name), p_jarByte);
+            Files.write(Paths.get(getConfig().getLoaderDir() + File.separator + p_loaderJar.getM_name() + ".jar"),
+                    p_loaderJar.getM_jarBytes());
+
+            DistributedLoader newLoader = new DistributedLoader(this);
+            newLoader.initPlugins(m_pluginPath);
+            newLoader.initPlugins(Paths.get(getConfig().getLoaderDir()));
+
+            m_loader = newLoader;
+            LOGGER.info(String.format("Updated %s to version %s", p_loaderJar.getM_name(), p_loaderJar.getM_version()));
         } catch (IOException e) {
-            LOGGER.error(String.format("Updating %s failed: %s", p_name, e));
+            LOGGER.error(String.format("Updating %s failed: %s", p_loaderJar.getM_name(), e));
         }
-
-        DistributedLoader newLoader = new DistributedLoader(this);
-        newLoader.initPlugins(m_pluginPath);
-        newLoader.initPlugins(Paths.get(m_loaderDir));
-
-        m_loader = newLoader;
     }
 
     @Override
@@ -269,11 +283,13 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 SyncResponseMessage.class);
         m_net.registerMessageType(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_INVITATION,
                 SyncInvitationMessage.class);
+        m_net.registerMessageType(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_UPDATE,
+                UpdateMessage.class);
 
         if (m_role == NodeRole.PEER) {
-            if (!Files.exists(Paths.get(m_loaderDir))) {
+            if (!Files.exists(Paths.get(getConfig().getLoaderDir()))) {
                 try {
-                    Files.createDirectory(Paths.get(m_loaderDir));
+                    Files.createDirectory(Paths.get(getConfig().getLoaderDir()));
                 } catch (IOException e) {
                     LOGGER.error("Could not create loaderDir.", e);
                 }
@@ -290,6 +306,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                         " '-Djava.system.class.loader=de.hhu.bsinfo.dxram.loader.DistributedSystemLoader'");
 
             }
+
+            m_net.register(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_UPDATE, this);
         } else {
             m_loaderTable = new LoaderTable();
 
@@ -314,6 +332,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_SYNC_INVITATION, this);
         } else {
             cleanLoaderDir();
+            m_net.unregister(DXRAMMessageTypes.LOADER_MESSAGE_TYPE, LoaderMessages.SUBTYPE_UPDATE, this);
         }
 
         return true;
@@ -334,13 +353,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
             LOGGER.info(String.format("Found %s in %s, sending ClassResponseMessage",
                     requestMessage.getM_packageName(), jarName));
-            responseMessage = new ClassResponseMessage(requestMessage, jarName,
-                    m_loaderTable.getJarByte(jarName));
+            responseMessage = new ClassResponseMessage(requestMessage, m_loaderTable.getLoaderJar(jarName));
+            m_loaderTable.logClassRequest(requestMessage.getSource(), jarName);
 
         } catch (NotInClusterException e) {
             LOGGER.error("Class not found in cluster");
-            responseMessage = new ClassResponseMessage(requestMessage,
-                    CLASS_NOT_FOUND, new byte[0]);
+            responseMessage = new ClassResponseMessage(requestMessage, new LoaderJar(CLASS_NOT_FOUND));
         }
 
         try {
@@ -359,16 +377,51 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private void onIncomingClassRegister(Message p_message) {
         RegisterJarMessage registerJarMessage = (RegisterJarMessage) p_message;
 
-        if (!m_loaderTable.containsJar(registerJarMessage.getM_jarName())) {
-            registerJarBytes(registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes());
+        if (!m_loaderTable.containsJar(registerJarMessage.getM_loaderJar().getM_name())) {
+            registerJarBytes(registerJarMessage.getM_loaderJar());
+            distributeJar(registerJarMessage.getM_loaderJar());
+        } else {
+            // check if the jar is a newer version
+            if (m_loaderTable.getLoaderJar(registerJarMessage.getM_loaderJar().getM_name()).getM_version() <
+                    registerJarMessage.getM_loaderJar().getM_version()) {
+                registerJarBytes(registerJarMessage.getM_loaderJar());
+                distributeJar(registerJarMessage.getM_loaderJar());
 
-            List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
-            superPeers.remove((Short) m_boot.getNodeId());
-            LOGGER.info(String.format("Distribute %s to other superpeers: %s",
-                    registerJarMessage.getM_jarName(), superPeers));
+                if (getConfig().isAutoUpdate()) {
+                    pushNewVersion(registerJarMessage.getM_loaderJar());
+                }
+            } else {
+                LOGGER.info("The cluster already registered this jar.");
+            }
+        }
+
+        m_loaderTable.logClassRequest(registerJarMessage.getSource(), registerJarMessage.getM_loaderJar().getM_name());
+    }
+
+    private void pushNewVersion(LoaderJar p_newVersion) {
+        List<Short> peers = m_loaderTable.peersWithJar(p_newVersion.getM_name());
+        if (!peers.isEmpty()) {
+            LOGGER.info(String.format("Sending updated %s jar to: %s",
+                    p_newVersion.getM_name(), peers));
+            for (short peer : peers) {
+                UpdateMessage updateMessage = new UpdateMessage(peer, p_newVersion);
+
+                try {
+                    m_net.sendMessage(updateMessage);
+                } catch (NetworkException e) {
+                    LOGGER.error(e);
+                }
+            }
+        }
+    }
+
+    private void distributeJar(LoaderJar p_loaderJar) {
+        List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
+        superPeers.remove((Short) m_boot.getNodeId());
+        if (!superPeers.isEmpty()) {
+            LOGGER.info(String.format("Distribute %s to other superpeers: %s", p_loaderJar.getM_name(), superPeers));
             for (Short superPeer : superPeers) {
-                DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer,
-                        registerJarMessage.getM_jarName(), registerJarMessage.getM_jarBytes(),
+                DistributeJarMessage distributeJarMessage = new DistributeJarMessage(superPeer, p_loaderJar,
                         m_loaderTable.jarMapSize());
                 try {
                     m_net.sendMessage(distributeJarMessage);
@@ -376,8 +429,6 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                     LOGGER.error(e);
                 }
             }
-        } else {
-            LOGGER.info("The cluster already registered this jar.");
         }
     }
 
@@ -389,7 +440,22 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      */
     private void onIncomingClassDistribute(Message p_message) {
         DistributeJarMessage distributeJarMessage = (DistributeJarMessage) p_message;
-        registerJarBytes(distributeJarMessage.getM_jarName(), distributeJarMessage.getM_jarBytes());
+
+        if (!m_loaderTable.containsJar(distributeJarMessage.getM_loaderJar().getM_name())) {
+            registerJarBytes(distributeJarMessage.getM_loaderJar());
+        } else {
+            // check if the jar is a newer version
+            if (m_loaderTable.getLoaderJar(distributeJarMessage.getM_loaderJar().getM_name()).getM_version() <
+                    distributeJarMessage.getM_loaderJar().getM_version()) {
+                registerJarBytes(distributeJarMessage.getM_loaderJar());
+
+                if (getConfig().isAutoUpdate()) {
+                    pushNewVersion(distributeJarMessage.getM_loaderJar());
+                }
+            } else {
+                LOGGER.info("The cluster already registered this jar.");
+            }
+        }
 
         if (distributeJarMessage.getM_tableSize() > m_loaderTable.jarMapSize()) {
             LOGGER.info(String.format("loaderTable is not synced (size is %s and should be %s), request sync",
@@ -434,17 +500,22 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
         LOGGER.info(String.format("Other peers needs %s", loadedJars));
 
-        HashMap<String, byte[]> responseMap = new HashMap<>();
         for (String jarName : loadedJars) {
-            if (m_loaderTable.containsJar(jarName)) {
-                responseMap.put(jarName, m_loaderTable.getJarByte(jarName));
+            if (!m_loaderTable.containsJar(jarName)) {
+                loadedJars.remove(jarName);
             }
         }
 
-        SyncResponseMessage response = new SyncResponseMessage(requestMessage.getSource(), responseMap);
+        if (!loadedJars.isEmpty()) {
+            LoaderJar[] responseArray = new LoaderJar[loadedJars.size()];
+            int i = 0;
+            for (String jarName : loadedJars) {
+                responseArray[i] = m_loaderTable.getLoaderJar(jarName);
+                i++;
+            }
 
-        if (!responseMap.isEmpty()) {
-            LOGGER.info(String.format("Sending SyncResponseMessage with %s jars", responseMap.size()));
+            SyncResponseMessage response = new SyncResponseMessage(requestMessage.getSource(), responseArray);
+            LOGGER.info(String.format("Sending SyncResponseMessage with %s jars", responseArray.length));
             try {
                 m_net.sendMessage(response);
             } catch (NetworkException e) {
@@ -479,6 +550,12 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
     }
 
+    private void onIncomingUpdateMessage(Message p_message) {
+        UpdateMessage updateMessage = (UpdateMessage) p_message;
+
+        updateApp(updateMessage.getM_loaderJar());
+    }
+
     @Override
     public void onIncomingMessage(Message p_message) {
         switch (p_message.getSubtype()) {
@@ -499,6 +576,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 break;
             case LoaderMessages.SUBTYPE_SYNC_INVITATION:
                 onIncomingSyncInvitation(p_message);
+                break;
+            case LoaderMessages.SUBTYPE_UPDATE:
+                onIncomingUpdateMessage(p_message);
                 break;
             default:
                 throw new IllegalStateException("Unexpected value: " + p_message.getSubtype());
