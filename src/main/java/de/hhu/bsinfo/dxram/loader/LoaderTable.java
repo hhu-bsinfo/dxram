@@ -65,7 +65,7 @@ public class LoaderTable {
     private void registerClass(String p_name, String p_jarName) {
         if (!m_packageJarMap.containsKey(p_name)) {
             m_packageJarMap.put(p_name, p_jarName);
-            LOGGER.info(String.format("added %s from %s", p_name, p_jarName));
+            //LOGGER.info(String.format("added %s from %s", p_name, p_jarName));
         }
     }
 
@@ -168,7 +168,10 @@ public class LoaderTable {
 
     public void logClassRequest(short p_nid, String p_jarName) {
         if (m_distributedJars.containsKey(p_nid)) {
-            m_distributedJars.put(p_nid, m_distributedJars.get(p_nid) + ';' + p_jarName);
+            String loaded = m_distributedJars.get(p_nid);
+            if (!loaded.contains(p_jarName)) {
+                m_distributedJars.put(p_nid, loaded + ';' + p_jarName);
+            }
         } else {
             m_distributedJars.put(p_nid, p_jarName);
         }

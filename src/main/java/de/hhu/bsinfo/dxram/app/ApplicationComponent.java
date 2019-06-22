@@ -9,10 +9,10 @@ import java.util.List;
 
 import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxram.engine.Module;
-import de.hhu.bsinfo.dxram.engine.ComponentProvider;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.engine.ModuleConfig;
+import de.hhu.bsinfo.dxram.loader.LoaderComponent;
 import de.hhu.bsinfo.dxram.plugin.PluginComponent;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;;
 
@@ -26,6 +26,8 @@ public class ApplicationComponent extends Component<ModuleConfig> {
 
     @Dependency
     private PluginComponent m_plugin;
+    @Dependency
+    private LoaderComponent m_loader;
 
     private final HashMap<String, Class<? extends Application>> m_applicationClasses = new HashMap<>();
     private ApplicationRunner m_runner;
@@ -42,6 +44,22 @@ public class ApplicationComponent extends Component<ModuleConfig> {
      * @return True if starting application was successful, false on error
      */
     public boolean startApplication(final String p_class, final String[] p_args) {
+        if (!m_applicationClasses.containsKey(p_class)) {
+            try {
+                m_loader.getJar(p_class);
+                Class<?> clazz = m_loader.getM_loader().loadClass(p_class);
+
+                if (Application.class.isAssignableFrom(clazz)) {
+                    registerApplicationClass((Class<? extends Application>) clazz);
+                }else {
+                    return false;
+                }
+            } catch(ClassNotFoundException e){
+                LOGGER.error(String.format("Application class %s was not found", p_class));
+                return false;
+            }
+        }
+
         return m_runner.startApplication(p_class, p_args);
     }
 

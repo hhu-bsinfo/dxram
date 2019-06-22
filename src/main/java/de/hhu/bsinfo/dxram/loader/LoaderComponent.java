@@ -37,7 +37,6 @@ import de.hhu.bsinfo.dxram.engine.Component;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.DXRAMJNIManager;
 import de.hhu.bsinfo.dxram.engine.Module;
-import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.loader.messages.ClassRequestMessage;
 import de.hhu.bsinfo.dxram.loader.messages.ClassResponseMessage;
 import de.hhu.bsinfo.dxram.loader.messages.DistributeJarMessage;
@@ -64,8 +63,6 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     private NetworkComponent m_net;
     @Dependency
     private BootComponent m_boot;
-    @Dependency
-    private EventComponent m_event;
     @Dependency
     private LookupComponent m_lookup;
 
@@ -172,7 +169,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      * @throws ClassNotFoundException
      *         class not found in cluster
      */
-    public Path getJar(String p_name) throws ClassNotFoundException {
+    public void getJar(String p_name) throws ClassNotFoundException {
         LOGGER.info(String.format("Ask LoaderComponent for %s", p_name));
 
         short id;
@@ -199,8 +196,8 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         Path jarPath = Paths.get(getConfig().getLoaderDir() + File.separator + response.getM_loaderJar().getM_name() + ".jar");
         response.getM_loaderJar().writeToPath(jarPath);
 
+        m_loader.add(jarPath);
         LOGGER.info(String.format("Added %s to ClassLoader", p_name));
-        return jarPath;
     }
 
     private int getRandomInt(int p_max) {

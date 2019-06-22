@@ -70,7 +70,7 @@ public class DistributedLoader extends URLClassLoader {
             myPackage = p_name;
         }
 
-        add(m_loader.getJar(myPackage));
+        m_loader.getJar(myPackage);
     }
 
     /**
