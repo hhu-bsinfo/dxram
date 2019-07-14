@@ -521,15 +521,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         Set<String> loadedJars = m_loaderTable.getLoadedJars();
         loadedJars.removeAll(requestMessage.getLoadedJars());
 
-        LOGGER.info(String.format("Other peers needs %s", loadedJars));
-
-        for (String jarName : loadedJars) {
-            if (!m_loaderTable.containsJar(jarName)) {
-                loadedJars.remove(jarName);
-            }
-        }
-
         if (!loadedJars.isEmpty()) {
+            LOGGER.info(String.format("Other peers needs %s", loadedJars));
+
             LoaderJar[] responseArray = new LoaderJar[loadedJars.size()];
             int i = 0;
             for (String jarName : loadedJars) {
