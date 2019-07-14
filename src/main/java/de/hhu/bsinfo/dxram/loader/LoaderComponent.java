@@ -41,6 +41,7 @@ import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.loader.messages.ClassRequestMessage;
 import de.hhu.bsinfo.dxram.loader.messages.ClassResponseMessage;
 import de.hhu.bsinfo.dxram.loader.messages.DistributeJarMessage;
+import de.hhu.bsinfo.dxram.loader.messages.FlushTableMessage;
 import de.hhu.bsinfo.dxram.loader.messages.LoaderMessages;
 import de.hhu.bsinfo.dxram.loader.messages.RegisterJarMessage;
 import de.hhu.bsinfo.dxram.loader.messages.SyncInvitationMessage;
@@ -250,7 +251,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
     /**
      * @return number of local registered jars
      */
-    public int numberLoadedEntries() {
+    public int getLocalLoadedCount() {
         if (m_role == NodeRole.SUPERPEER) {
             return m_loaderTable.jarMapSize();
         } else {

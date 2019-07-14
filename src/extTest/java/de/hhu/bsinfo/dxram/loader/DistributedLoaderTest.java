@@ -50,14 +50,14 @@ public class DistributedLoaderTest {
 
         Class test = null;
         try {
-            test = loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
+            test = loaderService.findClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
         } catch (ClassNotFoundException e) {
             Assert.fail("Oups, classloading failed.");
         }
         Assert.assertNotNull(test);
 
         try {
-            loaderService.getClassLoader().loadClass("BestClass");
+            loaderService.findClass("BestClass");
             Assert.fail("This class should not exist.");
         } catch (ClassNotFoundException e) {
             // this is nice

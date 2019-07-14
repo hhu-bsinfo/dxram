@@ -28,6 +28,9 @@ public class LoaderMessages {
     public static final byte SUBTYPE_SYNC_RESPONSE = 6;
     public static final byte SUBTYPE_SYNC_INVITATION = 7;
     public static final byte SUBTYPE_UPDATE = 8;
+    public static final byte SUBTYPE_FLUSH_TABLE = 9;
+    public static final byte SUBTYPE_TABLE_COUNT_REQUEST = 10;
+    public static final byte SUBTYPE_TABLE_COUNT_RESPONSE = 11;
 
     /**
      * Static class

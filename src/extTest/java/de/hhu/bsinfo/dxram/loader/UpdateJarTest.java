@@ -50,7 +50,7 @@ public class UpdateJarTest {
 
         Class test = null;
         try {
-            test = loaderService.getClassLoader().loadClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
+            test = loaderService.findClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
         } catch (ClassNotFoundException e) {
             Assert.fail("Oups, classloading failed.");
         }
