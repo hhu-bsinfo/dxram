@@ -92,6 +92,12 @@ public class LoaderService extends Service<ModuleConfig> implements MessageRecei
     }
 
     /**
+     * (FOR TESTING) Get a new instance of the DistributedLoader and clean all loaded Packages.
+     */
+    public void cleanLoader() {
+        m_loader.cleanLoader();
+    }
+    /**
      * Get number of loaded entries of specific superpeer
      *
      * @param p_nid nid of superpeer
@@ -113,7 +119,7 @@ public class LoaderService extends Service<ModuleConfig> implements MessageRecei
     }
 
     /**
-     * Flush LoaderTable of specific superpeer
+     * (FOR TESTING) Flush LoaderTable of specific superpeer
      *
      * @param p_nid superpeer to flush
      */
@@ -127,7 +133,7 @@ public class LoaderService extends Service<ModuleConfig> implements MessageRecei
     }
 
     /**
-     * Flush local LoaderTable, if the node is a superpeer.
+     * (FOR TESTING) Flush local LoaderTable, if the node is a superpeer.
      */
     public void flushSuperpeerTable() {
         m_loader.flushTable();

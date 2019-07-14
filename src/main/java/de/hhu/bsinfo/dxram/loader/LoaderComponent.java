@@ -186,11 +186,10 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             id = m_lookup.getResponsibleSuperpeer(m_boot.getNodeId());
         }
 
-        ClassRequestMessage requestMessage = new ClassRequestMessage(id, p_name);
-
         int count = 0;
         while(true) {
             try {
+                ClassRequestMessage requestMessage = new ClassRequestMessage(id, p_name);
                 m_net.sendSync(requestMessage, true);
 
                 ClassResponseMessage response = (ClassResponseMessage) requestMessage.getResponse();
@@ -206,7 +205,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 m_loader.add(jarPath);
                 LOGGER.info(String.format("Added %s to ClassLoader", p_name));
 
-                break;
+                return;
             } catch (ClassNotFoundException | NetworkException e) {
                 if (++count == getConfig().getMaxTries()) {
                     throw new ClassNotFoundException();
@@ -279,6 +278,21 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
             LOGGER.info(String.format("Updated %s to version %s", p_loaderJar.getM_name(), p_loaderJar.getM_version()));
         } catch (IOException e) {
             LOGGER.error(String.format("Updating %s failed: %s", p_loaderJar.getM_name(), e));
+        }
+    }
+
+    /**
+     * (FOR TESTING) Get a new instance of the DistributedLoader and clean all loaded Packages.
+     */
+    public void cleanLoader() {
+        if (m_role == NodeRole.PEER) {
+            cleanLoaderDir();
+            DistributedLoader newLoader = new DistributedLoader(this);
+            newLoader.initPlugins(m_pluginPath);
+
+            m_loader = newLoader;
+        }else {
+            LOGGER.warn("Only peers have a DistributedLoader instance.");
         }
     }
 
