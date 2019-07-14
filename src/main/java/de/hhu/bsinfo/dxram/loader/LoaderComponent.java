@@ -99,15 +99,19 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         List<Short> superPeers = m_boot.getOnlineSuperpeerIds();
         superPeers.remove((Short) m_boot.getNodeId());
 
-        int randomInt = getRandomInt(superPeers.size());
-        short id = superPeers.get(randomInt);
-        LOGGER.info(String.format("request loaderTable sync with %s", NodeID.toHexString(id)));
-        SyncRequestMessage syncRequestMessage = new SyncRequestMessage(id, m_loaderTable.getLoadedJars());
+        if (superPeers.isEmpty()) {
+            LOGGER.info("Nothing to sync, only one superpeer.");
+        }else {
+            int randomInt = getRandomInt(superPeers.size());
+            short id = superPeers.get(randomInt);
+            LOGGER.info(String.format("request loaderTable sync with %s", NodeID.toHexString(id)));
+            SyncRequestMessage syncRequestMessage = new SyncRequestMessage(id, m_loaderTable.getLoadedJars());
 
-        try {
-            m_net.sendMessage(syncRequestMessage);
-        } catch (NetworkException e) {
-            LOGGER.error(e);
+            try {
+                m_net.sendMessage(syncRequestMessage);
+            } catch (NetworkException e) {
+                LOGGER.error(e);
+            }
         }
     }
 
@@ -355,6 +359,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
     /**
      * Lookup of jar for requested package and send response with jar or CLASS_NOT_FOUND
+     * If forceSyncWhenNotFound is true, send SyncRequest to random superpeer, if class is not found
      *
      * @param p_message
      *         message with request
@@ -374,6 +379,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         } catch (NotInClusterException e) {
             LOGGER.error("Class not found in cluster");
             responseMessage = new ClassResponseMessage(requestMessage, new LoaderJar(CLASS_NOT_FOUND));
+            if (getConfig().m_forceSyncWhenNotFound) {
+                sync();
+            }
         }
 
         try {
@@ -537,7 +545,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
                 LOGGER.error(e);
             }
         } else {
-            LOGGER.info("The peer has all jars, abort sync (timing)");
+            LOGGER.info("The peer has all jars, abort sync");
         }
 
     }
@@ -565,6 +573,11 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
     }
 
+    /**
+     * Update jar on peer with new version from message
+     *
+     * @param p_message message with response
+     */
     private void onIncomingUpdateMessage(Message p_message) {
         UpdateMessage updateMessage = (UpdateMessage) p_message;
 

@@ -31,18 +31,19 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 @DXRAMTestConfiguration(
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
 
         })
 public class DistributedLoaderTest {
-    @TestInstance(runOnNodeIdx = 1)
+    @TestInstance(runOnNodeIdx = 2)
     public void initSuperpeer(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         loaderService.addJar(Paths.get("src/extTest/resources/dxrest-1.jar"));
     }
 
-    @TestInstance(runOnNodeIdx = 2)
+    @TestInstance(runOnNodeIdx = 3)
     public void simpleTest(final DXRAM p_instance) throws InterruptedException {
         Thread.sleep(100);
         LoaderService loaderService = p_instance.getService(LoaderService.class);

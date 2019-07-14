@@ -53,7 +53,12 @@ public class LoaderComponentConfig extends ModuleConfig {
     @Expose
     private final int m_maxTries = 2;
 
-    @Expose final int m_retryInterval = 500;
+    @Expose
+    public final int m_retryInterval = 500;
+
+    @Expose
+    public final boolean m_forceSyncWhenNotFound = true;
+
 
     public LoaderComponentConfig() {
         super(LoaderComponent.class);
