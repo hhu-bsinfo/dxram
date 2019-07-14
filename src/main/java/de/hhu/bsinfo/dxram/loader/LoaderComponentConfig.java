@@ -50,6 +50,11 @@ public class LoaderComponentConfig extends ModuleConfig {
     @Expose
     private final String m_loaderDir = "loadedJars";
 
+    @Expose
+    private final int m_maxTries = 2;
+
+    @Expose final int m_retryInterval = 500;
+
     public LoaderComponentConfig() {
         super(LoaderComponent.class);
     }

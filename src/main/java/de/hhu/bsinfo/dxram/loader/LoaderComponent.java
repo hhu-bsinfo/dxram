@@ -27,6 +27,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import de.hhu.bsinfo.dxnet.MessageReceiver;
 import de.hhu.bsinfo.dxnet.core.Message;
@@ -181,23 +182,40 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
         }
 
         ClassRequestMessage requestMessage = new ClassRequestMessage(id, p_name);
-        try {
-            m_net.sendSync(requestMessage, true);
 
-        } catch (NetworkException e) {
-            LOGGER.error(e);
+        int count = 0;
+        while(true) {
+            try {
+                m_net.sendSync(requestMessage, true);
+
+                ClassResponseMessage response = (ClassResponseMessage) requestMessage.getResponse();
+
+                if (CLASS_NOT_FOUND.equals(response.getM_loaderJar().getM_name())) {
+                    throw new ClassNotFoundException();
+                }
+
+                Path jarPath = Paths.get(getConfig().getLoaderDir() + File.separator +
+                        response.getM_loaderJar().getM_name() + ".jar");
+                response.getM_loaderJar().writeToPath(jarPath);
+
+                m_loader.add(jarPath);
+                LOGGER.info(String.format("Added %s to ClassLoader", p_name));
+
+                break;
+            } catch (ClassNotFoundException | NetworkException e) {
+                if (++count == getConfig().getMaxTries()) {
+                    throw new ClassNotFoundException();
+                }else {
+                    LOGGER.info(String.format("Retry getting %s in %s ms... (Retry number %s)",
+                            p_name, getConfig().m_retryInterval, count));
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(getConfig().m_retryInterval);
+                    } catch (InterruptedException ex) {
+                        LOGGER.error(ex);
+                    }
+                }
+            }
         }
-        ClassResponseMessage response = (ClassResponseMessage) requestMessage.getResponse();
-
-        if (CLASS_NOT_FOUND.equals(response.getM_loaderJar().getM_name())) {
-            throw new ClassNotFoundException();
-        }
-
-        Path jarPath = Paths.get(getConfig().getLoaderDir() + File.separator + response.getM_loaderJar().getM_name() + ".jar");
-        response.getM_loaderJar().writeToPath(jarPath);
-
-        m_loader.add(jarPath);
-        LOGGER.info(String.format("Added %s to ClassLoader", p_name));
     }
 
     private int getRandomInt(int p_max) {
