@@ -143,7 +143,9 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
         try {
             byte[] jarBytes = Files.readAllBytes(p_jarPath);
-            String name = p_jarPath.getFileName().toString().replace(".jar", "");
+            String name = p_jarPath.getFileName().toString()
+                    .replace(".jar", "")
+                    .replace("dxa-", "");
             int version = 0;
 
             if (name.contains("-")) {
