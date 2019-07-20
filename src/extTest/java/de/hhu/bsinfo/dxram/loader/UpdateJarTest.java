@@ -37,15 +37,14 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
 public class UpdateJarTest {
-    @TestInstance(runOnNodeIdx = 1)
+    @TestInstance(runOnNodeIdx = 2)
     public void test1(final DXRAM p_instance) throws InterruptedException {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         loaderService.addJar(Paths.get("src/extTest/resources/dxrest-1.jar"));
     }
 
-    @TestInstance(runOnNodeIdx = 2)
+    @TestInstance(runOnNodeIdx = 1)
     public void test2(final DXRAM p_instance) throws InterruptedException {
-        TimeUnit.MILLISECONDS.sleep(200);
         LoaderService loaderService = p_instance.getService(LoaderService.class);
 
         Class test = null;
@@ -60,7 +59,7 @@ public class UpdateJarTest {
     @TestInstance(runOnNodeIdx = 3)
     public void simpleTest(final DXRAM p_instance) throws InterruptedException {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        TimeUnit.MILLISECONDS.sleep(400);
+        TimeUnit.MILLISECONDS.sleep(500);
         loaderService.addJar(Paths.get("src/extTest/resources/dxrest-2.jar"));
     }
 }

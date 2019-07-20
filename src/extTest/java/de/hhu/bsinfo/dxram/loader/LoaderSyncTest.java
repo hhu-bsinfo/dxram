@@ -22,10 +22,12 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
         nodes = {
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
+                @DXRAMTestConfiguration.Node(nodeRole = NodeRole.SUPERPEER),
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
         })
 public class LoaderSyncTest {
-    @TestInstance(runOnNodeIdx = 2)
+    @TestInstance(runOnNodeIdx = 4)
     public void register(final DXRAM p_instance) throws Exception {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         BootService bootService = p_instance.getService(BootService.class);

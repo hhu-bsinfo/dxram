@@ -47,15 +47,28 @@ public class LoaderComponentConfig extends ModuleConfig {
     @Expose
     private boolean m_autoUpdate = true;
 
+    /**
+     * The path where loaded Jars get stored.
+     */
     @Expose
     private final String m_loaderDir = "loadedJars";
 
+    /**
+     * The number of tries a peer executes getJar before a ClassNotFoundException is thrown.
+     */
     @Expose
     private final int m_maxTries = 2;
 
+    /**
+     * The time a peer is waiting, before a retry is executed, in milliseconds.
+     */
     @Expose
     public final int m_retryInterval = 500;
 
+    /**
+     * If true, a superpeer forces a synchronisation,
+     * if a ClassRequests requests a class, that is not locally available.
+     */
     @Expose
     public final boolean m_forceSyncWhenNotFound = true;
 

@@ -38,13 +38,13 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
         })
 public class DistributedLoaderTest {
     @TestInstance(runOnNodeIdx = 2)
-    public void initSuperpeer(final DXRAM p_instance) {
+    public void registerJar(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         loaderService.addJar(Paths.get("src/extTest/resources/dxrest-1.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 3)
-    public void simpleTest(final DXRAM p_instance) {
+    public void findClassWithService(final DXRAM p_instance) {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
 
         Class test = null;

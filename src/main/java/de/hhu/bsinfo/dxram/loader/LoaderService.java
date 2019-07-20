@@ -181,7 +181,6 @@ public class LoaderService extends Service<ModuleConfig> implements MessageRecei
      */
     private void onIncomingFlushMessage(Message p_message) {
         m_loader.flushTable();
-        LOGGER.info(String.format("Flushed LoaderTable on superpeer %s", NodeID.toHexString(m_boot.getNodeId())));
     }
 
     private void onIncomingTableCountRequest(Message p_message) {

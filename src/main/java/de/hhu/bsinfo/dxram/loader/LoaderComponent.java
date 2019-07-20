@@ -209,7 +209,7 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
 
                 return;
             } catch (ClassNotFoundException | NetworkException e) {
-                if (++count == getConfig().getMaxTries()) {
+                if (++count >= getConfig().getMaxTries()) {
                     throw new ClassNotFoundException();
                 }else {
                     LOGGER.info(String.format("Retry getting %s in %s ms... (Retry number %s)",
