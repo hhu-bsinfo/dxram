@@ -29,13 +29,7 @@ public class DXRAMConfig {
      * Component configurations
      */
     @Expose
-    Map<String, ModuleConfig> m_componentConfigs = new HashMap<>();
-
-    /**
-     * Service configurations
-     */
-    @Expose
-    Map<String, ModuleConfig> m_serviceConfigs = new HashMap<>();
+    Map<String, ModuleConfig> m_moduleConfigs = new HashMap<>();
 
     /**
      * Constructor
@@ -43,10 +37,8 @@ public class DXRAMConfig {
      * @param p_componentConfigs Map of (default) component configuration objects
      * @param p_serviceConfigs Map of (default) service configuration objects
      */
-    DXRAMConfig(final Map<String, ModuleConfig> p_componentConfigs,
-            final Map<String, ModuleConfig> p_serviceConfigs) {
-        m_componentConfigs = p_componentConfigs;
-        m_serviceConfigs = p_serviceConfigs;
+    DXRAMConfig(final Map<String, ModuleConfig> p_moduleConfigs) {
+        m_moduleConfigs = p_moduleConfigs;
     }
 
     /**
@@ -73,7 +65,7 @@ public class DXRAMConfig {
      */
     @SuppressWarnings("unchecked")
     public <T extends ModuleConfig> T getComponentConfig(final Class<? extends Component> p_class) {
-        ModuleConfig conf = m_componentConfigs.get(p_class.getSimpleName());
+        ModuleConfig conf = m_moduleConfigs.get(p_class.getSimpleName());
 
         return (T) conf;
     }
@@ -87,41 +79,22 @@ public class DXRAMConfig {
      */
     @SuppressWarnings("unchecked")
     public <T extends ModuleConfig> T getServiceConfig(final Class<? extends Service> p_class) {
-        ModuleConfig conf = m_serviceConfigs.get(p_class.getSimpleName());
+        ModuleConfig conf = m_moduleConfigs.get(p_class.getSimpleName());
 
         return (T) conf;
     }
 
     /**
-     * Run configuration value verification on all component configurations
+     * Run configuration value verification on all modules
      *
      * @return True if verification successful, false on failure
      */
-    boolean verifyConfigurationValuesComponents() {
-        for (ModuleConfig config : m_componentConfigs.values()) {
+    boolean isValid() {
+        for (ModuleConfig config : m_moduleConfigs.values()) {
             LOGGER.debug("Verifying component configuration values of %s...", config.getModuleClassName());
 
             if (!config.verify(this)) {
                 LOGGER.error("Verifying component configuration values failed (%s)", config.getModuleClassName());
-
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Run configuration value verification on all service configurations
-     *
-     * @return True if verification successful, false on failure
-     */
-    boolean verifyConfigurationValuesServices() {
-        for (ModuleConfig config : m_serviceConfigs.values()) {
-            LOGGER.debug("Verifying service configuration values of %s...", config.getModuleClassName());
-
-            if (!config.verify(this)) {
-                LOGGER.error("Verifying service configuration values failed (%s)", config.getModuleClassName());
 
                 return false;
             }

@@ -122,7 +122,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider, Dependen
 
         Map<String, ModuleConfig> moduleConfigs = m_moduleManager.createDefaultConfigs();
 
-        return new DXRAMConfig(moduleConfigs, moduleConfigs);
+        return new DXRAMConfig(moduleConfigs);
     }
 
     /**
@@ -143,11 +143,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider, Dependen
         LOGGER.debug("Verifying configuration...");
 
         // verify configuration values
-        if (!p_config.verifyConfigurationValuesComponents()) {
-            return false;
-        }
-
-        if (!p_config.verifyConfigurationValuesServices()) {
+        if (!p_config.isValid()) {
             return false;
         }
 
@@ -162,7 +158,7 @@ public class DXRAMEngine implements ServiceProvider, ComponentProvider, Dependen
         LOGGER.debug("Configuration verification successful");
 
         LOGGER.debug("Initializing component manager...");
-        m_moduleManager.initialize(p_config.getEngineConfig().getRole(), p_config.m_componentConfigs);
+        m_moduleManager.initialize(p_config.getEngineConfig().getRole(), p_config.m_moduleConfigs);
 
         // -----------------------------
 
