@@ -41,17 +41,15 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
                 @DXRAMTestConfiguration.Node(nodeRole = NodeRole.PEER)
 
         })
-public class RemoteDepsTest {
+public class SystemLoaderTest {
     @TestInstance(runOnNodeIdx = 1)
     public void initSuperpeer(final DXRAM p_instance) throws Exception {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
-        loaderService.addJar(Paths.get("src/extTest/resources/dxrest.jar"));
+        loaderService.addJar(Paths.get("src/extTest/resources/dxrest-1.jar"));
     }
 
     @TestInstance(runOnNodeIdx = 2)
     public void simpleTest(final DXRAM p_instance) throws Exception {
-        Thread.sleep(100);
-
         ApplicationService applicationService = p_instance.getService(ApplicationService.class);
         applicationService.registerApplicationClass(ExternalDepsApp.class);
         applicationService.startApplication("de.hhu.bsinfo.dxram.loader.ExternalDepsApp");

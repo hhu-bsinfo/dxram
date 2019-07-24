@@ -1,9 +1,10 @@
 package de.hhu.bsinfo.dxram.loader;
 
+import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.junit.runner.RunWith;
 
@@ -11,7 +12,9 @@ import de.hhu.bsinfo.dxram.DXRAM;
 import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.TestInstance;
+import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
+import de.hhu.bsinfo.dxutils.NodeID;
 
 @RunWith(DXRAMJunitRunner.class)
 @DXRAMTestConfiguration(
@@ -22,7 +25,7 @@ import de.hhu.bsinfo.dxram.util.NodeRole;
 public class LoadingTimeTest {
     @TestInstance(runOnNodeIdx = 1)
     public void timingTest(final DXRAM p_instance) throws Exception {
-        List<Long> testData = new ArrayList();
+        long[] data = new long[1000];
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         loaderService.addJar(Paths.get("src/extTest/resources/dxrest-1.jar"));
 
@@ -33,12 +36,16 @@ public class LoadingTimeTest {
             loaderService.findClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
             long stop = System.nanoTime();
 
-            testData.add(stop - start);
+            data[i] = stop - start;
         }
 
-        FileWriter writer = new FileWriter("loadingTime.txt");
-        for (Long data : testData) {
-            writer.write(data + System.lineSeparator());
+        BootService bootService = p_instance.getService(BootService.class);
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd_HHmmss");
+        BufferedWriter writer = new BufferedWriter(new FileWriter(String.format("loadingTimes-%s-%s.txt",
+                format.format(new Date()), NodeID.toHexString(bootService.getNodeID()))));
+        for (long d : data) {
+            writer.write(d + System.lineSeparator());
         }
+        writer.close();
     }
 }

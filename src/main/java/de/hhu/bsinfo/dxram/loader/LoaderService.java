@@ -23,7 +23,6 @@ import de.hhu.bsinfo.dxnet.core.Message;
 import de.hhu.bsinfo.dxnet.core.NetworkException;
 import de.hhu.bsinfo.dxram.DXRAMMessageTypes;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.boot.BootService;
 import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.ModuleConfig;
@@ -34,7 +33,6 @@ import de.hhu.bsinfo.dxram.loader.messages.TableCountRequest;
 import de.hhu.bsinfo.dxram.loader.messages.TableCountResponse;
 import de.hhu.bsinfo.dxram.net.NetworkComponent;
 import de.hhu.bsinfo.dxram.util.NodeRole;
-import de.hhu.bsinfo.dxutils.NodeID;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
 
 /**

@@ -15,6 +15,7 @@ import de.hhu.bsinfo.dxram.DXRAMJunitRunner;
 import de.hhu.bsinfo.dxram.DXRAMTestConfiguration;
 import de.hhu.bsinfo.dxram.TestInstance;
 import de.hhu.bsinfo.dxram.boot.BootService;
+import de.hhu.bsinfo.dxram.lookup.LookupService;
 import de.hhu.bsinfo.dxram.util.NodeRole;
 
 @RunWith(DXRAMJunitRunner.class)
@@ -31,6 +32,7 @@ public class LoaderSyncTest {
     public void register(final DXRAM p_instance) throws Exception {
         LoaderService loaderService = p_instance.getService(LoaderService.class);
         BootService bootService = p_instance.getService(BootService.class);
+        LookupService lookupService = p_instance.getService(LookupService.class);
         List<Short> superpeers = bootService.getOnlineSuperpeerNodeIDs();
 
         // add dxrest to cluster, wait and assert all superpeers loaded same classes
@@ -43,8 +45,8 @@ public class LoaderSyncTest {
         }
         Assert.assertEquals(1, counts.size());
 
-        // flush first superpeer, wait and assert loaded count is not the same on all superpeers
-        loaderService.flushSuperpeerTable(superpeers.get(0));
+        // flush responsible superpeer, wait and assert loaded count is not the same on all superpeers
+        loaderService.flushSuperpeerTable(lookupService.getResponsibleSuperpeer(bootService.getNodeID()));
         TimeUnit.MILLISECONDS.sleep(500);
 
         counts = new HashSet<>();
@@ -53,14 +55,14 @@ public class LoaderSyncTest {
         }
         Assert.assertTrue(counts.size() > 1);
 
-        // force sync by loading non existent class and assert superpeers loaded same classes
+        // force sync by loading class from flushed superpeer and assert superpeers loaded same classes
+        Class test = null;
         try {
-            loaderService.findClass("IMPOSSIBLE_TO_LOAD");
-            Assert.fail("This class should not exist");
-        }catch (ClassNotFoundException e) {
-            System.out.println("This is fine.");
+            test = loaderService.findClass("de.hhu.bsinfo.dxapp.rest.cmd.requests.AppRunRequest");
+        } catch (ClassNotFoundException e) {
+            Assert.fail("Oups, classloading failed.");
         }
-        TimeUnit.MILLISECONDS.sleep(500);
+        Assert.assertNotNull(test);
 
         counts = new HashSet<>();
         for (short nid : superpeers) {
