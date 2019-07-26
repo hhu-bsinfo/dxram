@@ -135,12 +135,11 @@ public class LoaderTable {
                 if (entry.getName().endsWith(".class")) {
                     String className = entry.getName().replaceAll("/", "\\.");
                     String myClass = className.substring(0, className.lastIndexOf('.'));
-                    String myPackage = myClass.substring(0, myClass.lastIndexOf('.'));
                     try {
+                        String myPackage = myClass.substring(0, myClass.lastIndexOf('.'));
                         registerClass(myPackage, name);
-                    } catch (Throwable e) {
-                        LOGGER.warn("WARNING: failed to instantiate ");
-                        e.printStackTrace();
+                    } catch (StringIndexOutOfBoundsException e) {
+                        registerClass(myClass, name);
                     }
                 }
             }
