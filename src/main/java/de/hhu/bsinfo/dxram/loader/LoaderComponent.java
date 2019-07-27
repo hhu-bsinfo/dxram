@@ -41,7 +41,6 @@ import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.loader.messages.ClassRequestMessage;
 import de.hhu.bsinfo.dxram.loader.messages.ClassResponseMessage;
 import de.hhu.bsinfo.dxram.loader.messages.DistributeJarMessage;
-import de.hhu.bsinfo.dxram.loader.messages.FlushTableMessage;
 import de.hhu.bsinfo.dxram.loader.messages.LoaderMessages;
 import de.hhu.bsinfo.dxram.loader.messages.RegisterJarMessage;
 import de.hhu.bsinfo.dxram.loader.messages.SyncInvitationMessage;
@@ -80,16 +79,18 @@ public class LoaderComponent extends Component<LoaderComponentConfig> implements
      * Clean folder with requested jars from loader
      */
     private void cleanLoaderDir() {
-        try {
-            Files.walk(Paths.get(getConfig().getLoaderDir()))
-                    .sorted(Comparator.reverseOrder())
-                    .filter(Files::isRegularFile)
-                    .map(Path::toFile)
-                    .forEach(File::delete);
+        File dir = new File(getConfig().getLoaderDir());
 
-            LOGGER.info("Loader dir cleanup finished.");
-        } catch (IOException e) {
-            LOGGER.error("Loader dir cleanup failed ", e);
+        if (dir.isDirectory()) {
+            for (File file : dir.listFiles()) {
+                if (!file.isDirectory() && !file.isHidden()) {
+                    try {
+                        file.delete();
+                    } catch (Exception e) {
+                        LOGGER.warn(String.format("Could not delete %s ", file.getAbsolutePath()));
+                    }
+                }
+            }
         }
     }
 
