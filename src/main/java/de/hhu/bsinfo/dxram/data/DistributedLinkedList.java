@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public final class DistributedLinkedList<T> implements Iterable<T> {
 
@@ -293,6 +295,13 @@ public final class DistributedLinkedList<T> implements Iterable<T> {
     @Override
     public Iterator<T> iterator() {
         return getAll().iterator();
+    }
+
+    /**
+     * @return A stream over a snapshot of this distributed linked list.
+     */
+    public Stream<T> stream() {
+        return StreamSupport.stream(spliterator(), false);
     }
 
     private static final class MetaData extends AbstractChunk {

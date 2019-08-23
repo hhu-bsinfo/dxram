@@ -74,8 +74,7 @@ public class DistributedLinkedListTest {
         }
 
         // Join elements using one whitespace as the seperator
-        String content = StreamSupport.stream(list.spliterator(), false)
-                .collect(Collectors.joining(" "));
+        String content = list.stream().collect(Collectors.joining(" "));
 
         assertEquals("Hello Distributed World", content);
     }
