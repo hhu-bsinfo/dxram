@@ -228,7 +228,7 @@ public class LookupComponent extends Component<LookupComponentConfig>
             // Read from application cache first
             final Long chunkID = m_applicationIDCache.get(p_id);
 
-            if (chunkID == null) {
+            if (chunkID == null || chunkID == ChunkID.INVALID_ID) {
                 // Cache miss -> ask superpeer
 
                 LOGGER.trace("Value not cached for application cache: %d", p_id);

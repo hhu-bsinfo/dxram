@@ -42,13 +42,7 @@ import de.hhu.bsinfo.dxram.chunk.ChunkLocalService;
 import de.hhu.bsinfo.dxram.chunk.ChunkMigrationComponent;
 import de.hhu.bsinfo.dxram.chunk.ChunkService;
 import de.hhu.bsinfo.dxram.chunk.ChunkServiceConfig;
-import de.hhu.bsinfo.dxram.engine.Service;
-import de.hhu.bsinfo.dxram.engine.DXRAMConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMEngine;
-import de.hhu.bsinfo.dxram.engine.ModuleConfig;
-import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
-import de.hhu.bsinfo.dxram.engine.NullComponent;
-import de.hhu.bsinfo.dxram.engine.NullService;
+import de.hhu.bsinfo.dxram.engine.*;
 import de.hhu.bsinfo.dxram.event.EventComponent;
 import de.hhu.bsinfo.dxram.event.EventComponentConfig;
 import de.hhu.bsinfo.dxram.failure.FailureComponent;
@@ -96,7 +90,7 @@ import de.hhu.bsinfo.dxutils.NodeID;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 26.01.2016
  */
-public final class DXRAM {
+public final class DXRAM implements ServiceProvider {
 
 
     private DXRAMEngine m_engine;
@@ -186,6 +180,11 @@ public final class DXRAM {
      */
     public <T extends Service> T getService(final Class<T> p_class) {
         return m_engine.getService(p_class);
+    }
+
+    @Override
+    public boolean isServiceAvailable(Class<? extends Service> p_class) {
+        return m_engine.isServiceAvailable(p_class);
     }
 
     /**

@@ -481,6 +481,8 @@ public class OverlayPeer implements MessageReceiver {
 
                 ret = request.getResponse(GetChunkIDForNameserviceEntryResponse.class).getChunkID();
 
+                // This is not right. We can't differentiate between a network timeout
+                // and a valid response (unknown name service id) since both may contain an invalid chunk id.
                 if (ret != -1) {
                     break;
                 }

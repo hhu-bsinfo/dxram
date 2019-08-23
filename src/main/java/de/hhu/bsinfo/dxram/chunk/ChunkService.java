@@ -18,14 +18,7 @@ package de.hhu.bsinfo.dxram.chunk;
 
 import de.hhu.bsinfo.dxram.backup.BackupComponent;
 import de.hhu.bsinfo.dxram.boot.BootComponent;
-import de.hhu.bsinfo.dxram.chunk.operation.CIDStatus;
-import de.hhu.bsinfo.dxram.chunk.operation.Create;
-import de.hhu.bsinfo.dxram.chunk.operation.Get;
-import de.hhu.bsinfo.dxram.chunk.operation.Lock;
-import de.hhu.bsinfo.dxram.chunk.operation.Put;
-import de.hhu.bsinfo.dxram.chunk.operation.Remove;
-import de.hhu.bsinfo.dxram.chunk.operation.Resize;
-import de.hhu.bsinfo.dxram.chunk.operation.Status;
+import de.hhu.bsinfo.dxram.chunk.operation.*;
 import de.hhu.bsinfo.dxutils.dependency.Dependency;
 import de.hhu.bsinfo.dxram.engine.Module;
 import de.hhu.bsinfo.dxram.engine.Service;
@@ -65,6 +58,7 @@ public class ChunkService extends Service<ChunkServiceConfig> {
     private Status m_status;
     private CIDStatus m_cidStatus;
     private Create m_create;
+    private CreateLocal m_createLocal;
     private Get m_get;
     private Put m_put;
     private Remove m_remove;
@@ -96,6 +90,15 @@ public class ChunkService extends Service<ChunkServiceConfig> {
      */
     public Create create() {
         return m_create;
+    }
+
+    /**
+     * Get the CreateLocal operation.
+     *
+     * @return Operation
+     */
+    public CreateLocal createLocal() {
+        return m_createLocal;
     }
 
     /**
@@ -150,6 +153,7 @@ public class ChunkService extends Service<ChunkServiceConfig> {
         m_status = new Status(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_cidStatus = new CIDStatus(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_create = new Create(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
+        m_createLocal = new CreateLocal(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_get = new Get(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_put = new Put(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice);
         m_remove = new Remove(getClass(), m_boot, m_backup, m_chunk, m_network, m_lookup, m_nameservice,
