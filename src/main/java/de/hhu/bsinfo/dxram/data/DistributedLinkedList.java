@@ -61,6 +61,55 @@ public final class DistributedLinkedList<T> implements Iterable<T> {
         });
     }
 
+    public void add(long index, T value, short nodeId) {
+        syncedWrite(() -> {
+            if (index > metaData.size) {
+                throw new IndexOutOfBoundsException("Index: " + index + " Size: "+ metaData.size);
+            }
+
+            current.reset();
+            current.setValue(value);
+            current.setNext(ChunkID.INVALID_ID);
+            chunkService.create().create(nodeId, current);
+
+            if (metaData.size == 0) {
+                metaData.head = current.getID();
+                metaData.tail = metaData.head;
+            } else if (metaData.size > 0 && index == metaData.size) {
+                previous.reset();
+                previous.setID(metaData.tail);
+                chunkService.get().get(previous);
+                previous.setNext(current.getID());
+                chunkService.put().put(previous);
+                metaData.tail = current.getID();
+            } else {
+                long nextId = metaData.head;
+                for (int i = 0; i < index; i++) {
+                    previous.reset();
+                    previous.setID(nextId);
+                    chunkService.get().get(previous);
+                    nextId = previous.getNext();
+                }
+
+                if (nextId == metaData.head) {
+                    previous.reset();
+                    previous.setID(metaData.head);
+                    chunkService.get().get(previous);
+                    metaData.head = current.getID();
+                    current.setNext(previous.getID());
+                } else {
+                    current.setNext(previous.getNext());
+                    previous.setNext(current.getID());
+                    chunkService.put().put(previous);
+                }
+            }
+
+            chunkService.put().put(current);
+            metaData.size += 1;
+            return null;
+        });
+    }
+
     public T set(long index, T value) {
         return syncedWrite(() -> {
             if (index >= metaData.size) {

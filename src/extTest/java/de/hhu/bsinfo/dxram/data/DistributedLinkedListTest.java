@@ -52,6 +52,9 @@ public class DistributedLinkedListTest {
 
         // Add (append) an element storing the data on this peer
         list.add("World", bootService.getNodeID());
+
+        // Add an element at a specific index storing the data on a remote peer
+        list.add(1, "Distributed", peer);
     }
 
     @TestInstance(runOnNodeIdx = 2)
@@ -66,7 +69,7 @@ public class DistributedLinkedListTest {
         }
 
         // Wait until first node added two elements to the linked list
-        while (list.size() != 2) {
+        while (list.size() != 3) {
             LockSupport.parkNanos(PARK_TIME);
         }
 
@@ -74,6 +77,6 @@ public class DistributedLinkedListTest {
         String content = StreamSupport.stream(list.spliterator(), false)
                 .collect(Collectors.joining(" "));
 
-        assertEquals(content, "Hello World");
+        assertEquals("Hello Distributed World", content);
     }
 }
