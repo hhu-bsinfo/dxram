@@ -12,7 +12,7 @@ import de.hhu.bsinfo.dxram.engine.DXRAMVersion;
  *
  * @author Stefan Nothaas, stefan.nothaas@hhu.de, 17.05.17
  */
-public abstract class Application extends Thread {
+public abstract class Application extends Thread implements ServiceProvider {
     private static final Logger LOGGER = LogManager.getFormatterLogger(Application.class);
 
     private ServiceProvider m_serviceProvider;
@@ -103,7 +103,8 @@ public abstract class Application extends Thread {
      *         Class of the service to get.
      * @return DXRAM service or null if not available.
      */
-    protected <T extends Service> T getService(final Class<T> p_class) {
+    @Override
+    public <T extends Service> T getService(final Class<T> p_class) {
         return m_serviceProvider.getService(p_class);
     }
 
@@ -115,7 +116,8 @@ public abstract class Application extends Thread {
      *         or abstract class to get the registered instance.
      * @return True if available, false otherwise
      */
-    protected boolean isServiceAvailable(final Class<? extends Service> p_class) {
+    @Override
+    public boolean isServiceAvailable(final Class<? extends Service> p_class) {
         return m_serviceProvider.isServiceAvailable(p_class);
     }
 }
